@@ -169,6 +169,14 @@ ul {
   font-size: 14px;
 }
 
+.success-box {
+  border: 1px solid #bbf7d0;
+  border-radius: 16px;
+  background: #f0fdf4;
+  color: #166534;
+  padding: 12px;
+}
+
 .primary-button,
 .secondary-button,
 .danger-button {
@@ -320,6 +328,75 @@ select:focus {
   gap: 8px;
   align-items: center;
   color: #334155;
+}
+
+.study-card {
+  position: relative;
+}
+
+.study-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.status-badge {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.status-draft {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.status-published {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.status-closed {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.owner-chip {
+  max-width: 54%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.study-link-code {
+  margin: 0 0 12px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.study-link-code span {
+  color: #334155;
+  font-weight: 700;
 }
 
 .tree-wrap {
@@ -635,5 +712,9 @@ select:focus {
 
   .inline-form {
     grid-template-columns: 1fr;
+  }
+
+  .owner-chip {
+    max-width: 62%;
   }
 }
