@@ -5,19 +5,22 @@ function normalizeInviteCode(value) {
   return value.trim().toUpperCase();
 }
 
+function navigateTo(path) {
+  window.history.pushState({}, "", path);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
 export default function RegisterPage() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [message, setMessage] = useState("");
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function register(event) {
     event.preventDefault();
     setMessage("");
-    setSuccess(false);
 
     const cleanDisplayName = displayName.trim();
     const cleanEmail = email.trim().toLowerCase();
@@ -93,13 +96,8 @@ export default function RegisterPage() {
     }
 
     await supabase.auth.signOut();
-
     setLoading(false);
-    setSuccess(true);
-    setDisplayName("");
-    setEmail("");
-    setPassword("");
-    setInviteCode("");
+    navigateTo("/login?registered=1");
   }
 
   return (
@@ -151,12 +149,11 @@ export default function RegisterPage() {
                 className="text-input"
                 value={inviteCode}
                 onChange={(event) => setInviteCode(event.target.value)}
-                placeholder="For example, STUDIER-PILOT-2026"
+                autoComplete="off"
               />
             </label>
 
             {message ? <p className="error-box">{message}</p> : null}
-            {success ? <p className="success-box">Account created. Please sign in.</p> : null}
 
             <button className="primary-button" type="submit" disabled={loading}>
               {loading ? "Creating account..." : "Create account"}

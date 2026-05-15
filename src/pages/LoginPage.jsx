@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { supabase, supabaseReady } from "../lib/supabase";
 
 function navigateTo(path) {
@@ -11,6 +11,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const registered = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("registered") === "1";
+  }, []);
 
   async function login(event) {
     event.preventDefault();
@@ -50,6 +55,10 @@ export default function LoginPage() {
           <span className="badge">Studier</span>
           <h1>Sign in</h1>
           <p>Sign in to create and manage internal tree tests.</p>
+
+          {registered ? (
+            <p className="success-box">Account created. Please sign in.</p>
+          ) : null}
 
           <form className="form-stack" onSubmit={login}>
             <label className="form-block">
