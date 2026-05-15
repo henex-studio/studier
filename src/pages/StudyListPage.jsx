@@ -34,11 +34,7 @@ function statusClass(status) {
 function ownerClass(ownerId) {
   const value = String(ownerId || "");
   let total = 0;
-
-  for (let index = 0; index < value.length; index += 1) {
-    total += value.charCodeAt(index);
-  }
-
+  for (let index = 0; index < value.length; index += 1) total += value.charCodeAt(index);
   return `owner-chip owner-chip-${(total % 5) + 1}`;
 }
 
@@ -81,18 +77,13 @@ export default function StudyListPage({ profile }) {
     setStudies(studyRows);
 
     const ownerIds = [...new Set(studyRows.map((study) => study.owner_id).filter(Boolean))];
-
     if (ownerIds.length > 0) {
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("id,email,role,display_name")
         .in("id", ownerIds);
-
-      if (profileError) {
-        setMessage(profileError.message);
-      } else {
-        setProfiles(profileData || []);
-      }
+      if (profileError) setMessage(profileError.message);
+      else setProfiles(profileData || []);
     } else {
       setProfiles([]);
     }
@@ -128,17 +119,12 @@ export default function StudyListPage({ profile }) {
         "Thank you for taking part in this short internal pilot.",
         "You will see short tasks. For each task, choose where you would expect to find the information."
       ],
-      welcome_bullets: [
-        "This is a tree test. It asks where people would click in a menu to find information."
-      ],
+      welcome_bullets: ["This is a tree test. It asks where people would click in a menu to find information."],
       privacy_text: [
         "This test does not ask for your name or contact details.",
         "Please do not enter personal or case details."
       ],
-      end_text: [
-        "You have completed the test.",
-        "Thank you for helping improve the navigation."
-      ],
+      end_text: ["You have completed the test.", "Thank you for helping improve the navigation."],
       data_collection_settings: {
         record_match_type: true,
         record_time_seconds: true,
@@ -151,37 +137,21 @@ export default function StudyListPage({ profile }) {
       }
     };
 
-    const { data, error } = await supabase
-      .from("studies")
-      .insert(defaultStudy)
-      .select()
-      .single();
-
+    const { data, error } = await supabase.from("studies").insert(defaultStudy).select().single();
     if (error) {
       setMessage(error.message);
       return;
     }
-
     navigateTo(`/builder/${data.id}`);
   }
 
   async function updateStatus(study, status) {
     setCopiedStudyId("");
     setFallbackLink("");
-
-    const payload = {
-      status,
-      updated_at: new Date().toISOString()
-    };
-
+    const payload = { status, updated_at: new Date().toISOString() };
     if (status === "published") payload.published_at = new Date().toISOString();
     if (status === "closed") payload.closed_at = new Date().toISOString();
-
-    const { error } = await supabase
-      .from("studies")
-      .update(payload)
-      .eq("id", study.id);
-
+    const { error } = await supabase.from("studies").update(payload).eq("id", study.id);
     if (error) setMessage(error.message);
     await loadStudies();
   }
@@ -189,18 +159,9 @@ export default function StudyListPage({ profile }) {
   async function deleteStudy(study) {
     setCopiedStudyId("");
     setFallbackLink("");
-
-    const ok = window.confirm(
-      "This will permanently delete this test, its tree, questions, responses, final answers, and dashboard data. This action cannot be undone."
-    );
-
+    const ok = window.confirm("This will permanently delete this test, its tree, questions, responses, final answers, and dashboard data. This action cannot be undone.");
     if (!ok) return;
-
-    const { error } = await supabase
-      .from("studies")
-      .delete()
-      .eq("id", study.id);
-
+    const { error } = await supabase.from("studies").delete().eq("id", study.id);
     if (error) setMessage(error.message);
     await loadStudies();
   }
@@ -208,7 +169,6 @@ export default function StudyListPage({ profile }) {
   async function copyTestLink(study) {
     const fullLink = `${window.location.origin}/test/${study.slug}`;
     setFallbackLink("");
-
     try {
       await navigator.clipboard.writeText(fullLink);
       setCopiedStudyId(study.id);
@@ -226,32 +186,17 @@ export default function StudyListPage({ profile }) {
       <section className="card">
         <h1>Test collection</h1>
         <p>Create and manage internal tree tests.</p>
-
         <div className="inline-form">
-          <input
-            className="text-input"
-            placeholder="New test title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-          />
-          <button className="primary-button" onClick={createStudy}>
-            Add new test
-          </button>
+          <input className="text-input" placeholder="New test title" value={title} onChange={(event) => setTitle(event.target.value)} />
+          <button className="primary-button" onClick={createStudy}>Add new test</button>
         </div>
-
         {message ? <p className="error-box">{message}</p> : null}
-
-        {profile.role !== "admin" ? (
-          <p className="muted-text">Test limit: {studies.length} of 3.</p>
-        ) : null}
+        {profile.role !== "admin" ? <p className="muted-text">Test limit: {studies.length} of 3.</p> : null}
       </section>
 
       <section className="study-grid">
         {loading ? <div className="card">Loading...</div> : null}
-
-        {!loading && studies.length === 0 ? (
-          <div className="card">No tests yet.</div>
-        ) : null}
+        {!loading && studies.length === 0 ? <div className="card">No tests yet.</div> : null}
 
         {studies.map((study) => {
           const owner = ownerById.get(study.owner_id) || { label: "Unknown user", title: "Unknown user" };
@@ -263,66 +208,26 @@ export default function StudyListPage({ profile }) {
             <article className="card study-card" key={study.id}>
               <div className="study-card-header">
                 <span className={statusClass(study.status)}>{statusLabel(study.status)}</span>
-
-                {isAdminView ? (
-                  <span className={ownerClass(study.owner_id)} title={owner.title}>
-                    {owner.label}
-                  </span>
-                ) : null}
+                {isAdminView ? <span className={ownerClass(study.owner_id)} title={owner.title}>{owner.label}</span> : null}
               </div>
 
               <h2>{study.title}</h2>
-
-              <p className="study-link-code" title={fullLink}>
-                Test link code: <span>/{study.slug}</span>
-              </p>
+              <p className="study-link-code" title={fullLink}>Test link code: <span>/{study.slug}</span></p>
 
               <div className="button-row">
-                <a className="secondary-button" href={`/builder/${study.id}`}>
-                  Edit
-                </a>
-                <a className="secondary-button" href={`/dashboard/${study.id}`}>
-                  Dashboard
-                </a>
-                {study.status === "published" ? (
-                  <a
-                    className="secondary-button"
-                    href={`/test/${study.slug}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open link
-                  </a>
-                ) : null}
+                <a className="secondary-button" href={`/builder/${study.id}`}>Edit</a>
+                <a className="secondary-button" href={`/dashboard/${study.id}`}>Dashboard</a>
+                <a className="secondary-button" href={`/preview/${study.id}`}>Preview</a>
+                {study.status === "published" ? <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open link</a> : null}
               </div>
 
               <div className="button-row stable-action-row">
-                {study.status !== "published" ? (
-                  <button className="primary-button" onClick={() => updateStatus(study, "published")}>
-                    Publish
-                  </button>
-                ) : (
-                  <button className="secondary-button" onClick={() => updateStatus(study, "closed")}>
-                    Close
-                  </button>
-                )}
-
-                {study.status === "published" ? (
-                  <button className="secondary-button" type="button" onClick={() => copyTestLink(study)}>
-                    Copy link
-                  </button>
-                ) : null}
-
-                <button className="danger-button" onClick={() => deleteStudy(study)}>
-                  Delete
-                </button>
+                {study.status !== "published" ? <button className="primary-button" onClick={() => updateStatus(study, "published")}>Publish</button> : <button className="secondary-button" onClick={() => updateStatus(study, "closed")}>Close</button>}
+                {study.status === "published" ? <button className="secondary-button" type="button" onClick={() => copyTestLink(study)}>Copy link</button> : null}
+                <button className="danger-button" onClick={() => deleteStudy(study)}>Delete</button>
               </div>
 
-              {isCopied ? (
-                <div className="copy-toast">
-                  {fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}
-                </div>
-              ) : null}
+              {isCopied ? <div className="copy-toast">{fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}</div> : null}
             </article>
           );
         })}
