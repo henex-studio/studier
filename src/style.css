@@ -201,3 +201,18 @@ p, ul { line-height: 1.55; color: #334155; }
 .action-center {
   justify-content: center;
 }
+/* Registration and login links */
+.auth-switch-text {
+  margin-top: 18px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.auth-switch-text a {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.auth-switch-text a:hover {
+  text-decoration: underline;
+}
