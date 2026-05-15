@@ -6,13 +6,11 @@ import StudyBuilderPage from "./pages/StudyBuilderPage";
 import TestRunnerPage from "./pages/TestRunnerPage";
 import DashboardPage from "./pages/DashboardPage";
 import GuidePage from "./pages/GuidePage";
+import PreviewRunnerPage from "./pages/PreviewRunnerPage";
 
 function parsePath() {
   const parts = window.location.pathname.split("/").filter(Boolean);
-  return {
-    parts,
-    first: parts[0] || ""
-  };
+  return { parts, first: parts[0] || "" };
 }
 
 function navigateTo(path) {
@@ -21,13 +19,7 @@ function navigateTo(path) {
 }
 
 function isPlainLeftClick(event) {
-  return (
-    event.button === 0 &&
-    !event.metaKey &&
-    !event.ctrlKey &&
-    !event.shiftKey &&
-    !event.altKey
-  );
+  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 }
 
 function sameUser(previousSession, nextSession) {
@@ -70,7 +62,6 @@ export default function App() {
 
   useEffect(() => {
     if (!supabaseReady) return;
-
     let active = true;
 
     async function checkSession() {
@@ -84,7 +75,6 @@ export default function App() {
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setAuthChecked(true);
-
       setSession((previousSession) => {
         if (event === "SIGNED_OUT" || !nextSession) {
           setProfile(null);
@@ -110,7 +100,6 @@ export default function App() {
 
   useEffect(() => {
     if (!supabaseReady || !authChecked) return;
-
     let active = true;
 
     async function loadProfile() {
@@ -136,31 +125,16 @@ export default function App() {
       if (!active) return;
 
       if (error) {
-        setProfile({
-          id: session.user.id,
-          email: session.user.email,
-          role: "user",
-          display_name: null
-        });
+        setProfile({ id: session.user.id, email: session.user.email, role: "user", display_name: null });
       } else {
-        setProfile(
-          data || {
-            id: session.user.id,
-            email: session.user.email,
-            role: "user",
-            display_name: null
-          }
-        );
+        setProfile(data || { id: session.user.id, email: session.user.email, role: "user", display_name: null });
       }
 
       setProfileChecked(true);
     }
 
     loadProfile();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [authChecked, session?.user?.id]);
 
   if (!supabaseReady) {
@@ -196,6 +170,10 @@ export default function App() {
 
   if (first === "guide") {
     return <GuidePage profile={profile} />;
+  }
+
+  if (first === "preview" && parts[1]) {
+    return <PreviewRunnerPage profile={profile} studyId={parts[1]} />;
   }
 
   if (first === "builder" && parts[1]) {
