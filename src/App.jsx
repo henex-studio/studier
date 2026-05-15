@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase, supabaseReady } from "./lib/supabase";
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 import StudyListPage from "./pages/StudyListPage";
 import StudyBuilderPage from "./pages/StudyBuilderPage";
 import TestRunnerPage from "./pages/TestRunnerPage";
@@ -42,7 +43,6 @@ export default function App() {
   useEffect(() => {
     function onDocumentClick(event) {
       if (!isPlainLeftClick(event)) return;
-
       const link = event.target.closest?.("a[href]");
       if (!link) return;
       if (link.target && link.target !== "_self") return;
@@ -82,9 +82,7 @@ export default function App() {
           return null;
         }
 
-        if (sameUser(previousSession, nextSession)) {
-          return nextSession;
-        }
+        if (sameUser(previousSession, nextSession)) return nextSession;
 
         setProfile(null);
         setProfileChecked(false);
@@ -148,9 +146,8 @@ export default function App() {
     );
   }
 
-  if (first === "test" && parts[1]) {
-    return <TestRunnerPage slug={parts[1]} />;
-  }
+  if (first === "test" && parts[1]) return <TestRunnerPage slug={parts[1]} />;
+  if (first === "register") return <RegisterPage />;
 
   const firstAppLoad = !authChecked || (session?.user && !profileChecked && !profile);
 
@@ -164,25 +161,11 @@ export default function App() {
     );
   }
 
-  if (!session || !profile) {
-    return <LoginPage />;
-  }
-
-  if (first === "guide") {
-    return <GuidePage profile={profile} />;
-  }
-
-  if (first === "preview" && parts[1]) {
-    return <PreviewRunnerPage profile={profile} studyId={parts[1]} />;
-  }
-
-  if (first === "builder" && parts[1]) {
-    return <StudyBuilderPage profile={profile} studyId={parts[1]} />;
-  }
-
-  if (first === "dashboard" && parts[1]) {
-    return <DashboardPage profile={profile} studyId={parts[1]} />;
-  }
+  if (!session || !profile) return <LoginPage />;
+  if (first === "guide") return <GuidePage profile={profile} />;
+  if (first === "preview" && parts[1]) return <PreviewRunnerPage profile={profile} studyId={parts[1]} />;
+  if (first === "builder" && parts[1]) return <StudyBuilderPage profile={profile} studyId={parts[1]} />;
+  if (first === "dashboard" && parts[1]) return <DashboardPage profile={profile} studyId={parts[1]} />;
 
   return <StudyListPage profile={profile} />;
 }
