@@ -14,6 +14,11 @@ function makeSlug(title) {
   );
 }
 
+function navigateTo(path) {
+  window.history.pushState({}, "", path);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
 function statusLabel(status) {
   if (status === "published") return "Published";
   if (status === "closed") return "Closed";
@@ -157,7 +162,7 @@ export default function StudyListPage({ profile }) {
       return;
     }
 
-    window.location.href = `/builder/${data.id}`;
+    navigateTo(`/builder/${data.id}`);
   }
 
   async function updateStatus(study, status) {
