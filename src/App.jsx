@@ -5,6 +5,7 @@ import StudyListPage from "./pages/StudyListPage";
 import StudyBuilderPage from "./pages/StudyBuilderPage";
 import TestRunnerPage from "./pages/TestRunnerPage";
 import DashboardPage from "./pages/DashboardPage";
+import GuidePage from "./pages/GuidePage";
 
 function parsePath() {
   const parts = window.location.pathname.split("/").filter(Boolean);
@@ -191,6 +192,10 @@ export default function App() {
 
   if (!session || !profile) {
     return <LoginPage />;
+  }
+
+  if (first === "guide") {
+    return <GuidePage profile={profile} />;
   }
 
   if (first === "builder" && parts[1]) {
