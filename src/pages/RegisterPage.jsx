@@ -115,7 +115,7 @@ export default function RegisterPage() {
                 className="text-input"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
-                placeholder="For example, Cafe"
+                placeholder="For example, Trump"
                 autoComplete="name"
               />
             </label>
