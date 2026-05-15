@@ -15,12 +15,23 @@ const defaultSettings = {
   record_hesitation_flag: true
 };
 
-function TextListEditor({ label, values, onChange }) {
+function makeQuestionKey(text, index) {
+  const base = String(text || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40);
+
+  return base || `q${index + 1}`;
+}
+
+function TextListEditor({ label, helpText, values, onChange }) {
   const text = (values || []).join("\n");
 
   return (
     <label className="form-block">
       <span className="form-label">{label}</span>
+      {helpText ? <span className="muted-text">{helpText}</span> : null}
       <textarea
         className="textarea"
         value={text}
@@ -209,14 +220,21 @@ export default function StudyBuilderPage({ profile, studyId }) {
   async function saveAll() {
     setMessage("Saving...");
 
+    const cleanedFinalQuestions = finalQuestions.map((question, index) => ({
+      ...question,
+      question_key: question.question_key || makeQuestionKey(question.question_text, index)
+    }));
+
     const { error: studyError } = await supabase
       .from("studies")
       .update({
         title: study.title,
         welcome_text: study.welcome_text,
-        welcome_bullets: study.welcome_bullets,
+        welcome_bullets: [],
         privacy_text: study.privacy_text,
-        end_text: study.end_text,
+        end_text: study.end_text?.length
+          ? study.end_text
+          : ["You have completed the test.", "Thank you for helping improve the navigation."],
         data_collection_settings: study.data_collection_settings,
         updated_at: new Date().toISOString()
       })
@@ -254,11 +272,11 @@ export default function StudyBuilderPage({ profile, studyId }) {
       .delete()
       .eq("study_id", studyId);
 
-    if (finalQuestions.length) {
-      const finalRows = finalQuestions.map((question, index) => ({
+    if (cleanedFinalQuestions.length) {
+      const finalRows = cleanedFinalQuestions.map((question, index) => ({
         study_id: studyId,
         question_order: index + 1,
-        question_key: question.question_key || `q${index + 1}`,
+        question_key: question.question_key || makeQuestionKey(question.question_text, index),
         question_type: question.question_type,
         question_text: question.question_text,
         options: question.options || []
@@ -295,27 +313,17 @@ export default function StudyBuilderPage({ profile, studyId }) {
         </label>
 
         <TextListEditor
-          label="Welcome paragraphs"
+          label="Welcome note"
+          helpText="Shown on the first page before the participant starts the test. Use one paragraph per line."
           values={study.welcome_text || []}
           onChange={(values) => setStudy({ ...study, welcome_text: values })}
         />
 
         <TextListEditor
-          label="Welcome bullet points"
-          values={study.welcome_bullets || []}
-          onChange={(values) => setStudy({ ...study, welcome_bullets: values })}
-        />
-
-        <TextListEditor
-          label="Privacy bullet points"
+          label="Privacy note"
+          helpText="Shown in the privacy box on the first page. Use one point per line."
           values={study.privacy_text || []}
           onChange={(values) => setStudy({ ...study, privacy_text: values })}
-        />
-
-        <TextListEditor
-          label="End paragraphs"
-          values={study.end_text || []}
-          onChange={(values) => setStudy({ ...study, end_text: values })}
         />
       </section>
 
@@ -446,22 +454,12 @@ export default function StudyBuilderPage({ profile, studyId }) {
 
       <section className="card">
         <h2>Final questions</h2>
+        <p className="muted-text">
+          Question keys are generated automatically from the question text for CSV export.
+        </p>
 
         {finalQuestions.map((question, index) => (
           <div className="question-card" key={index}>
-            <label className="form-block">
-              <span className="form-label">Question key</span>
-              <input
-                className="text-input"
-                value={question.question_key}
-                onChange={(event) =>
-                  updateFinalQuestion(index, {
-                    question_key: event.target.value
-                  })
-                }
-              />
-            </label>
-
             <label className="form-block">
               <span className="form-label">Question text</span>
               <textarea
@@ -469,7 +467,8 @@ export default function StudyBuilderPage({ profile, studyId }) {
                 value={question.question_text}
                 onChange={(event) =>
                   updateFinalQuestion(index, {
-                    question_text: event.target.value
+                    question_text: event.target.value,
+                    question_key: makeQuestionKey(event.target.value, index)
                   })
                 }
               />
