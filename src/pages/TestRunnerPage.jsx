@@ -159,7 +159,22 @@ export default function TestRunnerPage({ slug }) {
     if (taskIndex > 0) {
       setTaskIndex(taskIndex - 1);
       setStartedAt(Date.now());
+      return;
     }
+
+    setScreen("welcome");
+    setStartedAt(Date.now());
+  }
+
+  function backFromFinal() {
+    setScreen("test");
+    setStartedAt(Date.now());
+  }
+
+  function startTest() {
+    setTaskIndex(0);
+    setStartedAt(Date.now());
+    setScreen("test");
   }
 
   async function submitFinal() {
@@ -251,7 +266,7 @@ export default function TestRunnerPage({ slug }) {
               </ul>
             </div>
 
-            <button className="primary-button start-button" onClick={() => setScreen("test")}>
+            <button className="primary-button start-button" onClick={startTest}>
               Start test
             </button>
           </section>
@@ -315,7 +330,7 @@ export default function TestRunnerPage({ slug }) {
             {message ? <p className="error-box">{message}</p> : null}
 
             <div className="button-row">
-              <button className="secondary-button" onClick={() => setScreen("test")}>
+              <button className="secondary-button" onClick={backFromFinal}>
                 Back
               </button>
               <button className="primary-button" onClick={submitFinal}>
@@ -373,7 +388,7 @@ export default function TestRunnerPage({ slug }) {
           {message ? <p className="error-box">{message}</p> : null}
 
           <div className="action-grid three">
-            <button className="secondary-button" disabled={taskIndex === 0} onClick={back}>
+            <button className="secondary-button" onClick={back}>
               Back
             </button>
             <button

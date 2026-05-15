@@ -26,12 +26,24 @@ function statusClass(status) {
   return "status-badge status-draft";
 }
 
+function ownerClass(ownerId) {
+  const value = String(ownerId || "");
+  let total = 0;
+
+  for (let index = 0; index < value.length; index += 1) {
+    total += value.charCodeAt(index);
+  }
+
+  return `owner-chip owner-chip-${(total % 5) + 1}`;
+}
+
 export default function StudyListPage({ profile }) {
   const [studies, setStudies] = useState([]);
   const [profiles, setProfiles] = useState([]);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [copyStatus, setCopyStatus] = useState("");
+  const [copiedStudyId, setCopiedStudyId] = useState("");
+  const [fallbackLink, setFallbackLink] = useState("");
   const [loading, setLoading] = useState(true);
 
   const ownerEmailById = useMemo(() => {
@@ -88,7 +100,8 @@ export default function StudyListPage({ profile }) {
 
   async function createStudy() {
     setMessage("");
-    setCopyStatus("");
+    setCopiedStudyId("");
+    setFallbackLink("");
 
     if (!title.trim()) {
       setMessage("Please enter a study title.");
@@ -139,7 +152,8 @@ export default function StudyListPage({ profile }) {
   }
 
   async function updateStatus(study, status) {
-    setCopyStatus("");
+    setCopiedStudyId("");
+    setFallbackLink("");
 
     const payload = {
       status,
@@ -159,7 +173,8 @@ export default function StudyListPage({ profile }) {
   }
 
   async function deleteStudy(study) {
-    setCopyStatus("");
+    setCopiedStudyId("");
+    setFallbackLink("");
 
     const ok = window.confirm(
       "This will permanently delete this study, its tree, questions, responses, final answers, and dashboard data. This action cannot be undone."
@@ -178,12 +193,17 @@ export default function StudyListPage({ profile }) {
 
   async function copyTestLink(study) {
     const fullLink = `${window.location.origin}/test/${study.slug}`;
+    setFallbackLink("");
 
     try {
       await navigator.clipboard.writeText(fullLink);
-      setCopyStatus(`Copied test link for ${study.title}.`);
+      setCopiedStudyId(study.id);
+      window.setTimeout(() => {
+        setCopiedStudyId((current) => (current === study.id ? "" : current));
+      }, 2200);
     } catch {
-      setCopyStatus(`Copy did not work. Link: ${fullLink}`);
+      setCopiedStudyId(study.id);
+      setFallbackLink(fullLink);
     }
   }
 
@@ -206,7 +226,6 @@ export default function StudyListPage({ profile }) {
         </div>
 
         {message ? <p className="error-box">{message}</p> : null}
-        {copyStatus ? <p className="success-box">{copyStatus}</p> : null}
 
         {profile.role !== "admin" ? (
           <p className="muted-text">Project limit: {studies.length} of 3.</p>
@@ -224,6 +243,7 @@ export default function StudyListPage({ profile }) {
           const ownerEmail = ownerEmailById.get(study.owner_id) || "Unknown user";
           const isAdminView = profile.role === "admin";
           const fullLink = `${window.location.origin}/test/${study.slug}`;
+          const isCopied = copiedStudyId === study.id;
 
           return (
             <article className="card study-card" key={study.id}>
@@ -231,7 +251,7 @@ export default function StudyListPage({ profile }) {
                 <span className={statusClass(study.status)}>{statusLabel(study.status)}</span>
 
                 {isAdminView ? (
-                  <span className="owner-chip" title={ownerEmail}>
+                  <span className={ownerClass(study.owner_id)} title={ownerEmail}>
                     {ownerEmail}
                   </span>
                 ) : null}
@@ -293,6 +313,12 @@ export default function StudyListPage({ profile }) {
                   Delete
                 </button>
               </div>
+
+              {isCopied ? (
+                <div className="copy-toast">
+                  {fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}
+                </div>
+              ) : null}
             </article>
           );
         })}
