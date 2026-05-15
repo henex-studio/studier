@@ -84,7 +84,41 @@ export default function StudyBuilderPage({ profile, studyId }) {
     next[index] = { ...next[index], ...patch };
     setFinalQuestions(next);
   }
+function addChoiceOption(questionIndex) {
+  const question = finalQuestions[questionIndex];
+  const currentOptions = Array.isArray(question.options) ? question.options : [];
 
+  updateFinalQuestion(questionIndex, {
+    options: [...currentOptions, `Option ${currentOptions.length + 1}`]
+  });
+}
+
+function updateChoiceOption(questionIndex, optionIndex, value) {
+  const question = finalQuestions[questionIndex];
+  const currentOptions = Array.isArray(question.options) ? [...question.options] : [];
+
+  currentOptions[optionIndex] = value;
+
+  updateFinalQuestion(questionIndex, {
+    options: currentOptions
+  });
+}
+
+function removeChoiceOption(questionIndex, optionIndex) {
+  const question = finalQuestions[questionIndex];
+  const currentOptions = Array.isArray(question.options) ? [...question.options] : [];
+
+  if (currentOptions.length <= 2) {
+    setMessage("A choice question needs at least 2 options.");
+    return;
+  }
+
+  currentOptions.splice(optionIndex, 1);
+
+  updateFinalQuestion(questionIndex, {
+    options: currentOptions
+  });
+}
   async function saveAll() {
     setMessage("Saving...");
     const { error: studyError } = await supabase.from("studies").update({ ...study, updated_at: new Date().toISOString() }).eq("id", studyId);
@@ -157,17 +191,66 @@ export default function StudyBuilderPage({ profile, studyId }) {
             <label className="form-block"><span className="form-label">Question key</span><input className="text-input" value={question.question_key} onChange={(event) => updateFinalQuestion(index, { question_key: event.target.value })} /></label>
             <label className="form-block"><span className="form-label">Question text</span><textarea className="textarea" value={question.question_text} onChange={(event) => updateFinalQuestion(index, { question_text: event.target.value })} /></label>
             <label className="form-block"><span className="form-label">Type</span><select className="text-input" value={question.question_type} onChange={(event) => updateFinalQuestion(index, { question_type: event.target.value, options: event.target.value === "choice" ? ["Option 1", "Option 2"] : [] })}><option value="choice">Choice</option><option value="text">Text</option></select></label>
-            {question.question_type === "choice" ? <label className="form-block"><span className="form-label">Options, one per line</span><textarea className="textarea" value={(question.options || []).join("\n")} onChange={(event) => updateFinalQuestion(index, { options: event.target.value.split("\n").filter(Boolean) })} /></label> : null}
+          {question.question_type === "choice" ? (
+  <div className="form-block">
+    <span className="form-label">Options</span>
+
+    {(question.options || []).map((option, optionIndex) => (
+      <div className="inline-form" key={optionIndex}>
+        <input
+          className="text-input"
+          value={option}
+          onChange={(event) =>
+            updateChoiceOption(index, optionIndex, event.target.value)
+          }
+        />
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={() => removeChoiceOption(index, optionIndex)}
+        >
+          Remove
+        </button>
+      </div>
+    ))}
+
+    <button
+      className="secondary-button"
+      type="button"
+      onClick={() => addChoiceOption(index)}
+    >
+      Add option
+    </button>
+  </div>
+) : null}
           </div>
         ))}
         <div className="button-row"><button className="secondary-button" onClick={() => addFinalQuestion("choice")}>Add choice question</button><button className="secondary-button" onClick={() => addFinalQuestion("text")}>Add text question</button></div>
       </section>
 
-      <section className="card sticky-actions">
-        {message ? <p>{message}</p> : null}
-        <button className="primary-button" onClick={saveAll}>Save study</button>
-        {study.status === "published" ? <a className="secondary-button" href={`/test/${study.slug}`} target="_blank">Open test link</a> : null}
-      </section>
+    <section className="card sticky-actions">
+  {message ? <p>{message}</p> : null}
+
+  <div className="button-row">
+    <button className="primary-button" onClick={saveAll}>
+      Save study
+    </button>
+
+    /admin
+      Back to studies
+    </a>
+
+    <a className="secondary-button" href={`/dashboard/${study.id}`}>
+      Dashboard
+    </a>
+
+    {study.status === "published" ? (
+      <a className="secondary-button" href={`/test/${study.slug}`} target="_blank">
+        Open test link
+      </a>
+    ) : null}
+  </div>
+</section>
     </AdminShell>
   );
 }
