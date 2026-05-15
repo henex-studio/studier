@@ -109,7 +109,7 @@ export default function StudyBuilderPage({ profile, studyId }) {
     await loadStudy();
   }
 
-  if (!study) return <AdminShell profile={profile}><section className="card">Loading...</section></AdminShell>;
+  if (!study || !treeRecord) return <AdminShell profile={profile}><section className="card">Loading...</section></AdminShell>;
 
   return (
     <AdminShell profile={profile}>
