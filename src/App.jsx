@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase, supabaseReady } from "./lib/supabase";
 import LoginPage from "./pages/LoginPage";
 import StudyListPage from "./pages/StudyListPage";
@@ -29,14 +29,16 @@ function isPlainLeftClick(event) {
   );
 }
 
+function sameUser(previousSession, nextSession) {
+  return previousSession?.user?.id && nextSession?.user?.id && previousSession.user.id === nextSession.user.id;
+}
+
 export default function App() {
   const [{ parts, first }, setRoute] = useState(parsePath());
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [authChecked, setAuthChecked] = useState(!supabaseReady);
   const [profileChecked, setProfileChecked] = useState(false);
-
-  const routeKey = useMemo(() => window.location.pathname, [parts, first]);
 
   useEffect(() => {
     const onPop = () => setRoute(parsePath());
@@ -79,11 +81,24 @@ export default function App() {
 
     checkSession();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession || null);
-      setProfile(null);
-      setProfileChecked(false);
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setAuthChecked(true);
+
+      setSession((previousSession) => {
+        if (event === "SIGNED_OUT" || !nextSession) {
+          setProfile(null);
+          setProfileChecked(true);
+          return null;
+        }
+
+        if (sameUser(previousSession, nextSession)) {
+          return nextSession;
+        }
+
+        setProfile(null);
+        setProfileChecked(false);
+        return nextSession;
+      });
     });
 
     return () => {
@@ -100,6 +115,11 @@ export default function App() {
     async function loadProfile() {
       if (!session?.user) {
         setProfile(null);
+        setProfileChecked(true);
+        return;
+      }
+
+      if (profile?.id === session.user.id) {
         setProfileChecked(true);
         return;
       }
@@ -122,12 +142,14 @@ export default function App() {
           display_name: null
         });
       } else {
-        setProfile(data || {
-          id: session.user.id,
-          email: session.user.email,
-          role: "user",
-          display_name: null
-        });
+        setProfile(
+          data || {
+            id: session.user.id,
+            email: session.user.email,
+            role: "user",
+            display_name: null
+          }
+        );
       }
 
       setProfileChecked(true);
@@ -138,7 +160,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [authChecked, session]);
+  }, [authChecked, session?.user?.id]);
 
   if (!supabaseReady) {
     return (
@@ -152,12 +174,12 @@ export default function App() {
   }
 
   if (first === "test" && parts[1]) {
-    return <TestRunnerPage key={routeKey} slug={parts[1]} />;
+    return <TestRunnerPage slug={parts[1]} />;
   }
 
-  const loading = !authChecked || (session?.user && !profileChecked);
+  const firstAppLoad = !authChecked || (session?.user && !profileChecked && !profile);
 
-  if (loading) {
+  if (firstAppLoad) {
     return (
       <div className="page-shell">
         <main className="container narrow">
@@ -172,12 +194,12 @@ export default function App() {
   }
 
   if (first === "builder" && parts[1]) {
-    return <StudyBuilderPage key={routeKey} profile={profile} studyId={parts[1]} />;
+    return <StudyBuilderPage profile={profile} studyId={parts[1]} />;
   }
 
   if (first === "dashboard" && parts[1]) {
-    return <DashboardPage key={routeKey} profile={profile} studyId={parts[1]} />;
+    return <DashboardPage profile={profile} studyId={parts[1]} />;
   }
 
-  return <StudyListPage key={routeKey} profile={profile} />;
+  return <StudyListPage profile={profile} />;
 }
