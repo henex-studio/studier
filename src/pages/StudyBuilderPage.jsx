@@ -230,7 +230,7 @@ export default function StudyBuilderPage({ profile, studyId }) {
       .update({
         title: study.title,
         welcome_text: study.welcome_text,
-        welcome_bullets: [],
+        welcome_bullets: study.welcome_bullets,
         privacy_text: study.privacy_text,
         end_text: study.end_text?.length
           ? study.end_text
@@ -317,6 +317,13 @@ export default function StudyBuilderPage({ profile, studyId }) {
           helpText="Shown on the first page before the participant starts the test. Use one paragraph per line."
           values={study.welcome_text || []}
           onChange={(values) => setStudy({ ...study, welcome_text: values })}
+        />
+
+        <TextListEditor
+          label="What the test is"
+          helpText="Shown in a plain explanation box on the first page. Use one paragraph per line."
+          values={study.welcome_bullets || []}
+          onChange={(values) => setStudy({ ...study, welcome_bullets: values })}
         />
 
         <TextListEditor
