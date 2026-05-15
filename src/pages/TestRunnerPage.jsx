@@ -295,7 +295,11 @@ export default function TestRunnerPage({ slug }) {
                           className={selected ? "final-choice final-choice-selected" : "final-choice"}
                           onClick={() => setFinalAnswers({ ...finalAnswers, [question.question_key]: option })}
                         >
-                          {selected ? <span className="choice-check">✓</span> : <span className="choice-empty" />}
+                          {selected ? (
+                            <CheckCircle2 className="choice-icon-selected" />
+                          ) : (
+                            <span className="choice-empty" />
+                          )}
                           <span>{option}</span>
                         </button>
                       );
