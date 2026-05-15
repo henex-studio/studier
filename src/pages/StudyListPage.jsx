@@ -14,11 +14,24 @@ function makeSlug(title) {
   );
 }
 
+function statusLabel(status) {
+  if (status === "published") return "Published";
+  if (status === "closed") return "Closed";
+  return "Draft";
+}
+
+function statusClass(status) {
+  if (status === "published") return "status-badge status-published";
+  if (status === "closed") return "status-badge status-closed";
+  return "status-badge status-draft";
+}
+
 export default function StudyListPage({ profile }) {
   const [studies, setStudies] = useState([]);
   const [profiles, setProfiles] = useState([]);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
+  const [copyStatus, setCopyStatus] = useState("");
   const [loading, setLoading] = useState(true);
 
   const ownerEmailById = useMemo(() => {
@@ -47,7 +60,9 @@ export default function StudyListPage({ profile }) {
     const studyRows = data || [];
     setStudies(studyRows);
 
-    const ownerIds = [...new Set(studyRows.map((study) => study.owner_id).filter(Boolean))];
+    const ownerIds = [
+      ...new Set(studyRows.map((study) => study.owner_id).filter(Boolean))
+    ];
 
     if (ownerIds.length > 0) {
       const { data: profileData, error: profileError } = await supabase
@@ -73,6 +88,7 @@ export default function StudyListPage({ profile }) {
 
   async function createStudy() {
     setMessage("");
+    setCopyStatus("");
 
     if (!title.trim()) {
       setMessage("Please enter a study title.");
@@ -80,7 +96,9 @@ export default function StudyListPage({ profile }) {
     }
 
     if (profile.role !== "admin" && studies.length >= 3) {
-      setMessage("You have reached the 3 project limit. Please delete an old project before creating a new one.");
+      setMessage(
+        "You have reached the 3 project limit. Please delete an old project before creating a new one."
+      );
       return;
     }
 
@@ -121,6 +139,8 @@ export default function StudyListPage({ profile }) {
   }
 
   async function updateStatus(study, status) {
+    setCopyStatus("");
+
     const payload = {
       status,
       updated_at: new Date().toISOString()
@@ -139,6 +159,8 @@ export default function StudyListPage({ profile }) {
   }
 
   async function deleteStudy(study) {
+    setCopyStatus("");
+
     const ok = window.confirm(
       "This will permanently delete this study, its tree, questions, responses, final answers, and dashboard data. This action cannot be undone."
     );
@@ -152,6 +174,17 @@ export default function StudyListPage({ profile }) {
 
     if (error) setMessage(error.message);
     await loadStudies();
+  }
+
+  async function copyTestLink(study) {
+    const fullLink = `${window.location.origin}/test/${study.slug}`;
+
+    try {
+      await navigator.clipboard.writeText(fullLink);
+      setCopyStatus(`Copied test link for ${study.title}.`);
+    } catch {
+      setCopyStatus(`Copy did not work. Link: ${fullLink}`);
+    }
   }
 
   return (
@@ -173,6 +206,7 @@ export default function StudyListPage({ profile }) {
         </div>
 
         {message ? <p className="error-box">{message}</p> : null}
+        {copyStatus ? <p className="success-box">{copyStatus}</p> : null}
 
         {profile.role !== "admin" ? (
           <p className="muted-text">Project limit: {studies.length} of 3.</p>
@@ -189,18 +223,25 @@ export default function StudyListPage({ profile }) {
         {studies.map((study) => {
           const ownerEmail = ownerEmailById.get(study.owner_id) || "Unknown user";
           const isAdminView = profile.role === "admin";
+          const fullLink = `${window.location.origin}/test/${study.slug}`;
 
           return (
-            <article className="card" key={study.id}>
-              <span className="badge">{study.status}</span>
-              <h2>{study.title}</h2>
-              <p className="muted-text">/{study.slug}</p>
+            <article className="card study-card" key={study.id}>
+              <div className="study-card-header">
+                <span className={statusClass(study.status)}>{statusLabel(study.status)}</span>
 
-              {isAdminView ? (
-                <p className="owner-line">
-                  Created by <strong>{ownerEmail}</strong>
-                </p>
-              ) : null}
+                {isAdminView ? (
+                  <span className="owner-chip" title={ownerEmail}>
+                    {ownerEmail}
+                  </span>
+                ) : null}
+              </div>
+
+              <h2>{study.title}</h2>
+
+              <p className="study-link-code" title={fullLink}>
+                Test link code: <span>/{study.slug}</span>
+              </p>
 
               <div className="button-row">
                 <a className="secondary-button" href={`/builder/${study.id}`}>
@@ -210,7 +251,12 @@ export default function StudyListPage({ profile }) {
                   Dashboard
                 </a>
                 {study.status === "published" ? (
-                  <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">
+                  <a
+                    className="secondary-button"
+                    href={`/test/${study.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Open link
                   </a>
                 ) : null}
@@ -218,14 +264,31 @@ export default function StudyListPage({ profile }) {
 
               <div className="button-row">
                 {study.status !== "published" ? (
-                  <button className="primary-button" onClick={() => updateStatus(study, "published")}>
+                  <button
+                    className="primary-button"
+                    onClick={() => updateStatus(study, "published")}
+                  >
                     Publish
                   </button>
                 ) : (
-                  <button className="secondary-button" onClick={() => updateStatus(study, "closed")}>
+                  <button
+                    className="secondary-button"
+                    onClick={() => updateStatus(study, "closed")}
+                  >
                     Close
                   </button>
                 )}
+
+                {study.status === "published" ? (
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => copyTestLink(study)}
+                  >
+                    Copy link
+                  </button>
+                ) : null}
+
                 <button className="danger-button" onClick={() => deleteStudy(study)}>
                   Delete
                 </button>
