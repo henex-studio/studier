@@ -233,9 +233,7 @@ export default function TestRunnerPage({ slug }) {
   }
 
   if (screen === "welcome") {
-    const whatTheTestIs = Array.isArray(study.welcome_bullets)
-      ? study.welcome_bullets
-      : [];
+    const whatTheTestIs = Array.isArray(study.welcome_bullets) ? study.welcome_bullets : [];
 
     return (
       <div ref={topRef} className="page-shell">
@@ -295,18 +293,9 @@ export default function TestRunnerPage({ slug }) {
                         <button
                           key={option}
                           className={selected ? "final-choice final-choice-selected" : "final-choice"}
-                          onClick={() =>
-                            setFinalAnswers({
-                              ...finalAnswers,
-                              [question.question_key]: option
-                            })
-                          }
+                          onClick={() => setFinalAnswers({ ...finalAnswers, [question.question_key]: option })}
                         >
-                          {selected ? (
-                            <span className="choice-check">✓</span>
-                          ) : (
-                            <span className="choice-empty" />
-                          )}
+                          {selected ? <span className="choice-check">✓</span> : <span className="choice-empty" />}
                           <span>{option}</span>
                         </button>
                       );
@@ -316,12 +305,7 @@ export default function TestRunnerPage({ slug }) {
                   <textarea
                     className="textarea"
                     value={finalAnswers[question.question_key] || ""}
-                    onChange={(event) =>
-                      setFinalAnswers({
-                        ...finalAnswers,
-                        [question.question_key]: event.target.value
-                      })
-                    }
+                    onChange={(event) => setFinalAnswers({ ...finalAnswers, [question.question_key]: event.target.value })}
                   />
                 )}
               </div>
@@ -330,12 +314,8 @@ export default function TestRunnerPage({ slug }) {
             {message ? <p className="error-box">{message}</p> : null}
 
             <div className="button-row">
-              <button className="secondary-button" onClick={backFromFinal}>
-                Back
-              </button>
-              <button className="primary-button" onClick={submitFinal}>
-                Submit
-              </button>
+              <button className="secondary-button" onClick={backFromFinal}>Back</button>
+              <button className="primary-button" onClick={submitFinal}>Submit</button>
             </div>
           </section>
         </main>
@@ -370,37 +350,21 @@ export default function TestRunnerPage({ slug }) {
 
         <section className="card">
           <h2>Menu</h2>
-          <TreeView
-            tree={tree}
-            selectedPath={currentAnswer.selected_path || ""}
-            onSelect={selectPath}
-          />
+          <TreeView tree={tree} selectedPath={currentAnswer.selected_path || ""} onSelect={selectPath} />
         </section>
 
         <section className="card selected-card">
           <h2>Your selected place</h2>
           <div className="selected-path">
-            {currentAnswer.skipped
-              ? "Skipped"
-              : currentAnswer.selected_path || "No selection yet"}
+            {currentAnswer.skipped ? "Skipped" : currentAnswer.selected_path || "No selection yet"}
           </div>
 
           {message ? <p className="error-box">{message}</p> : null}
 
           <div className="action-grid three">
-            <button className="secondary-button" onClick={back}>
-              Back
-            </button>
-            <button
-              className="primary-button"
-              disabled={!currentAnswer.selected_path}
-              onClick={() => next(false)}
-            >
-              Next
-            </button>
-            <button className="secondary-button" onClick={() => next(true)}>
-              Skip this task
-            </button>
+            <button className="secondary-button" onClick={back}>Back</button>
+            <button className="primary-button" disabled={!currentAnswer.selected_path} onClick={() => next(false)}>Next</button>
+            <button className="secondary-button" onClick={() => next(true)}>Skip this task</button>
           </div>
         </section>
       </main>

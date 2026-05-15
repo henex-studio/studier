@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 
 function makeSlug(title) {
   return (
-    String(title || "study")
+    String(title || "test")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
@@ -46,10 +46,13 @@ export default function StudyListPage({ profile }) {
   const [fallbackLink, setFallbackLink] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const ownerEmailById = useMemo(() => {
+  const ownerById = useMemo(() => {
     const map = new Map();
     profiles.forEach((item) => {
-      map.set(item.id, item.email || "Unknown user");
+      map.set(item.id, {
+        label: item.display_name || item.email || "Unknown user",
+        title: item.email || item.display_name || "Unknown user"
+      });
     });
     return map;
   }, [profiles]);
@@ -72,14 +75,12 @@ export default function StudyListPage({ profile }) {
     const studyRows = data || [];
     setStudies(studyRows);
 
-    const ownerIds = [
-      ...new Set(studyRows.map((study) => study.owner_id).filter(Boolean))
-    ];
+    const ownerIds = [...new Set(studyRows.map((study) => study.owner_id).filter(Boolean))];
 
     if (ownerIds.length > 0) {
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id,email,role")
+        .select("id,email,role,display_name")
         .in("id", ownerIds);
 
       if (profileError) {
@@ -104,14 +105,12 @@ export default function StudyListPage({ profile }) {
     setFallbackLink("");
 
     if (!title.trim()) {
-      setMessage("Please enter a study title.");
+      setMessage("Please enter a test title.");
       return;
     }
 
     if (profile.role !== "admin" && studies.length >= 3) {
-      setMessage(
-        "You have reached the 3 project limit. Please delete an old project before creating a new one."
-      );
+      setMessage("You have reached the 3 test limit. Please delete an old test before creating a new one.");
       return;
     }
 
@@ -134,7 +133,17 @@ export default function StudyListPage({ profile }) {
       end_text: [
         "You have completed the test.",
         "Thank you for helping improve the navigation."
-      ]
+      ],
+      data_collection_settings: {
+        record_match_type: true,
+        record_time_seconds: true,
+        record_first_click: true,
+        record_click_count: true,
+        record_click_history: false,
+        record_backtrack_count: false,
+        record_depth: false,
+        record_hesitation_flag: false
+      }
     };
 
     const { data, error } = await supabase
@@ -177,7 +186,7 @@ export default function StudyListPage({ profile }) {
     setFallbackLink("");
 
     const ok = window.confirm(
-      "This will permanently delete this study, its tree, questions, responses, final answers, and dashboard data. This action cannot be undone."
+      "This will permanently delete this test, its tree, questions, responses, final answers, and dashboard data. This action cannot be undone."
     );
 
     if (!ok) return;
@@ -210,25 +219,25 @@ export default function StudyListPage({ profile }) {
   return (
     <AdminShell profile={profile}>
       <section className="card">
-        <h1>Studies</h1>
+        <h1>Test collection</h1>
         <p>Create and manage internal tree tests.</p>
 
         <div className="inline-form">
           <input
             className="text-input"
-            placeholder="New study title"
+            placeholder="New test title"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
           />
           <button className="primary-button" onClick={createStudy}>
-            New study
+            Add new test
           </button>
         </div>
 
         {message ? <p className="error-box">{message}</p> : null}
 
         {profile.role !== "admin" ? (
-          <p className="muted-text">Project limit: {studies.length} of 3.</p>
+          <p className="muted-text">Test limit: {studies.length} of 3.</p>
         ) : null}
       </section>
 
@@ -236,11 +245,11 @@ export default function StudyListPage({ profile }) {
         {loading ? <div className="card">Loading...</div> : null}
 
         {!loading && studies.length === 0 ? (
-          <div className="card">No studies yet.</div>
+          <div className="card">No tests yet.</div>
         ) : null}
 
         {studies.map((study) => {
-          const ownerEmail = ownerEmailById.get(study.owner_id) || "Unknown user";
+          const owner = ownerById.get(study.owner_id) || { label: "Unknown user", title: "Unknown user" };
           const isAdminView = profile.role === "admin";
           const fullLink = `${window.location.origin}/test/${study.slug}`;
           const isCopied = copiedStudyId === study.id;
@@ -251,8 +260,8 @@ export default function StudyListPage({ profile }) {
                 <span className={statusClass(study.status)}>{statusLabel(study.status)}</span>
 
                 {isAdminView ? (
-                  <span className={ownerClass(study.owner_id)} title={ownerEmail}>
-                    {ownerEmail}
+                  <span className={ownerClass(study.owner_id)} title={owner.title}>
+                    {owner.label}
                   </span>
                 ) : null}
               </div>
@@ -282,29 +291,19 @@ export default function StudyListPage({ profile }) {
                 ) : null}
               </div>
 
-              <div className="button-row">
+              <div className="button-row stable-action-row">
                 {study.status !== "published" ? (
-                  <button
-                    className="primary-button"
-                    onClick={() => updateStatus(study, "published")}
-                  >
+                  <button className="primary-button" onClick={() => updateStatus(study, "published")}>
                     Publish
                   </button>
                 ) : (
-                  <button
-                    className="secondary-button"
-                    onClick={() => updateStatus(study, "closed")}
-                  >
+                  <button className="secondary-button" onClick={() => updateStatus(study, "closed")}>
                     Close
                   </button>
                 )}
 
                 {study.status === "published" ? (
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => copyTestLink(study)}
-                  >
+                  <button className="secondary-button" type="button" onClick={() => copyTestLink(study)}>
                     Copy link
                   </button>
                 ) : null}
