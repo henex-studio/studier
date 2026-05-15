@@ -108,3 +108,70 @@ p, ul { line-height: 1.55; color: #334155; }
 @media (min-width: 640px) { .container { padding: 24px; } .study-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .choice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .action-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .study-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .admin-header { flex-direction: row; justify-content: space-between; align-items: center; } .builder-layout { grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.15fr); align-items: stretch; } .sticky-tree-panel, .task-editor-panel { min-height: 620px; } .sticky-tree-panel { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; align-self: start; } }
 @media (max-width: 639px) { .button-row, .admin-actions, .topbar-actions { gap: 12px; row-gap: 12px; } .button-row .primary-button, .button-row .secondary-button, .button-row .danger-button, .admin-actions .primary-button, .admin-actions .secondary-button { width: 100%; } .inline-form { grid-template-columns: 1fr; } .owner-chip { max-width: 62%; } .sticky-actions { position: static; } .question-card-footer { justify-content: stretch; } .question-card-footer .danger-button { width: 100%; } .sticky-tree-panel, .task-editor-panel { min-height: auto; } table { min-width: 1100px; } }
+
+/* Guide page */
+.guide-hero {
+  margin-bottom: 16px;
+}
+
+.guide-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.guide-toc {
+  display: grid;
+  gap: 10px;
+  align-self: start;
+}
+
+.guide-toc a {
+  color: #1d4ed8;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.guide-toc a:hover {
+  text-decoration: underline;
+}
+
+.guide-content {
+  display: grid;
+  gap: 26px;
+}
+
+.guide-content section {
+  scroll-margin-top: 24px;
+}
+
+.guide-content pre {
+  white-space: pre-wrap;
+  overflow-x: auto;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px;
+  color: #334155;
+}
+
+.guide-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+}
+
+.guide-bottom-actions {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 18px;
+}
+
+@media (min-width: 1024px) {
+  .guide-layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .guide-toc {
+    position: sticky;
+    top: 16px;
+  }
+}
