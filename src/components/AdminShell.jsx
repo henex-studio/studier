@@ -18,6 +18,9 @@ export default function AdminShell({ profile, children }) {
           <a className="secondary-button" href="/admin">
             Test collection
           </a>
+          <a className="secondary-button" href="/guide">
+            Guide
+          </a>
           <button className="secondary-button" onClick={signOut}>
             Sign out
           </button>
