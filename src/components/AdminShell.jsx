@@ -12,11 +12,15 @@ export default function AdminShell({ profile, children }) {
       <header className="topbar">
         <div>
           <h1>Studier</h1>
-          <p>{profile?.email} · {profile?.role}</p>
+          <p>{profile?.display_name || profile?.email} · {profile?.role}</p>
         </div>
         <div className="topbar-actions">
-          <a className="secondary-button" href="/admin">Studies</a>
-          <button className="secondary-button" onClick={signOut}>Sign out</button>
+          <a className="secondary-button" href="/admin">
+            Test collection
+          </a>
+          <button className="secondary-button" onClick={signOut}>
+            Sign out
+          </button>
         </div>
       </header>
       <main className="container">{children}</main>
