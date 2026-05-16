@@ -15,6 +15,154 @@ const optionalDataSettings = [
   { key: "record_hesitation_flag", label: "Hesitation flag", description: "Flags tasks that may have involved hesitation, based on time or click count.", defaultChecked: false }
 ];
 
+
+const sampleCsv = `Level 1,Level 2,Level 3
+Services,,
+,Payments,
+,,Apply for payment
+,,Check payment status
+,Support,
+,,Contact support
+,,Make a complaint
+Information,,
+,Eligibility,
+,Documents,
+Account,,
+,Sign in,
+,Update details,
+`;
+
+function splitCsvRow(row) {
+  return row.split(",").map((cell) => cell.trim());
+}
+
+function validateCsv(csvText) {
+  const errors = [];
+  const warnings = [];
+  const text = String(csvText || "").trim();
+
+  if (!text) {
+    errors.push("CSV is empty. Add a tree or paste CSV content.");
+    return { errors, warnings };
+  }
+
+  const rows = String(csvText || "").split(/\r?\n/);
+  const header = splitCsvRow(rows[0] || "").map((cell) => cell.toLowerCase());
+  const expectedHeader = ["level 1", "level 2", "level 3"];
+
+  expectedHeader.forEach((label, index) => {
+    if (header[index] !== label) {
+      errors.push(`Header column ${index + 1} should be ${expectedHeader[index].replace("level", "Level")}.`);
+    }
+  });
+
+  let hasLevelOne = false;
+  let currentLevelOne = "";
+  let currentLevelTwo = "";
+
+  rows.slice(1).forEach((row, rowIndex) => {
+    const rowNumber = rowIndex + 2;
+
+    if (!row.trim()) {
+      warnings.push(`Row ${rowNumber} is empty.`);
+      return;
+    }
+
+    const cells = splitCsvRow(row);
+
+    if (cells.length > 3) {
+      warnings.push(`Row ${rowNumber} has more than 3 columns. Extra columns will be ignored.`);
+    }
+
+    const levelOne = cells[0] || "";
+    const levelTwo = cells[1] || "";
+    const levelThree = cells[2] || "";
+
+    if (levelOne) {
+      hasLevelOne = true;
+      currentLevelOne = levelOne;
+      currentLevelTwo = "";
+    }
+
+    if (levelTwo) {
+      if (!currentLevelOne) {
+        warnings.push(`Row ${rowNumber} has a Level 2 item but no parent Level 1 item above it.`);
+      }
+      currentLevelTwo = levelTwo;
+    }
+
+    if (levelThree) {
+      if (!currentLevelOne) {
+        warnings.push(`Row ${rowNumber} has a Level 3 item but no parent Level 1 item above it.`);
+      }
+      if (!currentLevelTwo) {
+        warnings.push(`Row ${rowNumber} has a Level 3 item but no parent Level 2 item above it.`);
+      }
+    }
+  });
+
+  if (!hasLevelOne) {
+    errors.push("CSV needs at least one Level 1 item.");
+  }
+
+  return { errors, warnings };
+}
+
+function getReadinessChecks(study, treeRecord, tasks, finalQuestions, csvChecks) {
+  const errors = [];
+  const warnings = [];
+
+  if (!String(study?.title || "").trim()) errors.push("Add a test title.");
+  if (!(study?.welcome_text || []).some((text) => String(text || "").trim())) errors.push("Add a welcome note.");
+  if (!(study?.privacy_text || []).some((text) => String(text || "").trim())) errors.push("Add a privacy note.");
+  if (!treeRecord?.tree_json?.length) errors.push("Add a valid IA tree CSV.");
+  if (csvChecks.errors.length) errors.push("Fix CSV errors before publishing.");
+
+  if (!tasks.length) {
+    errors.push("Add at least one task.");
+  } else {
+    tasks.forEach((task, index) => {
+      if (!String(task.task_text || "").trim()) errors.push(`Task ${index + 1} needs task text.`);
+      if (!(task.target_paths || []).length) errors.push(`Task ${index + 1} needs at least one target path.`);
+    });
+  }
+
+  finalQuestions.forEach((question, index) => {
+    if (!String(question.question_text || "").trim()) warnings.push(`Final question ${index + 1} has no question text.`);
+
+    if (question.question_type === "choice") {
+      const options = Array.isArray(question.options) ? question.options : [];
+      if (options.length < 2) warnings.push(`Choice question ${index + 1} needs at least 2 options.`);
+      if (options.some((option) => !String(option || "").trim())) warnings.push(`Choice question ${index + 1} has an empty option.`);
+    }
+  });
+
+  return { errors, warnings };
+}
+
+function CheckPanel({ title, errors = [], warnings = [], emptyText }) {
+  const hasItems = errors.length > 0 || warnings.length > 0;
+
+  return (
+    <div className="check-panel">
+      <h3>{title}</h3>
+      {!hasItems ? <p className="success-box">{emptyText}</p> : null}
+      {errors.length ? (
+        <div className="check-list check-list-error">
+          <p className="form-label">Errors</p>
+          <ol>{errors.map((item) => <li key={item}>{item}</li>)}</ol>
+        </div>
+      ) : null}
+      {warnings.length ? (
+        <div className="check-list check-list-warning">
+          <p className="form-label">Warnings</p>
+          <ol>{warnings.map((item) => <li key={item}>{item}</li>)}</ol>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function defaultDataSettings() {
   return optionalDataSettings.reduce((settings, item) => {
     settings[item.key] = item.defaultChecked;
@@ -60,6 +208,11 @@ export default function StudyBuilderPage({ profile, studyId }) {
   const [message, setMessage] = useState("");
   const [selectedPath, setSelectedPath] = useState("");
   const tree = useMemo(() => treeRecord?.tree_json || [], [treeRecord]);
+  const csvChecks = useMemo(() => validateCsv(treeRecord?.csv_text || ""), [treeRecord?.csv_text]);
+  const readinessChecks = useMemo(
+    () => getReadinessChecks(study, treeRecord, tasks, finalQuestions, csvChecks),
+    [study, treeRecord, tasks, finalQuestions, csvChecks]
+  );
 
   async function loadStudy() {
     const { data: studyData, error: studyError } = await supabase.from("studies").select("*").eq("id", studyId).single();
@@ -90,6 +243,18 @@ export default function StudyBuilderPage({ profile, studyId }) {
 
   function updateCsv(text) {
     setTreeRecord({ ...treeRecord, csv_text: text, tree_json: treeFromCsv(text) });
+  }
+
+  function downloadSampleCsv() {
+    const blob = new Blob([sampleCsv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "studier_ia_tree_sample.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   }
 
   function addTask() {
@@ -220,9 +385,18 @@ export default function StudyBuilderPage({ profile, studyId }) {
       </section>
 
       <section className="card">
-        <h2>IA tree CSV</h2>
+        <div className="section-title-row">
+          <div>
+            <h2>IA tree CSV</h2>
+            <p className="muted-text">Use columns named Level 1, Level 2, and Level 3.</p>
+          </div>
+          <button className="secondary-button" type="button" onClick={downloadSampleCsv}>
+            Download sample CSV
+          </button>
+        </div>
         <div className="file-input-wrap"><input type="file" accept=".csv,text/csv" onChange={handleFile} /></div>
         <textarea className="textarea csv-input" value={treeRecord.csv_text || ""} onChange={(event) => updateCsv(event.target.value)} placeholder="Paste CSV here" />
+        <CheckPanel title="CSV checks" errors={csvChecks.errors} warnings={csvChecks.warnings} emptyText="CSV format looks OK." />
       </section>
 
       <section className="builder-layout">
@@ -292,6 +466,12 @@ export default function StudyBuilderPage({ profile, studyId }) {
           <button className="secondary-button" type="button" onClick={() => addFinalQuestion("choice")}>Add choice question</button>
           <button className="secondary-button" type="button" onClick={() => addFinalQuestion("text")}>Add text question</button>
         </div>
+      </section>
+
+      <section className="card">
+        <h2>Test readiness checks</h2>
+        <p className="muted-text">These checks help you prepare the test before previewing or publishing.</p>
+        <CheckPanel title="Readiness checks" errors={readinessChecks.errors} warnings={readinessChecks.warnings} emptyText="This test looks ready for preview and publishing." />
       </section>
 
       <section className="card sticky-actions">
