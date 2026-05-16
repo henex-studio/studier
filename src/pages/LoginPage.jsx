@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { supabase, supabaseReady } from "../lib/supabase";
+import Hero from "../components/Hero";
 
 function navigateTo(path) {
   window.history.pushState({}, "", path);
@@ -52,12 +53,16 @@ export default function LoginPage() {
     <div className="page-shell">
       <main className="container narrow">
         <section className="card hero-card">
-          <span className="badge">Studier</span>
+
+          <Hero />
+
           <h1>Sign in</h1>
-          <p>Sign in to create and manage internal tree tests.</p>
+          <p>Sign in to create and manage tree tests.</p>
 
           {registered ? (
-            <p className="success-box">Account created. Please sign in.</p>
+            <p className="success-box">
+              Account created. Please sign in.
+            </p>
           ) : null}
 
           <form className="form-stack" onSubmit={login}>
@@ -67,8 +72,7 @@ export default function LoginPage() {
                 className="text-input"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
+                onChange={(e) => setEmail(e.target.value)}
               />
             </label>
 
@@ -78,20 +82,19 @@ export default function LoginPage() {
                 className="text-input"
                 type="password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
+                onChange={(e) => setPassword(e.target.value)}
               />
             </label>
 
             {message ? <p className="error-box">{message}</p> : null}
 
-            <button className="primary-button" type="submit" disabled={loading}>
+            <button className="primary-button" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
           <p className="auth-switch-text">
-            Need an account? <a href="/register">Register with an invite code</a>
+            Need an account? <a href="/register">Register</a>
           </p>
         </section>
       </main>
