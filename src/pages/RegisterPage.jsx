@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { supabase, supabaseReady } from "../lib/supabase";
+import { CONSENT_VERSION, hasLocalConsent } from "./ConsentPage";
 
 function normalizeInviteCode(value) {
   return value.trim().toUpperCase();
@@ -25,6 +26,11 @@ export default function RegisterPage() {
     const cleanDisplayName = displayName.trim();
     const cleanEmail = email.trim().toLowerCase();
     const cleanInviteCode = normalizeInviteCode(inviteCode);
+
+    if (!hasLocalConsent()) {
+      navigateTo("/");
+      return;
+    }
 
     if (!supabaseReady) {
       setMessage("Supabase is not configured.");
@@ -53,9 +59,7 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    const { data: inviteOk, error: inviteError } = await supabase.rpc("validate_invite_code", {
-      p_code: cleanInviteCode
-    });
+    const { data: inviteOk, error: inviteError } = await supabase.rpc("validate_invite_code", { p_code: cleanInviteCode });
 
     if (inviteError || inviteOk !== true) {
       setLoading(false);
@@ -86,7 +90,8 @@ export default function RegisterPage() {
       p_user_id: userId,
       p_email: cleanEmail,
       p_display_name: cleanDisplayName,
-      p_code: cleanInviteCode
+      p_code: cleanInviteCode,
+      p_consent_version: CONSENT_VERSION
     });
 
     if (profileError) {
@@ -111,46 +116,23 @@ export default function RegisterPage() {
           <form className="form-stack" onSubmit={register}>
             <label className="form-block">
               <span className="form-label">Display name</span>
-              <input
-                className="text-input"
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-                placeholder="For example, Trump"
-                autoComplete="name"
-              />
+              <input className="text-input" value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="For example, Cafe" autoComplete="name" />
             </label>
 
             <label className="form-block">
               <span className="form-label">Email</span>
-              <input
-                className="text-input"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-              />
+              <input className="text-input" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" />
             </label>
 
             <label className="form-block">
               <span className="form-label">Password</span>
-              <input
-                className="text-input"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="new-password"
-              />
+              <input className="text-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" />
               <span className="muted-text">Use at least 6 characters.</span>
             </label>
 
             <label className="form-block">
               <span className="form-label">Invite code</span>
-              <input
-                className="text-input"
-                value={inviteCode}
-                onChange={(event) => setInviteCode(event.target.value)}
-                autoComplete="off"
-              />
+              <input className="text-input" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} autoComplete="off" />
             </label>
 
             {message ? <p className="error-box">{message}</p> : null}
@@ -160,9 +142,7 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p className="auth-switch-text">
-            Already have an account? <a href="/login">Sign in</a>
-          </p>
+          <p className="auth-switch-text">Already have an account? <a href="/login">Sign in</a></p>
         </section>
       </main>
     </div>
