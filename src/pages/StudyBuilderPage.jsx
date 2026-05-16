@@ -207,12 +207,22 @@ export default function StudyBuilderPage({ profile, studyId }) {
   const [finalQuestions, setFinalQuestions] = useState([]);
   const [message, setMessage] = useState("");
   const [selectedPath, setSelectedPath] = useState("");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const tree = useMemo(() => treeRecord?.tree_json || [], [treeRecord]);
   const csvChecks = useMemo(() => validateCsv(treeRecord?.csv_text || ""), [treeRecord?.csv_text]);
   const readinessChecks = useMemo(
     () => getReadinessChecks(study, treeRecord, tasks, finalQuestions, csvChecks),
     [study, treeRecord, tasks, finalQuestions, csvChecks]
   );
+
+  function markDirty() {
+    setHasUnsavedChanges(true);
+  }
+
+  function updateStudy(patch) {
+    markDirty();
+    setStudy((current) => ({ ...current, ...patch }));
+  }
 
   async function loadStudy() {
     const { data: studyData, error: studyError } = await supabase.from("studies").select("*").eq("id", studyId).single();
@@ -230,18 +240,50 @@ export default function StudyBuilderPage({ profile, studyId }) {
 
     const { data: finalData } = await supabase.from("study_final_questions").select("*").eq("study_id", studyId).order("question_order");
     setFinalQuestions(finalData || []);
+    setHasUnsavedChanges(false);
   }
 
   useEffect(() => { loadStudy(); }, [studyId]);
+
+  useEffect(() => {
+    function handleBeforeUnload(event) {
+      if (!hasUnsavedChanges) return;
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  useEffect(() => {
+    function handleDocumentClick(event) {
+      if (!hasUnsavedChanges) return;
+      const link = event.target.closest?.("a[href]");
+      if (!link) return;
+      if (link.target && link.target !== "_self") return;
+
+      const ok = window.confirm("You have unsaved changes. Leave without saving?");
+      if (!ok) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }
+
+    document.addEventListener("click", handleDocumentClick, true);
+    return () => document.removeEventListener("click", handleDocumentClick, true);
+  }, [hasUnsavedChanges]);
 
   async function handleFile(event) {
     const file = event.target.files?.[0];
     if (!file) return;
     const text = await file.text();
+    markDirty();
     setTreeRecord({ ...treeRecord, csv_text: text, tree_json: treeFromCsv(text) });
   }
 
   function updateCsv(text) {
+    markDirty();
     setTreeRecord({ ...treeRecord, csv_text: text, tree_json: treeFromCsv(text) });
   }
 
@@ -258,32 +300,38 @@ export default function StudyBuilderPage({ profile, studyId }) {
   }
 
   function addTask() {
+    markDirty();
     setTasks([...tasks, { task_order: tasks.length + 1, task_text: "", target_paths: [], acceptable_paths: [] }]);
   }
 
   function updateTask(index, patch) {
+    markDirty();
     const next = [...tasks];
     next[index] = { ...next[index], ...patch };
     setTasks(next);
   }
 
   function deleteTask(index) {
+    markDirty();
     const next = tasks.filter((_, taskIndex) => taskIndex !== index).map((task, taskIndex) => ({ ...task, task_order: taskIndex + 1 }));
     setTasks(next);
   }
 
   function addFinalQuestion(type = "text") {
+    markDirty();
     const order = finalQuestions.length + 1;
     setFinalQuestions([...finalQuestions, { question_order: order, question_key: `q${order}`, question_type: type, question_text: "", options: type === "choice" ? ["Option 1", "Option 2"] : [] }]);
   }
 
   function updateFinalQuestion(index, patch) {
+    markDirty();
     const next = [...finalQuestions];
     next[index] = { ...next[index], ...patch };
     setFinalQuestions(next);
   }
 
   function deleteFinalQuestion(index) {
+    markDirty();
     const next = finalQuestions.filter((_, questionIndex) => questionIndex !== index).map((question, questionIndex) => ({ ...question, question_order: questionIndex + 1, question_key: question.question_key || `q${questionIndex + 1}` }));
     setFinalQuestions(next);
   }
@@ -347,6 +395,7 @@ export default function StudyBuilderPage({ profile, studyId }) {
     }
 
     setMessage("Saved.");
+    setHasUnsavedChanges(false);
     await loadStudy();
   }
 
@@ -361,11 +410,11 @@ export default function StudyBuilderPage({ profile, studyId }) {
         <h1>Edit test</h1>
         <label className="form-block">
           <span className="form-label">Title</span>
-          <input className="text-input" value={study.title} onChange={(event) => setStudy({ ...study, title: event.target.value })} />
+          <input className="text-input" value={study.title} onChange={(event) => updateStudy({ title: event.target.value })} />
         </label>
-        <TextListEditor label="Welcome note" helpText="Shown on the first page before the participant starts the test. Use one paragraph per line." values={study.welcome_text || []} onChange={(values) => setStudy({ ...study, welcome_text: values })} />
-        <TextListEditor label="What the test is" helpText="Shown in a plain explanation box on the first page. Use one paragraph per line." values={study.welcome_bullets || []} onChange={(values) => setStudy({ ...study, welcome_bullets: values })} />
-        <TextListEditor label="Privacy note" helpText="Shown in the privacy box on the first page. Use one point per line." values={study.privacy_text || []} onChange={(values) => setStudy({ ...study, privacy_text: values })} />
+        <TextListEditor label="Welcome note" helpText="Shown on the first page before the participant starts the test. Use one paragraph per line." values={study.welcome_text || []} onChange={(values) => updateStudy({ welcome_text: values })} />
+        <TextListEditor label="What the test is" helpText="Shown in a plain explanation box on the first page. Use one paragraph per line." values={study.welcome_bullets || []} onChange={(values) => updateStudy({ welcome_bullets: values })} />
+        <TextListEditor label="Privacy note" helpText="Shown in the privacy box on the first page. Use one point per line." values={study.privacy_text || []} onChange={(values) => updateStudy({ privacy_text: values })} />
       </section>
 
       <section className="card">
@@ -375,7 +424,7 @@ export default function StudyBuilderPage({ profile, studyId }) {
           {optionalDataSettings.map((item) => (
             <label key={item.key} className="setting-card">
               <span className="setting-main-row">
-                <input type="checkbox" checked={(study.data_collection_settings || defaultDataSettings())[item.key] === true} onChange={(event) => setStudy({ ...study, data_collection_settings: { ...(study.data_collection_settings || defaultDataSettings()), [item.key]: event.target.checked } })} />
+                <input type="checkbox" checked={(study.data_collection_settings || defaultDataSettings())[item.key] === true} onChange={(event) => updateStudy({ data_collection_settings: { ...(study.data_collection_settings || defaultDataSettings()), [item.key]: event.target.checked } })} />
                 <span className="setting-label">{item.label}</span>
               </span>
               <span className="setting-description">{item.description}</span>
@@ -476,8 +525,11 @@ export default function StudyBuilderPage({ profile, studyId }) {
 
       <section className="card sticky-actions">
         {message ? <p>{message}</p> : null}
+        {hasUnsavedChanges ? <p className="unsaved-changes-note">Unsaved changes</p> : null}
+        <p className="muted-text">Save the test before previewing recent changes.</p>
         <div className="button-row">
           <button className="primary-button" type="button" onClick={saveAll}>Save test</button>
+          <a className="secondary-button" href={`/preview/${study.id}`}>Preview test</a>
           <a className="secondary-button" href="/admin">Back to test collection</a>
           <a className="secondary-button" href={`/dashboard/${study.id}`}>Dashboard</a>
           {study.status === "published" ? <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open test link</a> : null}
