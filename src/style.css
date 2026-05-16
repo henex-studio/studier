@@ -469,3 +469,29 @@ p, ul { line-height: 1.55; color: #334155; }
     width: 100%;
   }
 }
+
+
+/* Publish validation */
+.publish-validation-box {
+  margin-top: 14px;
+  border: 1px solid #fecaca;
+  border-radius: 16px;
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 12px 14px;
+}
+
+.publish-validation-box .form-label {
+  color: #991b1b;
+  margin-bottom: 6px;
+}
+
+.publish-validation-box ol {
+  margin: 8px 0 0;
+  padding-left: 22px;
+}
+
+.publish-validation-box li {
+  margin-bottom: 6px;
+  color: #7f1d1d;
+}
