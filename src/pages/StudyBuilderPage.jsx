@@ -517,19 +517,6 @@ export default function StudyBuilderPage({ profile, studyId }) {
         </div>
       </section>
 
-      <section className="card">
-        <div className="section-title-row">
-          <div>
-            <h2>IA tree CSV</h2>
-            <p className="muted-text">Use columns named Level 1, Level 2, and Level 3.</p>
-          </div>
-          <button className="secondary-button" type="button" onClick={downloadSampleCsv}>Download sample CSV</button>
-        </div>
-        <div className="file-input-wrap"><input type="file" accept=".csv,text/csv" onChange={handleFile} /></div>
-        <textarea className="textarea csv-input" value={treeRecord.csv_text || ""} onChange={(event) => updateCsv(event.target.value)} placeholder="Paste CSV here" />
-        <CheckPanel title="CSV checks" errors={csvChecks.errors} warnings={csvChecks.warnings} emptyText="CSV format looks OK." />
-      </section>
-
       <QuestionEditor
         title="Pre task questions"
         helpText="Optional. Use broad, non identifying questions only. Do not ask for names, emails, case details, sensitive information, or anything that could identify a person in a small group."
@@ -543,6 +530,19 @@ export default function StudyBuilderPage({ profile, studyId }) {
         onUpdateOption={(index, optionIndex, value) => updateChoiceOption("pre", index, optionIndex, value)}
         onRemoveOption={(index, optionIndex) => removeChoiceOption("pre", index, optionIndex)}
       />
+
+      <section className="card">
+        <div className="section-title-row">
+          <div>
+            <h2>IA tree CSV</h2>
+            <p className="muted-text">Use columns named Level 1, Level 2, and Level 3.</p>
+          </div>
+          <button className="secondary-button" type="button" onClick={downloadSampleCsv}>Download sample CSV</button>
+        </div>
+        <div className="file-input-wrap"><input type="file" accept=".csv,text/csv" onChange={handleFile} /></div>
+        <textarea className="textarea csv-input" value={treeRecord.csv_text || ""} onChange={(event) => updateCsv(event.target.value)} placeholder="Paste CSV here" />
+        <CheckPanel title="CSV checks" errors={csvChecks.errors} warnings={csvChecks.warnings} emptyText="CSV format looks OK." />
+      </section>
 
       <section className="builder-layout">
         <aside className="card sticky-tree-panel">
