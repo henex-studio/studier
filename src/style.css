@@ -1232,3 +1232,13 @@ select:focus {
   font-weight: 700;
   margin: 0 0 10px;
 }
+
+
+/* Pre task questions */
+.question-position-note {
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  padding: 12px 14px;
+}
