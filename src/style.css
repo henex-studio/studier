@@ -292,3 +292,25 @@ p, ul { line-height: 1.55; color: #334155; }
   font-size: 14px;
   color: #64748b;
 }
+
+/* Wordmark style */
+
+.brand-wordmark {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* subtle accent instead of logo */
+.hero-accent {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  margin: 0 auto 16px;
+
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+}
