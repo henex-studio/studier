@@ -45,55 +45,42 @@ function hasTextListValue(values) {
 function getPublishIssues(study, treeRecord, tasks, finalQuestions) {
   const issues = [];
 
-  if (!String(study?.title || "").trim()) {
-    issues.push("Add a test title.");
-  }
-
-  if (!hasTextListValue(study?.welcome_text)) {
-    issues.push("Add a welcome note.");
-  }
-
-  if (!hasTextListValue(study?.privacy_text)) {
-    issues.push("Add a privacy note.");
-  }
-
-  if (!treeRecord?.tree_json?.length) {
-    issues.push("Add a valid IA tree CSV.");
-  }
+  if (!String(study?.title || "").trim()) issues.push("Add a test title.");
+  if (!hasTextListValue(study?.welcome_text)) issues.push("Add a welcome note.");
+  if (!hasTextListValue(study?.privacy_text)) issues.push("Add a privacy note.");
+  if (!treeRecord?.tree_json?.length) issues.push("Add a valid IA tree CSV.");
 
   if (!tasks.length) {
     issues.push("Add at least one task.");
   }
 
   tasks.forEach((task, index) => {
-    if (!String(task.task_text || "").trim()) {
-      issues.push(`Task ${index + 1} needs task text.`);
-    }
-
-    if (!(task.target_paths || []).length) {
-      issues.push(`Task ${index + 1} needs at least one target path.`);
-    }
+    if (!String(task.task_text || "").trim()) issues.push(`Task ${index + 1} needs task text.`);
+    if (!(task.target_paths || []).length) issues.push(`Task ${index + 1} needs at least one target path.`);
   });
 
   finalQuestions.forEach((question, index) => {
-    if (!String(question.question_text || "").trim()) {
-      issues.push(`Final question ${index + 1} needs question text.`);
-    }
+    if (!String(question.question_text || "").trim()) issues.push(`Final question ${index + 1} needs question text.`);
 
     if (question.question_type === "choice") {
       const options = Array.isArray(question.options) ? question.options : [];
-
-      if (options.length < 2) {
-        issues.push(`Choice question ${index + 1} needs at least 2 options.`);
-      }
-
-      if (options.some((option) => !String(option || "").trim())) {
-        issues.push(`Choice question ${index + 1} has an empty option.`);
-      }
+      if (options.length < 2) issues.push(`Choice question ${index + 1} needs at least 2 options.`);
+      if (options.some((option) => !String(option || "").trim())) issues.push(`Choice question ${index + 1} has an empty option.`);
     }
   });
 
   return issues;
+}
+
+function PublishIssues({ issues }) {
+  if (!issues.length) return null;
+
+  return (
+    <div className="publish-validation-box">
+      <p className="form-label">This test is not ready to publish.</p>
+      <ol>{issues.map((issue) => <li key={issue}>{issue}</li>)}</ol>
+    </div>
+  );
 }
 
 export default function StudyListPage({ profile }) {
@@ -105,6 +92,7 @@ export default function StudyListPage({ profile }) {
   const [fallbackLink, setFallbackLink] = useState("");
   const [publishIssuesByStudyId, setPublishIssuesByStudyId] = useState({});
   const [publishingStudyId, setPublishingStudyId] = useState("");
+  const [viewMode, setViewMode] = useState("cards");
   const [loading, setLoading] = useState(true);
 
   const ownerById = useMemo(() => {
@@ -207,21 +195,9 @@ export default function StudyListPage({ profile }) {
 
   async function validateBeforePublish(study) {
     const [{ data: treeRecord }, { data: taskRows }, { data: finalRows }] = await Promise.all([
-      supabase
-        .from("study_trees")
-        .select("tree_json")
-        .eq("study_id", study.id)
-        .maybeSingle(),
-      supabase
-        .from("study_tasks")
-        .select("task_text,target_paths")
-        .eq("study_id", study.id)
-        .order("task_order"),
-      supabase
-        .from("study_final_questions")
-        .select("question_text,question_type,options")
-        .eq("study_id", study.id)
-        .order("question_order")
+      supabase.from("study_trees").select("tree_json").eq("study_id", study.id).maybeSingle(),
+      supabase.from("study_tasks").select("task_text,target_paths").eq("study_id", study.id).order("task_order"),
+      supabase.from("study_final_questions").select("question_text,question_type,options").eq("study_id", study.id).order("question_order")
     ]);
 
     return getPublishIssues(study, treeRecord, taskRows || [], finalRows || []);
@@ -238,10 +214,7 @@ export default function StudyListPage({ profile }) {
       setPublishingStudyId("");
 
       if (issues.length > 0) {
-        setPublishIssuesByStudyId((previous) => ({
-          ...previous,
-          [study.id]: issues
-        }));
+        setPublishIssuesByStudyId((previous) => ({ ...previous, [study.id]: issues }));
         return;
       }
     }
@@ -264,8 +237,12 @@ export default function StudyListPage({ profile }) {
   async function deleteStudy(study) {
     setCopiedStudyId("");
     setFallbackLink("");
-    const ok = window.confirm("This will permanently delete this test, its tree, questions, responses, final answers, and dashboard data. This action cannot be undone.");
+
+    const ok = window.confirm(
+      "This will permanently delete this test, its tree, questions, responses, final answers, and dashboard data. This action cannot be undone."
+    );
     if (!ok) return;
+
     const { error } = await supabase.from("studies").delete().eq("id", study.id);
     if (error) setMessage(error.message);
     await loadStudies();
@@ -274,6 +251,7 @@ export default function StudyListPage({ profile }) {
   async function copyTestLink(study) {
     const fullLink = `${window.location.origin}/test/${study.slug}`;
     setFallbackLink("");
+
     try {
       await navigator.clipboard.writeText(fullLink);
       setCopiedStudyId(study.id);
@@ -286,68 +264,159 @@ export default function StudyListPage({ profile }) {
     }
   }
 
+  function renderActions(study) {
+    const isPublishing = publishingStudyId === study.id;
+
+    return (
+      <div className="button-row stable-action-row">
+        {study.status !== "published" ? (
+          <button className="primary-button" disabled={isPublishing} onClick={() => updateStatus(study, "published")}>
+            {isPublishing ? "Checking..." : "Publish"}
+          </button>
+        ) : (
+          <button className="secondary-button" onClick={() => updateStatus(study, "closed")}>Close</button>
+        )}
+
+        {study.status === "published" ? (
+          <button className="secondary-button" type="button" onClick={() => copyTestLink(study)}>Copy link</button>
+        ) : null}
+
+        <button className="danger-button" onClick={() => deleteStudy(study)}>Delete</button>
+      </div>
+    );
+  }
+
   return (
     <AdminShell profile={profile}>
       <section className="card">
-        <h1>Test collection</h1>
-        <p>Create and manage internal tree tests.</p>
+        <div className="collection-header-row">
+          <div>
+            <h1>Test collection</h1>
+            <p>Create and manage internal tree tests.</p>
+          </div>
+
+          <div className="view-toggle" aria-label="Collection view mode">
+            <button
+              className={viewMode === "cards" ? "view-toggle-button view-toggle-button-active" : "view-toggle-button"}
+              type="button"
+              onClick={() => setViewMode("cards")}
+            >
+              Cards
+            </button>
+            <button
+              className={viewMode === "list" ? "view-toggle-button view-toggle-button-active" : "view-toggle-button"}
+              type="button"
+              onClick={() => setViewMode("list")}
+            >
+              List
+            </button>
+          </div>
+        </div>
+
         <div className="inline-form">
           <input className="text-input" placeholder="New test title" value={title} onChange={(event) => setTitle(event.target.value)} />
           <button className="primary-button" onClick={createStudy}>Add new test</button>
         </div>
+
         {message ? <p className="error-box">{message}</p> : null}
         {profile.role !== "admin" ? <p className="muted-text">Test limit: {studies.length} of 3.</p> : null}
       </section>
 
-      <section className="study-grid">
-        {loading ? <div className="card">Loading...</div> : null}
-        {!loading && studies.length === 0 ? <div className="card">No tests yet.</div> : null}
+      {loading ? <div className="card">Loading...</div> : null}
+      {!loading && studies.length === 0 ? <div className="card">No tests yet.</div> : null}
 
-        {studies.map((study) => {
-          const owner = ownerById.get(study.owner_id) || { label: "Unknown user", title: "Unknown user" };
-          const isAdminView = profile.role === "admin";
-          const fullLink = `${window.location.origin}/test/${study.slug}`;
-          const isCopied = copiedStudyId === study.id;
-          const publishIssues = publishIssuesByStudyId[study.id] || [];
-          const isPublishing = publishingStudyId === study.id;
+      {!loading && studies.length > 0 && viewMode === "cards" ? (
+        <section className="study-grid">
+          {studies.map((study) => {
+            const owner = ownerById.get(study.owner_id) || { label: "Unknown user", title: "Unknown user" };
+            const isAdminView = profile.role === "admin";
+            const fullLink = `${window.location.origin}/test/${study.slug}`;
+            const isCopied = copiedStudyId === study.id;
+            const publishIssues = publishIssuesByStudyId[study.id] || [];
 
-          return (
-            <article className="card study-card" key={study.id}>
-              <div className="study-card-header">
-                <span className={statusClass(study.status)}>{statusLabel(study.status)}</span>
-                {isAdminView ? <span className={ownerClass(study.owner_id)} title={owner.title}>{owner.label}</span> : null}
-              </div>
-
-              <h2>{study.title}</h2>
-              <p className="study-link-code" title={fullLink}>Test link code: <span>/{study.slug}</span></p>
-
-              <div className="button-row">
-                <a className="secondary-button" href={`/builder/${study.id}`}>Edit</a>
-                <a className="secondary-button" href={`/dashboard/${study.id}`}>Dashboard</a>
-                <a className="secondary-button" href={`/preview/${study.id}`}>Preview</a>
-                {study.status === "published" ? <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open link</a> : null}
-              </div>
-
-              <div className="button-row stable-action-row">
-                {study.status !== "published" ? <button className="primary-button" disabled={isPublishing} onClick={() => updateStatus(study, "published")}>{isPublishing ? "Checking..." : "Publish"}</button> : <button className="secondary-button" onClick={() => updateStatus(study, "closed")}>Close</button>}
-                {study.status === "published" ? <button className="secondary-button" type="button" onClick={() => copyTestLink(study)}>Copy link</button> : null}
-                <button className="danger-button" onClick={() => deleteStudy(study)}>Delete</button>
-              </div>
-
-              {publishIssues.length ? (
-                <div className="publish-validation-box">
-                  <p className="form-label">This test is not ready to publish.</p>
-                  <ol>
-                    {publishIssues.map((issue) => <li key={issue}>{issue}</li>)}
-                  </ol>
+            return (
+              <article className="card study-card" key={study.id}>
+                <div className="study-card-header">
+                  <span className={statusClass(study.status)}>{statusLabel(study.status)}</span>
+                  {isAdminView ? <span className={ownerClass(study.owner_id)} title={owner.title}>{owner.label}</span> : null}
                 </div>
-              ) : null}
 
-              {isCopied ? <div className="copy-toast">{fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}</div> : null}
-            </article>
-          );
-        })}
-      </section>
+                <h2>{study.title}</h2>
+                <p className="study-link-code" title={fullLink}>Test link code: <span>/{study.slug}</span></p>
+
+                <div className="button-row">
+                  <a className="secondary-button" href={`/builder/${study.id}`}>Edit</a>
+                  <a className="secondary-button" href={`/dashboard/${study.id}`}>Dashboard</a>
+                  <a className="secondary-button" href={`/preview/${study.id}`}>Preview</a>
+                  {study.status === "published" ? <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open link</a> : null}
+                </div>
+
+                {renderActions(study)}
+                <PublishIssues issues={publishIssues} />
+                {isCopied ? <div className="copy-toast">{fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}</div> : null}
+              </article>
+            );
+          })}
+        </section>
+      ) : null}
+
+      {!loading && studies.length > 0 && viewMode === "list" ? (
+        <section className="card list-view-card">
+          <div className="desktop-table test-list-table-wrap">
+            <table className="test-list-table">
+              <thead>
+                <tr>
+                  <th>Test</th>
+                  <th>Status</th>
+                  {profile.role === "admin" ? <th>Owner</th> : null}
+                  <th>Link code</th>
+                  <th>Quick links</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {studies.map((study) => {
+                  const owner = ownerById.get(study.owner_id) || { label: "Unknown user", title: "Unknown user" };
+                  const fullLink = `${window.location.origin}/test/${study.slug}`;
+                  const isCopied = copiedStudyId === study.id;
+                  const publishIssues = publishIssuesByStudyId[study.id] || [];
+
+                  return (
+                    <React.Fragment key={study.id}>
+                      <tr>
+                        <td>
+                          <a className="test-title-link" href={`/builder/${study.id}`}>{study.title}</a>
+                        </td>
+                        <td><span className={statusClass(study.status)}>{statusLabel(study.status)}</span></td>
+                        {profile.role === "admin" ? <td><span className={ownerClass(study.owner_id)} title={owner.title}>{owner.label}</span></td> : null}
+                        <td><span className="list-link-code" title={fullLink}>/{study.slug}</span></td>
+                        <td>
+                          <div className="list-link-row">
+                            <a href={`/builder/${study.id}`}>Edit</a>
+                            <a href={`/dashboard/${study.id}`}>Dashboard</a>
+                            <a href={`/preview/${study.id}`}>Preview</a>
+                            {study.status === "published" ? <a href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open</a> : null}
+                          </div>
+                        </td>
+                        <td>{renderActions(study)}</td>
+                      </tr>
+
+                      {publishIssues.length || isCopied ? (
+                        <tr className="list-feedback-row">
+                          <td colSpan={profile.role === "admin" ? 6 : 5}>
+                            <PublishIssues issues={publishIssues} />
+                            {isCopied ? <div className="copy-toast">{fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}</div> : null}
+                          </td>
+                        </tr>
+                      ) : null}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
     </AdminShell>
   );
 }
