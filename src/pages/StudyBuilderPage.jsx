@@ -15,7 +15,6 @@ const optionalDataSettings = [
   { key: "record_hesitation_flag", label: "Hesitation flag", description: "Flags tasks that may have involved hesitation, based on time or click count.", defaultChecked: false }
 ];
 
-
 const sampleCsv = `Level 1,Level 2,Level 3
 Services,,
 ,Payments,
@@ -31,6 +30,23 @@ Account,,
 ,Sign in,
 ,Update details,
 `;
+
+function defaultDataSettings() {
+  return optionalDataSettings.reduce((settings, item) => {
+    settings[item.key] = item.defaultChecked;
+    return settings;
+  }, {});
+}
+
+function makeQuestionKey(text, index, position = "final") {
+  const prefix = position === "pre" ? "pre" : "final";
+  const base = String(text || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40);
+  return `${prefix}_${base || `q${index + 1}`}`;
+}
 
 function splitCsvRow(row) {
   return row.split(",").map((cell) => cell.trim());
@@ -51,9 +67,7 @@ function validateCsv(csvText) {
   const expectedHeader = ["level 1", "level 2", "level 3"];
 
   expectedHeader.forEach((label, index) => {
-    if (header[index] !== label) {
-      errors.push(`Header column ${index + 1} should be ${expectedHeader[index].replace("level", "Level")}.`);
-    }
+    if (header[index] !== label) errors.push(`Header column ${index + 1} should be ${expectedHeader[index].replace("level", "Level")}.`);
   });
 
   let hasLevelOne = false;
@@ -62,17 +76,13 @@ function validateCsv(csvText) {
 
   rows.slice(1).forEach((row, rowIndex) => {
     const rowNumber = rowIndex + 2;
-
     if (!row.trim()) {
       warnings.push(`Row ${rowNumber} is empty.`);
       return;
     }
 
     const cells = splitCsvRow(row);
-
-    if (cells.length > 3) {
-      warnings.push(`Row ${rowNumber} has more than 3 columns. Extra columns will be ignored.`);
-    }
+    if (cells.length > 3) warnings.push(`Row ${rowNumber} has more than 3 columns. Extra columns will be ignored.`);
 
     const levelOne = cells[0] || "";
     const levelTwo = cells[1] || "";
@@ -85,30 +95,33 @@ function validateCsv(csvText) {
     }
 
     if (levelTwo) {
-      if (!currentLevelOne) {
-        warnings.push(`Row ${rowNumber} has a Level 2 item but no parent Level 1 item above it.`);
-      }
+      if (!currentLevelOne) warnings.push(`Row ${rowNumber} has a Level 2 item but no parent Level 1 item above it.`);
       currentLevelTwo = levelTwo;
     }
 
     if (levelThree) {
-      if (!currentLevelOne) {
-        warnings.push(`Row ${rowNumber} has a Level 3 item but no parent Level 1 item above it.`);
-      }
-      if (!currentLevelTwo) {
-        warnings.push(`Row ${rowNumber} has a Level 3 item but no parent Level 2 item above it.`);
-      }
+      if (!currentLevelOne) warnings.push(`Row ${rowNumber} has a Level 3 item but no parent Level 1 item above it.`);
+      if (!currentLevelTwo) warnings.push(`Row ${rowNumber} has a Level 3 item but no parent Level 2 item above it.`);
     }
   });
 
-  if (!hasLevelOne) {
-    errors.push("CSV needs at least one Level 1 item.");
-  }
-
+  if (!hasLevelOne) errors.push("CSV needs at least one Level 1 item.");
   return { errors, warnings };
 }
 
-function getReadinessChecks(study, treeRecord, tasks, finalQuestions, csvChecks) {
+function checkQuestions(questions, label, warnings) {
+  questions.forEach((question, index) => {
+    if (!String(question.question_text || "").trim()) warnings.push(`${label} question ${index + 1} has no question text.`);
+
+    if (question.question_type === "choice") {
+      const options = Array.isArray(question.options) ? question.options : [];
+      if (options.length < 2) warnings.push(`${label} choice question ${index + 1} needs at least 2 options.`);
+      if (options.some((option) => !String(option || "").trim())) warnings.push(`${label} choice question ${index + 1} has an empty option.`);
+    }
+  });
+}
+
+function getReadinessChecks(study, treeRecord, tasks, preQuestions, finalQuestions, csvChecks) {
   const errors = [];
   const warnings = [];
 
@@ -127,16 +140,8 @@ function getReadinessChecks(study, treeRecord, tasks, finalQuestions, csvChecks)
     });
   }
 
-  finalQuestions.forEach((question, index) => {
-    if (!String(question.question_text || "").trim()) warnings.push(`Final question ${index + 1} has no question text.`);
-
-    if (question.question_type === "choice") {
-      const options = Array.isArray(question.options) ? question.options : [];
-      if (options.length < 2) warnings.push(`Choice question ${index + 1} needs at least 2 options.`);
-      if (options.some((option) => !String(option || "").trim())) warnings.push(`Choice question ${index + 1} has an empty option.`);
-    }
-  });
-
+  checkQuestions(preQuestions, "Pre task", warnings);
+  checkQuestions(finalQuestions, "Final", warnings);
   return { errors, warnings };
 }
 
@@ -161,18 +166,6 @@ function CheckPanel({ title, errors = [], warnings = [], emptyText }) {
       ) : null}
     </div>
   );
-}
-
-function defaultDataSettings() {
-  return optionalDataSettings.reduce((settings, item) => {
-    settings[item.key] = item.defaultChecked;
-    return settings;
-  }, {});
-}
-
-function makeQuestionKey(text, index) {
-  const base = String(text || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40);
-  return base || `q${index + 1}`;
 }
 
 function TextListEditor({ label, helpText, values, onChange }) {
@@ -200,19 +193,80 @@ function PathList({ title, paths, onRemove }) {
   );
 }
 
+function QuestionEditor({ title, helpText, questions, position, onUpdate, onDelete, onAddChoice, onAddText, onAddOption, onUpdateOption, onRemoveOption }) {
+  return (
+    <section className="card">
+      <h2>{title}</h2>
+      {helpText ? <p className="muted-text">{helpText}</p> : null}
+
+      {questions.map((question, index) => (
+        <div className="question-card" key={index}>
+          <label className="form-block">
+            <span className="form-label">Question text</span>
+            <textarea className="textarea" value={question.question_text} onChange={(event) => onUpdate(index, { question_text: event.target.value, question_key: makeQuestionKey(event.target.value, index, position) })} />
+          </label>
+
+          <label className="form-block">
+            <span className="form-label">Type</span>
+            <select className="text-input" value={question.question_type} onChange={(event) => onUpdate(index, { question_type: event.target.value, options: event.target.value === "choice" ? question.options?.length ? question.options : ["Option 1", "Option 2"] : [] })}>
+              <option value="choice">Choice</option>
+              <option value="text">Text</option>
+            </select>
+          </label>
+
+          {question.question_type === "choice" ? (
+            <div className="form-block">
+              <span className="form-label">Options</span>
+              {(question.options || []).map((option, optionIndex) => (
+                <div className="inline-form" key={optionIndex}>
+                  <input className="text-input" value={option} onChange={(event) => onUpdateOption(index, optionIndex, event.target.value)} />
+                  <button className="secondary-button" type="button" onClick={() => onRemoveOption(index, optionIndex)}>Remove</button>
+                </div>
+              ))}
+              <button className="secondary-button" type="button" onClick={() => onAddOption(index)}>Add option</button>
+            </div>
+          ) : null}
+
+          <div className="question-card-footer">
+            <button className="danger-button" type="button" onClick={() => onDelete(index)}>Delete question</button>
+          </div>
+        </div>
+      ))}
+
+      <div className="button-row">
+        <button className="secondary-button" type="button" onClick={onAddChoice}>Add choice question</button>
+        <button className="secondary-button" type="button" onClick={onAddText}>Add text question</button>
+      </div>
+    </section>
+  );
+}
+
+function createQuestion(type, order, position) {
+  return {
+    question_order: order,
+    question_key: makeQuestionKey("", order - 1, position),
+    question_position: position,
+    question_type: type,
+    question_text: "",
+    options: type === "choice" ? ["Option 1", "Option 2"] : []
+  };
+}
+
 export default function StudyBuilderPage({ profile, studyId }) {
   const [study, setStudy] = useState(null);
   const [treeRecord, setTreeRecord] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [preQuestions, setPreQuestions] = useState([]);
   const [finalQuestions, setFinalQuestions] = useState([]);
   const [message, setMessage] = useState("");
   const [selectedPath, setSelectedPath] = useState("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   const tree = useMemo(() => treeRecord?.tree_json || [], [treeRecord]);
   const csvChecks = useMemo(() => validateCsv(treeRecord?.csv_text || ""), [treeRecord?.csv_text]);
   const readinessChecks = useMemo(
-    () => getReadinessChecks(study, treeRecord, tasks, finalQuestions, csvChecks),
-    [study, treeRecord, tasks, finalQuestions, csvChecks]
+    () => getReadinessChecks(study, treeRecord, tasks, preQuestions, finalQuestions, csvChecks),
+    [study, treeRecord, tasks, preQuestions, finalQuestions, csvChecks]
   );
 
   function markDirty() {
@@ -230,6 +284,7 @@ export default function StudyBuilderPage({ profile, studyId }) {
       setMessage(studyError.message);
       return;
     }
+
     setStudy({ ...studyData, data_collection_settings: { ...defaultDataSettings(), ...(studyData.data_collection_settings || {}) } });
 
     const { data: treeData } = await supabase.from("study_trees").select("*").eq("study_id", studyId).maybeSingle();
@@ -238,8 +293,10 @@ export default function StudyBuilderPage({ profile, studyId }) {
     const { data: taskData } = await supabase.from("study_tasks").select("*").eq("study_id", studyId).order("task_order");
     setTasks(taskData || []);
 
-    const { data: finalData } = await supabase.from("study_final_questions").select("*").eq("study_id", studyId).order("question_order");
-    setFinalQuestions(finalData || []);
+    const { data: questionData } = await supabase.from("study_final_questions").select("*").eq("study_id", studyId).order("question_order");
+    const questionRows = questionData || [];
+    setPreQuestions(questionRows.filter((question) => question.question_position === "pre"));
+    setFinalQuestions(questionRows.filter((question) => question.question_position !== "pre"));
     setHasUnsavedChanges(false);
   }
 
@@ -317,52 +374,75 @@ export default function StudyBuilderPage({ profile, studyId }) {
     setTasks(next);
   }
 
-  function addFinalQuestion(type = "text") {
+  function updateQuestion(position, index, patch) {
     markDirty();
-    const order = finalQuestions.length + 1;
-    setFinalQuestions([...finalQuestions, { question_order: order, question_key: `q${order}`, question_type: type, question_text: "", options: type === "choice" ? ["Option 1", "Option 2"] : [] }]);
+    const list = position === "pre" ? [...preQuestions] : [...finalQuestions];
+    list[index] = { ...list[index], ...patch, question_position: position };
+    if (position === "pre") setPreQuestions(list);
+    else setFinalQuestions(list);
   }
 
-  function updateFinalQuestion(index, patch) {
+  function deleteQuestion(position, index) {
     markDirty();
-    const next = [...finalQuestions];
-    next[index] = { ...next[index], ...patch };
-    setFinalQuestions(next);
+    const list = position === "pre" ? preQuestions : finalQuestions;
+    const next = list
+      .filter((_, questionIndex) => questionIndex !== index)
+      .map((question, questionIndex) => ({
+        ...question,
+        question_position: position,
+        question_order: questionIndex + 1,
+        question_key: question.question_key || makeQuestionKey(question.question_text, questionIndex, position)
+      }));
+    if (position === "pre") setPreQuestions(next);
+    else setFinalQuestions(next);
   }
 
-  function deleteFinalQuestion(index) {
+  function addQuestion(position, type) {
     markDirty();
-    const next = finalQuestions.filter((_, questionIndex) => questionIndex !== index).map((question, questionIndex) => ({ ...question, question_order: questionIndex + 1, question_key: question.question_key || `q${questionIndex + 1}` }));
-    setFinalQuestions(next);
+    const list = position === "pre" ? preQuestions : finalQuestions;
+    const next = [...list, createQuestion(type, list.length + 1, position)];
+    if (position === "pre") setPreQuestions(next);
+    else setFinalQuestions(next);
   }
 
-  function addChoiceOption(questionIndex) {
-    const question = finalQuestions[questionIndex];
+  function addChoiceOption(position, questionIndex) {
+    const question = position === "pre" ? preQuestions[questionIndex] : finalQuestions[questionIndex];
     const currentOptions = Array.isArray(question.options) ? question.options : [];
-    updateFinalQuestion(questionIndex, { options: [...currentOptions, `Option ${currentOptions.length + 1}`] });
+    updateQuestion(position, questionIndex, { options: [...currentOptions, `Option ${currentOptions.length + 1}`] });
   }
 
-  function updateChoiceOption(questionIndex, optionIndex, value) {
-    const question = finalQuestions[questionIndex];
+  function updateChoiceOption(position, questionIndex, optionIndex, value) {
+    const question = position === "pre" ? preQuestions[questionIndex] : finalQuestions[questionIndex];
     const currentOptions = Array.isArray(question.options) ? [...question.options] : [];
     currentOptions[optionIndex] = value;
-    updateFinalQuestion(questionIndex, { options: currentOptions });
+    updateQuestion(position, questionIndex, { options: currentOptions });
   }
 
-  function removeChoiceOption(questionIndex, optionIndex) {
-    const question = finalQuestions[questionIndex];
+  function removeChoiceOption(position, questionIndex, optionIndex) {
+    const question = position === "pre" ? preQuestions[questionIndex] : finalQuestions[questionIndex];
     const currentOptions = Array.isArray(question.options) ? [...question.options] : [];
     if (currentOptions.length <= 2) {
       setMessage("A choice question needs at least 2 options.");
       return;
     }
     currentOptions.splice(optionIndex, 1);
-    updateFinalQuestion(questionIndex, { options: currentOptions });
+    updateQuestion(position, questionIndex, { options: currentOptions });
+  }
+
+  function buildQuestionRows(list, position) {
+    return list.map((question, index) => ({
+      study_id: studyId,
+      question_order: index + 1,
+      question_position: position,
+      question_key: question.question_key || makeQuestionKey(question.question_text, index, position),
+      question_type: question.question_type,
+      question_text: question.question_text,
+      options: question.options || []
+    }));
   }
 
   async function saveAll() {
     setMessage("Saving...");
-    const cleanedFinalQuestions = finalQuestions.map((question, index) => ({ ...question, question_key: question.question_key || makeQuestionKey(question.question_text, index) }));
 
     const { error: studyError } = await supabase.from("studies").update({
       title: study.title,
@@ -384,15 +464,19 @@ export default function StudyBuilderPage({ profile, studyId }) {
 
     await supabase.from("study_tasks").delete().eq("study_id", studyId);
     if (tasks.length) {
-      const taskRows = tasks.map((task, index) => ({ study_id: studyId, task_order: index + 1, task_text: task.task_text, target_paths: task.target_paths || [], acceptable_paths: task.acceptable_paths || [] }));
+      const taskRows = tasks.map((task, index) => ({
+        study_id: studyId,
+        task_order: index + 1,
+        task_text: task.task_text,
+        target_paths: task.target_paths || [],
+        acceptable_paths: task.acceptable_paths || []
+      }));
       await supabase.from("study_tasks").insert(taskRows);
     }
 
     await supabase.from("study_final_questions").delete().eq("study_id", studyId);
-    if (cleanedFinalQuestions.length) {
-      const finalRows = cleanedFinalQuestions.map((question, index) => ({ study_id: studyId, question_order: index + 1, question_key: question.question_key || makeQuestionKey(question.question_text, index), question_type: question.question_type, question_text: question.question_text, options: question.options || [] }));
-      await supabase.from("study_final_questions").insert(finalRows);
-    }
+    const questionRows = [...buildQuestionRows(preQuestions, "pre"), ...buildQuestionRows(finalQuestions, "final")];
+    if (questionRows.length) await supabase.from("study_final_questions").insert(questionRows);
 
     setMessage("Saved.");
     setHasUnsavedChanges(false);
@@ -439,14 +523,26 @@ export default function StudyBuilderPage({ profile, studyId }) {
             <h2>IA tree CSV</h2>
             <p className="muted-text">Use columns named Level 1, Level 2, and Level 3.</p>
           </div>
-          <button className="secondary-button" type="button" onClick={downloadSampleCsv}>
-            Download sample CSV
-          </button>
+          <button className="secondary-button" type="button" onClick={downloadSampleCsv}>Download sample CSV</button>
         </div>
         <div className="file-input-wrap"><input type="file" accept=".csv,text/csv" onChange={handleFile} /></div>
         <textarea className="textarea csv-input" value={treeRecord.csv_text || ""} onChange={(event) => updateCsv(event.target.value)} placeholder="Paste CSV here" />
         <CheckPanel title="CSV checks" errors={csvChecks.errors} warnings={csvChecks.warnings} emptyText="CSV format looks OK." />
       </section>
+
+      <QuestionEditor
+        title="Pre task questions"
+        helpText="Optional. Use broad, non identifying questions only. Do not ask for names, emails, case details, sensitive information, or anything that could identify a person in a small group."
+        questions={preQuestions}
+        position="pre"
+        onUpdate={(index, patch) => updateQuestion("pre", index, patch)}
+        onDelete={(index) => deleteQuestion("pre", index)}
+        onAddChoice={() => addQuestion("pre", "choice")}
+        onAddText={() => addQuestion("pre", "text")}
+        onAddOption={(index) => addChoiceOption("pre", index)}
+        onUpdateOption={(index, optionIndex, value) => updateChoiceOption("pre", index, optionIndex, value)}
+        onRemoveOption={(index, optionIndex) => removeChoiceOption("pre", index, optionIndex)}
+      />
 
       <section className="builder-layout">
         <aside className="card sticky-tree-panel">
@@ -478,44 +574,19 @@ export default function StudyBuilderPage({ profile, studyId }) {
         </section>
       </section>
 
-      <section className="card">
-        <h2>Final questions</h2>
-        <p className="muted-text">Question keys are generated automatically from the question text for CSV export.</p>
-        {finalQuestions.map((question, index) => (
-          <div className="question-card" key={index}>
-            <label className="form-block">
-              <span className="form-label">Question text</span>
-              <textarea className="textarea" value={question.question_text} onChange={(event) => updateFinalQuestion(index, { question_text: event.target.value, question_key: makeQuestionKey(event.target.value, index) })} />
-            </label>
-            <label className="form-block">
-              <span className="form-label">Type</span>
-              <select className="text-input" value={question.question_type} onChange={(event) => updateFinalQuestion(index, { question_type: event.target.value, options: event.target.value === "choice" ? question.options?.length ? question.options : ["Option 1", "Option 2"] : [] })}>
-                <option value="choice">Choice</option>
-                <option value="text">Text</option>
-              </select>
-            </label>
-            {question.question_type === "choice" ? (
-              <div className="form-block">
-                <span className="form-label">Options</span>
-                {(question.options || []).map((option, optionIndex) => (
-                  <div className="inline-form" key={optionIndex}>
-                    <input className="text-input" value={option} onChange={(event) => updateChoiceOption(index, optionIndex, event.target.value)} />
-                    <button className="secondary-button" type="button" onClick={() => removeChoiceOption(index, optionIndex)}>Remove</button>
-                  </div>
-                ))}
-                <button className="secondary-button" type="button" onClick={() => addChoiceOption(index)}>Add option</button>
-              </div>
-            ) : null}
-            <div className="question-card-footer">
-              <button className="danger-button" type="button" onClick={() => deleteFinalQuestion(index)}>Delete question</button>
-            </div>
-          </div>
-        ))}
-        <div className="button-row">
-          <button className="secondary-button" type="button" onClick={() => addFinalQuestion("choice")}>Add choice question</button>
-          <button className="secondary-button" type="button" onClick={() => addFinalQuestion("text")}>Add text question</button>
-        </div>
-      </section>
+      <QuestionEditor
+        title="Final questions"
+        helpText="Optional. Question keys are generated automatically from the question text for CSV export."
+        questions={finalQuestions}
+        position="final"
+        onUpdate={(index, patch) => updateQuestion("final", index, patch)}
+        onDelete={(index) => deleteQuestion("final", index)}
+        onAddChoice={() => addQuestion("final", "choice")}
+        onAddText={() => addQuestion("final", "text")}
+        onAddOption={(index) => addChoiceOption("final", index)}
+        onUpdateOption={(index, optionIndex, value) => updateChoiceOption("final", index, optionIndex, value)}
+        onRemoveOption={(index, optionIndex) => removeChoiceOption("final", index, optionIndex)}
+      />
 
       <section className="card">
         <h2>Test readiness checks</h2>
