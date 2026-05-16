@@ -1186,3 +1186,19 @@ select:focus {
     width: 100%;
   }
 }
+
+
+/* Tester welcome privacy panel */
+.privacy-card {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.privacy-card h2 {
+  color: #1e3a8a;
+}
+
+.privacy-card li,
+.privacy-card p {
+  color: #1e293b;
+}
