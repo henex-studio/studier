@@ -8,6 +8,7 @@ import TestRunnerPage from "./pages/TestRunnerPage";
 import DashboardPage from "./pages/DashboardPage";
 import GuidePage from "./pages/GuidePage";
 import PreviewRunnerPage from "./pages/PreviewRunnerPage";
+import ConsentPage, { hasLocalConsent, hasProfileConsent } from "./pages/ConsentPage";
 
 function parsePath() {
   const parts = window.location.pathname.split("/").filter(Boolean);
@@ -147,7 +148,15 @@ export default function App() {
   }
 
   if (first === "test" && parts[1]) return <TestRunnerPage slug={parts[1]} />;
-  if (first === "register") return <RegisterPage />;
+
+  if (first === "" || first === "consent") {
+    return <ConsentPage profile={profile} onAccepted={setProfile} />;
+  }
+
+  if (first === "register") {
+    if (!hasLocalConsent()) return <ConsentPage />;
+    return <RegisterPage />;
+  }
 
   const firstAppLoad = !authChecked || (session?.user && !profileChecked && !profile);
 
@@ -162,6 +171,8 @@ export default function App() {
   }
 
   if (!session || !profile) return <LoginPage />;
+  if (!hasProfileConsent(profile)) return <ConsentPage profile={profile} onAccepted={setProfile} />;
+
   if (first === "guide") return <GuidePage profile={profile} />;
   if (first === "preview" && parts[1]) return <PreviewRunnerPage profile={profile} studyId={parts[1]} />;
   if (first === "builder" && parts[1]) return <StudyBuilderPage profile={profile} studyId={parts[1]} />;
