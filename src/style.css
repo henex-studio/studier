@@ -255,3 +255,40 @@ p, ul { line-height: 1.55; color: #334155; }
   border-color: #cbd5e1;
   color: #94a3b8;
 }
+/* ===== Hero section ===== */
+
+.hero {
+  text-align: center;
+  padding: 32px 16px 12px;
+}
+
+.hero-logo {
+  width: 72px;
+  height: 52px;
+  margin: 0 auto 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
+}
+
+.hero-logo-mark {
+  color: white;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+.hero-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.hero-subtitle {
+  font-size: 14px;
+  color: #64748b;
+}
