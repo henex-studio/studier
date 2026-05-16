@@ -38,6 +38,64 @@ function ownerClass(ownerId) {
   return `owner-chip owner-chip-${(total % 5) + 1}`;
 }
 
+function hasTextListValue(values) {
+  return Array.isArray(values) && values.some((value) => String(value || "").trim());
+}
+
+function getPublishIssues(study, treeRecord, tasks, finalQuestions) {
+  const issues = [];
+
+  if (!String(study?.title || "").trim()) {
+    issues.push("Add a test title.");
+  }
+
+  if (!hasTextListValue(study?.welcome_text)) {
+    issues.push("Add a welcome note.");
+  }
+
+  if (!hasTextListValue(study?.privacy_text)) {
+    issues.push("Add a privacy note.");
+  }
+
+  if (!treeRecord?.tree_json?.length) {
+    issues.push("Add a valid IA tree CSV.");
+  }
+
+  if (!tasks.length) {
+    issues.push("Add at least one task.");
+  }
+
+  tasks.forEach((task, index) => {
+    if (!String(task.task_text || "").trim()) {
+      issues.push(`Task ${index + 1} needs task text.`);
+    }
+
+    if (!(task.target_paths || []).length) {
+      issues.push(`Task ${index + 1} needs at least one target path.`);
+    }
+  });
+
+  finalQuestions.forEach((question, index) => {
+    if (!String(question.question_text || "").trim()) {
+      issues.push(`Final question ${index + 1} needs question text.`);
+    }
+
+    if (question.question_type === "choice") {
+      const options = Array.isArray(question.options) ? question.options : [];
+
+      if (options.length < 2) {
+        issues.push(`Choice question ${index + 1} needs at least 2 options.`);
+      }
+
+      if (options.some((option) => !String(option || "").trim())) {
+        issues.push(`Choice question ${index + 1} has an empty option.`);
+      }
+    }
+  });
+
+  return issues;
+}
+
 export default function StudyListPage({ profile }) {
   const [studies, setStudies] = useState([]);
   const [profiles, setProfiles] = useState([]);
@@ -45,6 +103,8 @@ export default function StudyListPage({ profile }) {
   const [message, setMessage] = useState("");
   const [copiedStudyId, setCopiedStudyId] = useState("");
   const [fallbackLink, setFallbackLink] = useState("");
+  const [publishIssuesByStudyId, setPublishIssuesByStudyId] = useState({});
+  const [publishingStudyId, setPublishingStudyId] = useState("");
   const [loading, setLoading] = useState(true);
 
   const ownerById = useMemo(() => {
@@ -145,12 +205,57 @@ export default function StudyListPage({ profile }) {
     navigateTo(`/builder/${data.id}`);
   }
 
+  async function validateBeforePublish(study) {
+    const [{ data: treeRecord }, { data: taskRows }, { data: finalRows }] = await Promise.all([
+      supabase
+        .from("study_trees")
+        .select("tree_json")
+        .eq("study_id", study.id)
+        .maybeSingle(),
+      supabase
+        .from("study_tasks")
+        .select("task_text,target_paths")
+        .eq("study_id", study.id)
+        .order("task_order"),
+      supabase
+        .from("study_final_questions")
+        .select("question_text,question_type,options")
+        .eq("study_id", study.id)
+        .order("question_order")
+    ]);
+
+    return getPublishIssues(study, treeRecord, taskRows || [], finalRows || []);
+  }
+
   async function updateStatus(study, status) {
     setCopiedStudyId("");
     setFallbackLink("");
+    setMessage("");
+
+    if (status === "published") {
+      setPublishingStudyId(study.id);
+      const issues = await validateBeforePublish(study);
+      setPublishingStudyId("");
+
+      if (issues.length > 0) {
+        setPublishIssuesByStudyId((previous) => ({
+          ...previous,
+          [study.id]: issues
+        }));
+        return;
+      }
+    }
+
+    setPublishIssuesByStudyId((previous) => {
+      const next = { ...previous };
+      delete next[study.id];
+      return next;
+    });
+
     const payload = { status, updated_at: new Date().toISOString() };
     if (status === "published") payload.published_at = new Date().toISOString();
     if (status === "closed") payload.closed_at = new Date().toISOString();
+
     const { error } = await supabase.from("studies").update(payload).eq("id", study.id);
     if (error) setMessage(error.message);
     await loadStudies();
@@ -203,6 +308,8 @@ export default function StudyListPage({ profile }) {
           const isAdminView = profile.role === "admin";
           const fullLink = `${window.location.origin}/test/${study.slug}`;
           const isCopied = copiedStudyId === study.id;
+          const publishIssues = publishIssuesByStudyId[study.id] || [];
+          const isPublishing = publishingStudyId === study.id;
 
           return (
             <article className="card study-card" key={study.id}>
@@ -222,10 +329,19 @@ export default function StudyListPage({ profile }) {
               </div>
 
               <div className="button-row stable-action-row">
-                {study.status !== "published" ? <button className="primary-button" onClick={() => updateStatus(study, "published")}>Publish</button> : <button className="secondary-button" onClick={() => updateStatus(study, "closed")}>Close</button>}
+                {study.status !== "published" ? <button className="primary-button" disabled={isPublishing} onClick={() => updateStatus(study, "published")}>{isPublishing ? "Checking..." : "Publish"}</button> : <button className="secondary-button" onClick={() => updateStatus(study, "closed")}>Close</button>}
                 {study.status === "published" ? <button className="secondary-button" type="button" onClick={() => copyTestLink(study)}>Copy link</button> : null}
                 <button className="danger-button" onClick={() => deleteStudy(study)}>Delete</button>
               </div>
+
+              {publishIssues.length ? (
+                <div className="publish-validation-box">
+                  <p className="form-label">This test is not ready to publish.</p>
+                  <ol>
+                    {publishIssues.map((issue) => <li key={issue}>{issue}</li>)}
+                  </ol>
+                </div>
+              ) : null}
 
               {isCopied ? <div className="copy-toast">{fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}</div> : null}
             </article>
