@@ -116,7 +116,7 @@ export default function RegisterPage() {
           <form className="form-stack" onSubmit={register}>
             <label className="form-block">
               <span className="form-label">Display name</span>
-              <input className="text-input" value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="For example, Cafe" autoComplete="name" />
+              <input className="text-input" value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="For example, Trump" autoComplete="name" />
             </label>
 
             <label className="form-block">
