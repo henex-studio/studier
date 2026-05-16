@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { supabase, supabaseReady } from "../lib/supabase";
 import { CONSENT_VERSION, hasLocalConsent } from "./ConsentPage";
+import Hero from "../components/Hero";
 
 function normalizeInviteCode(value) {
   return value.trim().toUpperCase();
@@ -23,19 +24,14 @@ export default function RegisterPage() {
     event.preventDefault();
     setMessage("");
 
-    const cleanDisplayName = displayName.trim();
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanInviteCode = normalizeInviteCode(inviteCode);
-
     if (!hasLocalConsent()) {
       navigateTo("/");
       return;
     }
 
-    if (!supabaseReady) {
-      setMessage("Supabase is not configured.");
-      return;
-    }
+    const cleanDisplayName = displayName.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanInviteCode = normalizeInviteCode(inviteCode);
 
     if (!cleanDisplayName) {
       setMessage("Display name is required.");
@@ -59,11 +55,13 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    const { data: inviteOk, error: inviteError } = await supabase.rpc("validate_invite_code", { p_code: cleanInviteCode });
+    const { data: inviteOk } = await supabase.rpc("validate_invite_code", {
+      p_code: cleanInviteCode
+    });
 
-    if (inviteError || inviteOk !== true) {
+    if (inviteOk !== true) {
       setLoading(false);
-      setMessage(inviteError?.message || "Invite code is not valid or has reached its use limit.");
+      setMessage("Invite code is not valid or has reached its limit.");
       return;
     }
 
@@ -80,19 +78,16 @@ export default function RegisterPage() {
 
     const userId = signUpData?.user?.id;
 
-    if (!userId) {
-      setLoading(false);
-      setMessage("Account could not be created. Please try again.");
-      return;
-    }
-
-    const { error: profileError } = await supabase.rpc("complete_invite_registration", {
-      p_user_id: userId,
-      p_email: cleanEmail,
-      p_display_name: cleanDisplayName,
-      p_code: cleanInviteCode,
-      p_consent_version: CONSENT_VERSION
-    });
+    const { error: profileError } = await supabase.rpc(
+      "complete_invite_registration",
+      {
+        p_user_id: userId,
+        p_email: cleanEmail,
+        p_display_name: cleanDisplayName,
+        p_code: cleanInviteCode,
+        p_consent_version: CONSENT_VERSION
+      }
+    );
 
     if (profileError) {
       setLoading(false);
@@ -109,40 +104,52 @@ export default function RegisterPage() {
     <div className="page-shell">
       <main className="container narrow">
         <section className="card hero-card">
-          <span className="badge">Studier</span>
+
+          <Hero />
+
           <h1>Create account</h1>
-          <p>Register with an invite code. New accounts are created as user accounts.</p>
 
           <form className="form-stack" onSubmit={register}>
-            <label className="form-block">
-              <span className="form-label">Display name</span>
-              <input className="text-input" value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="For example, Trump" autoComplete="name" />
-            </label>
+            <input
+              className="text-input"
+              placeholder="Display name"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+            />
 
-            <label className="form-block">
-              <span className="form-label">Email</span>
-              <input className="text-input" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" />
-            </label>
+            <input
+              className="text-input"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
-            <label className="form-block">
-              <span className="form-label">Password</span>
-              <input className="text-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" />
-              <span className="muted-text">Use at least 6 characters.</span>
-            </label>
+            <input
+              className="text-input"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
 
-            <label className="form-block">
-              <span className="form-label">Invite code</span>
-              <input className="text-input" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} autoComplete="off" />
-            </label>
+            <input
+              className="text-input"
+              placeholder="Invite code"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+            />
 
             {message ? <p className="error-box">{message}</p> : null}
 
-            <button className="primary-button" type="submit" disabled={loading}>
-              {loading ? "Creating account..." : "Create account"}
+            <button className="primary-button" disabled={loading}>
+              {loading ? "Creating..." : "Create account"}
             </button>
           </form>
 
-          <p className="auth-switch-text">Already have an account? <a href="/login">Sign in</a></p>
+          <p className="auth-switch-text">
+            Already have an account? <a href="/login">Sign in</a>
+          </p>
         </section>
       </main>
     </div>
