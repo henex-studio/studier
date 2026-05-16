@@ -216,3 +216,42 @@ p, ul { line-height: 1.55; color: #334155; }
 .auth-switch-text a:hover {
   text-decoration: underline;
 }
+
+/* Platform consent page */
+.consent-card h2 {
+  margin-top: 0;
+}
+
+.consent-section {
+  margin-top: 20px;
+}
+
+.consent-section ol {
+  padding-left: 22px;
+}
+
+.consent-section li {
+  margin-bottom: 8px;
+}
+
+.consent-check-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  padding: 12px;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.consent-check-row input {
+  margin-top: 3px;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+}
