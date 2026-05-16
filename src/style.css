@@ -404,3 +404,68 @@ p, ul { line-height: 1.55; color: #334155; }
     max-width: 100%;
   }
 }
+
+
+/* CSV sample download and readiness checks */
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.section-title-row h2 {
+  margin-bottom: 6px;
+}
+
+.check-panel {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.check-panel h3 {
+  margin: 0;
+}
+
+.check-list {
+  border-radius: 16px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.check-list ol {
+  margin: 8px 0 0;
+  padding-left: 22px;
+}
+
+.check-list li {
+  margin-bottom: 6px;
+  color: #334155;
+}
+
+.check-list-error {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.check-list-warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.check-list-error .form-label {
+  color: #b91c1c;
+}
+
+.check-list-warning .form-label {
+  color: #92400e;
+}
+
+@media (max-width: 639px) {
+  .section-title-row .secondary-button {
+    width: 100%;
+  }
+}
