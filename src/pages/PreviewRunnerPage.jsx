@@ -4,6 +4,13 @@ import { supabase } from "../lib/supabase";
 import { getMatchResult } from "../lib/matching";
 import { CheckCircle2 } from "lucide-react";
 
+function isPastExpiry(value) {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getTime() <= Date.now();
+}
+
 function secondsSince(value) {
   return Math.max(1, Math.round((Date.now() - value) / 1000));
 }
@@ -21,6 +28,7 @@ function QuestionBlock({ question, answers, onChange }) {
                 key={option}
                 className={selected ? "final-choice final-choice-selected" : "final-choice"}
                 onClick={() => onChange(question.question_key, option)}
+                type="button"
               >
                 {selected ? <CheckCircle2 className="choice-icon-selected" /> : <span className="choice-empty" />}
                 <span>{option}</span>
@@ -39,6 +47,52 @@ function QuestionBlock({ question, answers, onChange }) {
   );
 }
 
+function TaskProgressNavigation({ tasks, taskIndex, reviewTaskIndex, setReviewTaskIndex, screen }) {
+  if (!tasks.length || screen !== "test") return null;
+
+  const manyTasks = tasks.length > 10;
+
+  return (
+    <section className="task-progress-card" aria-label="Task progress">
+      <div className="task-progress-heading-row">
+        <span className="form-label">Task progress</span>
+        <span className="muted-text">Task {taskIndex + 1} of {tasks.length}</span>
+      </div>
+      <div className={manyTasks ? "task-progress-track task-progress-track-many" : "task-progress-track"}>
+        {tasks.map((task, index) => {
+          const isCompleted = index < taskIndex;
+          const isCurrent = index === taskIndex;
+          const isReviewing = reviewTaskIndex === index;
+          const isFuture = index > taskIndex;
+          const canOpen = isCompleted || isCurrent;
+          let className = "task-progress-dot";
+          if (isCompleted) className += " task-progress-dot-completed";
+          if (isCurrent) className += " task-progress-dot-current";
+          if (isFuture) className += " task-progress-dot-future";
+          if (isReviewing) className += " task-progress-dot-reviewing";
+
+          return (
+            <button
+              key={task.id || index}
+              className={className}
+              type="button"
+              disabled={!canOpen}
+              onClick={() => {
+                if (isCurrent) setReviewTaskIndex(null);
+                else if (isCompleted) setReviewTaskIndex(index);
+              }}
+              title={isCompleted ? `Review task ${index + 1}` : isCurrent ? `Current task ${index + 1}` : `Task ${index + 1} not started`}
+              aria-label={isCompleted ? `Review task ${index + 1}` : isCurrent ? `Current task ${index + 1}` : `Task ${index + 1} not started`}
+            >
+              {index + 1}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function PreviewRunnerPage({ profile, studyId }) {
   const topRef = useRef(null);
   const nextNoticeTimerRef = useRef(null);
@@ -50,11 +104,11 @@ export default function PreviewRunnerPage({ profile, studyId }) {
   const [finalQuestions, setFinalQuestions] = useState([]);
   const [screen, setScreen] = useState("welcome");
   const [taskIndex, setTaskIndex] = useState(0);
+  const [reviewTaskIndex, setReviewTaskIndex] = useState(null);
   const [answers, setAnswers] = useState({});
   const [preAnswers, setPreAnswers] = useState({});
   const [finalAnswers, setFinalAnswers] = useState({});
   const [showNextNotice, setShowNextNotice] = useState(false);
-  const [reviewTaskIndex, setReviewTaskIndex] = useState(null);
   const [startedAt, setStartedAt] = useState(Date.now());
   const [message, setMessage] = useState("");
 
@@ -71,7 +125,7 @@ export default function PreviewRunnerPage({ profile, studyId }) {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [screen, taskIndex]);
+  }, [screen, taskIndex, reviewTaskIndex]);
 
   useEffect(() => {
     return () => {
@@ -85,52 +139,6 @@ export default function PreviewRunnerPage({ profile, studyId }) {
     nextNoticeTimerRef.current = window.setTimeout(() => {
       setShowNextNotice(false);
     }, 1200);
-  }
-
-  function TaskProgressNavigation() {
-    if (!tasks.length || screen !== "test") return null;
-
-    const manyTasks = tasks.length > 10;
-
-    return (
-      <section className="task-progress-card" aria-label="Task progress">
-        <div className="task-progress-heading-row">
-          <span className="form-label">Task progress</span>
-          <span className="muted-text">Task {taskIndex + 1} of {tasks.length}</span>
-        </div>
-        <div className={manyTasks ? "task-progress-track task-progress-track-many" : "task-progress-track"}>
-          {tasks.map((item, index) => {
-            const isCompleted = index < taskIndex;
-            const isCurrent = index === taskIndex;
-            const isReviewing = reviewTaskIndex === index;
-            const isFuture = index > taskIndex;
-            const canOpen = isCompleted || isCurrent;
-            let className = "task-progress-dot";
-            if (isCompleted) className += " task-progress-dot-completed";
-            if (isCurrent) className += " task-progress-dot-current";
-            if (isFuture) className += " task-progress-dot-future";
-            if (isReviewing) className += " task-progress-dot-reviewing";
-
-            return (
-              <button
-                key={item.id || index}
-                className={className}
-                type="button"
-                disabled={!canOpen}
-                onClick={() => {
-                  if (isCurrent) setReviewTaskIndex(null);
-                  else if (isCompleted) setReviewTaskIndex(index);
-                }}
-                title={isCompleted ? `Review task ${index + 1}` : isCurrent ? `Current task ${index + 1}` : `Task ${index + 1} not started`}
-                aria-label={isCompleted ? `Review task ${index + 1}` : isCurrent ? `Current task ${index + 1}` : `Task ${index + 1} not started`}
-              >
-                {index + 1}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-    );
   }
 
   async function load() {
@@ -154,13 +162,25 @@ export default function PreviewRunnerPage({ profile, studyId }) {
 
     setStudy(studyData);
 
-    const { data: treeRows } = await supabase.from("study_trees").select("tree_json").eq("study_id", studyData.id).maybeSingle();
+    const { data: treeRows } = await supabase
+      .from("study_trees")
+      .select("tree_json")
+      .eq("study_id", studyData.id)
+      .maybeSingle();
     setTree(treeRows?.tree_json || []);
 
-    const { data: taskRows } = await supabase.from("study_tasks").select("*").eq("study_id", studyData.id).order("task_order");
+    const { data: taskRows } = await supabase
+      .from("study_tasks")
+      .select("*")
+      .eq("study_id", studyData.id)
+      .order("task_order");
     setTasks(taskRows || []);
 
-    const { data: questionRows } = await supabase.from("study_final_questions").select("*").eq("study_id", studyData.id).order("question_order");
+    const { data: questionRows } = await supabase
+      .from("study_final_questions")
+      .select("*")
+      .eq("study_id", studyData.id)
+      .order("question_order");
     const questions = questionRows || [];
     setPreQuestions(questions.filter((question) => question.question_position === "pre"));
     setFinalQuestions(questions.filter((question) => question.question_position !== "pre"));
@@ -179,6 +199,7 @@ export default function PreviewRunnerPage({ profile, studyId }) {
   }
 
   function selectPath(path) {
+    if (isReviewingSubmittedTask) return;
     const click = { path, time_from_task_start_seconds: secondsSince(startedAt) };
     const previous = currentAnswer || { click_history: [] };
     setCurrentAnswer({
@@ -203,18 +224,18 @@ export default function PreviewRunnerPage({ profile, studyId }) {
   }
 
   function back() {
+    setReviewTaskIndex(null);
     if (taskIndex > 0) {
-      setReviewTaskIndex(null);
       setTaskIndex(taskIndex - 1);
       setStartedAt(Date.now());
       return;
     }
-    setReviewTaskIndex(null);
     setScreen(preQuestions.length ? "pre" : "welcome");
     setStartedAt(Date.now());
   }
 
   function backFromPre() {
+    setReviewTaskIndex(null);
     setScreen("welcome");
     setStartedAt(Date.now());
   }
@@ -244,6 +265,7 @@ export default function PreviewRunnerPage({ profile, studyId }) {
   }
 
   function PreviewBanner() {
+    if (!study) return null;
     return (
       <section className="preview-banner">
         <div className="preview-banner-text">
@@ -306,8 +328,8 @@ export default function PreviewRunnerPage({ profile, studyId }) {
       <div ref={topRef} className="page-shell">
         <main className="container narrow">
           <PreviewBanner />
+          {showNextNotice ? <div className="next-toast">Next question loaded</div> : null}
           <section className="card">
-            {showNextNotice ? <div className="next-toast">Next question loaded</div> : null}
             <h1>Final questions</h1>
             {finalQuestions.map((question) => <QuestionBlock key={question.id || question.question_key} question={question} answers={finalAnswers} onChange={(key, value) => setFinalAnswers({ ...finalAnswers, [key]: value })} />)}
             {message ? <p className="error-box">{message}</p> : null}
@@ -327,7 +349,7 @@ export default function PreviewRunnerPage({ profile, studyId }) {
       <main className="container">
         <PreviewBanner />
         {showNextNotice ? <div className="next-toast">Next question loaded</div> : null}
-        <TaskProgressNavigation />
+        <TaskProgressNavigation tasks={tasks} taskIndex={taskIndex} reviewTaskIndex={reviewTaskIndex} setReviewTaskIndex={setReviewTaskIndex} screen={screen} />
         <section className="task-card">
           <span className="badge">Task {displayedTaskIndex + 1} of {tasks.length}</span>
           <h1>Choose where you would go</h1>
@@ -352,6 +374,5 @@ export default function PreviewRunnerPage({ profile, studyId }) {
         </section>
       </main>
     </div>
-  );
   );
 }
