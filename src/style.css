@@ -1357,3 +1357,45 @@ select:focus {
     transform: translateY(0);
   }
 }
+
+
+/* Selected icon cleanup for tree and choice answers */
+.tree-icon-empty,
+.choice-empty {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+}
+
+.tree-icon-selected,
+.choice-icon-selected {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  padding: 0;
+}
+
+.choice-icon-selected {
+  stroke-width: 2.4;
+}
+
+.tree-icon-selected {
+  stroke-width: 3;
+}
+
+.final-choice .choice-icon-selected {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.final-choice-selected .choice-icon-selected,
+.tree-button-selected .tree-icon-selected {
+  color: #2563eb;
+}
