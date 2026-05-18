@@ -29,6 +29,22 @@ function collectExpandablePaths(nodes, parentPath = "") {
   return paths;
 }
 
+
+function getAncestorPaths(path) {
+  const parts = String(path || "")
+    .split(" > ")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length <= 1) return [];
+
+  return parts.slice(0, -1).map((_, index) => parts.slice(0, index + 1).join(" > "));
+}
+
+function mergeUniqueValues(values) {
+  return Array.from(new Set(values));
+}
+
 function shouldCollapseByDefault() {
   if (typeof window === "undefined") return false;
 
@@ -36,7 +52,7 @@ function shouldCollapseByDefault() {
   return pathname.startsWith("/test/") || pathname.startsWith("/preview/");
 }
 
-export default function TreeView({ tree = [], selectedPath = "", onSelect, defaultExpanded }) {
+export default function TreeView({ tree = [], selectedPath = "", onSelect, defaultExpanded, expandToPath = "" }) {
   const startExpanded = defaultExpanded ?? !shouldCollapseByDefault();
   const shouldResetWhenSelectionClears = !startExpanded;
 
@@ -55,6 +71,16 @@ export default function TreeView({ tree = [], selectedPath = "", onSelect, defau
       setExpandedPaths([]);
     }
   }, [selectedPath, shouldResetWhenSelectionClears]);
+
+
+  useEffect(() => {
+    if (!expandToPath) return;
+
+    const ancestorPaths = getAncestorPaths(expandToPath);
+    if (ancestorPaths.length === 0) return;
+
+    setExpandedPaths((current) => mergeUniqueValues([...current, ...ancestorPaths]));
+  }, [expandToPath]);
 
   function togglePath(path) {
     setExpandedPaths((current) => {
