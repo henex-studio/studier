@@ -426,7 +426,7 @@ export default function TestRunnerPage({ slug }) {
         {showNextNotice ? <div className="next-toast">Next question loaded</div> : null}
         <TaskProgressNavigation tasks={tasks} taskIndex={taskIndex} reviewTaskIndex={reviewTaskIndex} setReviewTaskIndex={setReviewTaskIndex} screen={screen} />
         <section className="task-card">
-          <span className="badge">Task {displayedTaskIndex + 1} of {tasks.length}</span>
+          <span className="badge">Task {displayedTaskIndex + 1}</span>
           <h1>Choose where you would go</h1>
           <p>{displayedTask.task_text}</p>
         </section>
