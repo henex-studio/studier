@@ -1399,3 +1399,51 @@ select:focus {
 .tree-button-selected .tree-icon-selected {
   color: #2563eb;
 }
+
+
+
+/* Task header order and progress emphasis */
+.task-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.task-card h1 {
+  order: 1;
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.2;
+}
+
+.task-card .badge {
+  order: 2;
+  display: inline-flex;
+  align-self: center;
+  font-size: 18px;
+  font-weight: 900;
+  padding: 9px 18px;
+  margin: 0 0 16px;
+  border-radius: 999px;
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.task-card p {
+  order: 3;
+  width: 100%;
+  margin-top: 0;
+  font-size: 16px;
+}
+
+@media (max-width: 639px) {
+  .task-card h1 {
+    font-size: 26px;
+  }
+
+  .task-card .badge {
+    font-size: 16px;
+    padding: 8px 15px;
+  }
+}
