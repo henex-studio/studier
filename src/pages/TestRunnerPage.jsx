@@ -65,6 +65,7 @@ export default function TestRunnerPage({ slug }) {
   const [preAnswers, setPreAnswers] = useState({});
   const [finalAnswers, setFinalAnswers] = useState({});
   const [showNextNotice, setShowNextNotice] = useState(false);
+  const [reviewTaskIndex, setReviewTaskIndex] = useState(null);
   const [startedAt, setStartedAt] = useState(Date.now());
   const [message, setMessage] = useState("");
 
@@ -73,6 +74,12 @@ export default function TestRunnerPage({ slug }) {
   const currentAnswer = task
     ? answers[task.id] || { selected_path: "", skipped: false, first_click_path: "", click_history: [] }
     : null;
+  const displayedTaskIndex = reviewTaskIndex === null ? taskIndex : reviewTaskIndex;
+  const displayedTask = tasks[displayedTaskIndex];
+  const displayedAnswer = displayedTask
+    ? answers[displayedTask.id] || { selected_path: "", skipped: false, first_click_path: "", click_history: [] }
+    : null;
+  const isReviewingSubmittedTask = reviewTaskIndex !== null && reviewTaskIndex !== taskIndex;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -90,6 +97,52 @@ export default function TestRunnerPage({ slug }) {
     nextNoticeTimerRef.current = window.setTimeout(() => {
       setShowNextNotice(false);
     }, 1500);
+  }
+
+  function TaskProgressNavigation() {
+    if (!tasks.length || screen !== "test") return null;
+
+    const manyTasks = tasks.length > 10;
+
+    return (
+      <section className="task-progress-card" aria-label="Task progress">
+        <div className="task-progress-heading-row">
+          <span className="form-label">Task progress</span>
+          <span className="muted-text">Task {taskIndex + 1} of {tasks.length}</span>
+        </div>
+        <div className={manyTasks ? "task-progress-track task-progress-track-many" : "task-progress-track"}>
+          {tasks.map((item, index) => {
+            const isCompleted = index < taskIndex;
+            const isCurrent = index === taskIndex;
+            const isReviewing = reviewTaskIndex === index;
+            const isFuture = index > taskIndex;
+            const canOpen = isCompleted || isCurrent;
+            let className = "task-progress-dot";
+            if (isCompleted) className += " task-progress-dot-completed";
+            if (isCurrent) className += " task-progress-dot-current";
+            if (isFuture) className += " task-progress-dot-future";
+            if (isReviewing) className += " task-progress-dot-reviewing";
+
+            return (
+              <button
+                key={item.id || index}
+                className={className}
+                type="button"
+                disabled={!canOpen}
+                onClick={() => {
+                  if (isCurrent) setReviewTaskIndex(null);
+                  else if (isCompleted) setReviewTaskIndex(index);
+                }}
+                title={isCompleted ? `Review task ${index + 1}` : isCurrent ? `Current task ${index + 1}` : `Task ${index + 1} not started`}
+                aria-label={isCompleted ? `Review task ${index + 1}` : isCurrent ? `Current task ${index + 1}` : `Task ${index + 1} not started`}
+              >
+                {index + 1}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
   }
 
   async function load() {
@@ -213,6 +266,8 @@ export default function TestRunnerPage({ slug }) {
 
   async function next(skipped = false) {
     await saveCurrentAnswer(skipped);
+    if (skipped) setCurrentAnswer({ skipped: true, selected_path: "" });
+    setReviewTaskIndex(null);
     if (taskIndex < tasks.length - 1) {
       setTaskIndex(taskIndex + 1);
       setStartedAt(Date.now());
@@ -225,10 +280,12 @@ export default function TestRunnerPage({ slug }) {
 
   function back() {
     if (taskIndex > 0) {
+      setReviewTaskIndex(null);
       setTaskIndex(taskIndex - 1);
       setStartedAt(Date.now());
       return;
     }
+    setReviewTaskIndex(null);
     setScreen(preQuestions.length ? "pre" : "welcome");
     setStartedAt(Date.now());
   }
@@ -239,17 +296,20 @@ export default function TestRunnerPage({ slug }) {
   }
 
   function backFromFinal() {
+    setReviewTaskIndex(null);
     setScreen("test");
     setStartedAt(Date.now());
   }
 
   function startTest() {
+    setReviewTaskIndex(null);
     setTaskIndex(0);
     setStartedAt(Date.now());
     setScreen(preQuestions.length ? "pre" : "test");
   }
 
   function continueFromPre() {
+    setReviewTaskIndex(null);
     setTaskIndex(0);
     setStartedAt(Date.now());
     setScreen("test");
@@ -365,19 +425,31 @@ export default function TestRunnerPage({ slug }) {
     <div ref={topRef} className="page-shell">
       <main className="container">
         {showNextNotice ? <div className="next-toast">Next question loaded</div> : null}
+        <TaskProgressNavigation />
         <section className="task-card">
-          <span className="badge">Task {taskIndex + 1} of {tasks.length}</span>
+          <span className="badge">Task {displayedTaskIndex + 1} of {tasks.length}</span>
           <h1>Choose where you would go</h1>
-          <p>{task.task_text}</p>
+          <p>{displayedTask.task_text}</p>
         </section>
-        <section className="card"><h2>Menu</h2><TreeView tree={tree} selectedPath={currentAnswer.selected_path || ""} onSelect={selectPath} /></section>
+        {isReviewingSubmittedTask ? (
+          <section className="locked-answer-notice">
+            <h2>Submitted answer locked</h2>
+            <p>This answer has already been submitted. To keep the test focused on your first instinct, submitted answers cannot be changed.</p>
+          </section>
+        ) : null}
+        <section className="card"><h2>Menu</h2><TreeView tree={tree} selectedPath={displayedAnswer.selected_path || ""} onSelect={isReviewingSubmittedTask ? undefined : selectPath} /></section>
         <section className="card selected-card">
-          <h2>Your selected place</h2>
-          <div className="selected-path">{currentAnswer.skipped ? "Skipped" : currentAnswer.selected_path || "No selection yet"}</div>
+          <h2>{isReviewingSubmittedTask ? "Submitted answer" : "Your selected place"}</h2>
+          <div className="selected-path">{displayedAnswer.skipped ? "Skipped" : displayedAnswer.selected_path || "No selection yet"}</div>
           {message ? <p className="error-box">{message}</p> : null}
-          <div className="action-grid three"><button className="secondary-button" onClick={back}>Back</button><button className="primary-button" disabled={!currentAnswer.selected_path} onClick={() => next(false)}>Next</button><button className="secondary-button" onClick={() => next(true)}>Skip this task</button></div>
+          {isReviewingSubmittedTask ? (
+            <div className="button-row"><button className="primary-button" onClick={() => setReviewTaskIndex(null)}>Back to current task</button></div>
+          ) : (
+            <div className="action-grid three"><button className="secondary-button" onClick={back}>Back</button><button className="primary-button" disabled={!currentAnswer.selected_path} onClick={() => next(false)}>Next</button><button className="secondary-button" onClick={() => next(true)}>Skip this task</button></div>
+          )}
         </section>
       </main>
     </div>
+  );
   );
 }
