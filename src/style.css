@@ -1254,3 +1254,76 @@ select:focus {
 .sticky-actions .muted-text {
   color: #475569;
 }
+
+
+
+/* Tree view fixes for tester flow */
+.tree-wrap {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.tree-button {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.tree-label-wrap {
+  min-width: 0;
+  max-width: calc(100% - 58px);
+}
+
+.tree-label {
+  overflow-wrap: anywhere;
+}
+
+.tree-toggle {
+  flex-shrink: 0;
+}
+
+.tree-icon-empty,
+.tree-icon-selected {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tree-icon-empty {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+}
+
+.tree-icon-selected {
+  border: 1px solid #2563eb;
+  background: #ffffff;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.final-choice .choice-empty,
+.final-choice .choice-icon-selected {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 999px;
+}
+
+.final-choice .choice-empty {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+}
+
+.final-choice .choice-icon-selected {
+  border: 1px solid #2563eb;
+  background: #ffffff;
+  color: #2563eb;
+  padding: 1px;
+}
