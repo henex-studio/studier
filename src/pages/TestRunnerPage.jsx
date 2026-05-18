@@ -11,7 +11,7 @@ function secondsSince(value) {
 
 function QuestionBlock({ question, answers, onChange }) {
   return (
-    <div className="question-card" key={question.id}>
+    <div className="question-card" key={question.id || question.question_key}>
       <p className="form-label">{question.question_text}</p>
       {question.question_type === "choice" ? (
         <div className="choice-grid">
@@ -42,6 +42,7 @@ function QuestionBlock({ question, answers, onChange }) {
 
 export default function TestRunnerPage({ slug }) {
   const topRef = useRef(null);
+  const nextNoticeTimerRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [study, setStudy] = useState(null);
   const [tree, setTree] = useState([]);
@@ -53,6 +54,7 @@ export default function TestRunnerPage({ slug }) {
   const [answers, setAnswers] = useState({});
   const [preAnswers, setPreAnswers] = useState({});
   const [finalAnswers, setFinalAnswers] = useState({});
+  const [showNextNotice, setShowNextNotice] = useState(false);
   const [startedAt, setStartedAt] = useState(Date.now());
   const [message, setMessage] = useState("");
 
@@ -65,6 +67,20 @@ export default function TestRunnerPage({ slug }) {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [screen, taskIndex]);
+
+  useEffect(() => {
+    return () => {
+      if (nextNoticeTimerRef.current) window.clearTimeout(nextNoticeTimerRef.current);
+    };
+  }, []);
+
+  function showNextQuestionNotice() {
+    setShowNextNotice(true);
+    if (nextNoticeTimerRef.current) window.clearTimeout(nextNoticeTimerRef.current);
+    nextNoticeTimerRef.current = window.setTimeout(() => {
+      setShowNextNotice(false);
+    }, 1200);
+  }
 
   async function load() {
     const { data: studyData, error } = await supabase
@@ -101,7 +117,6 @@ export default function TestRunnerPage({ slug }) {
       .select("*")
       .eq("study_id", studyData.id)
       .order("question_order");
-
     const questions = questionRows || [];
     setPreQuestions(questions.filter((question) => question.question_position === "pre"));
     setFinalQuestions(questions.filter((question) => question.question_position !== "pre"));
@@ -175,8 +190,10 @@ export default function TestRunnerPage({ slug }) {
     if (taskIndex < tasks.length - 1) {
       setTaskIndex(taskIndex + 1);
       setStartedAt(Date.now());
+      showNextQuestionNotice();
     } else {
       setScreen("final");
+      showNextQuestionNotice();
     }
   }
 
@@ -233,32 +250,17 @@ export default function TestRunnerPage({ slug }) {
     await supabase
       .from("participant_sessions")
       .upsert(
-        {
-          study_id: study.id,
-          participant_id: participantId,
-          completed_at: new Date().toISOString()
-        },
+        { study_id: study.id, participant_id: participantId, completed_at: new Date().toISOString() },
         { onConflict: "study_id,participant_id" }
       );
 
     setScreen("done");
   }
 
-  if (loading) {
-    return <div className="page-shell"><main className="container narrow"><section className="card">Loading...</section></main></div>;
-  }
+  if (loading) return <div className="page-shell"><main className="container narrow"><section className="card">Loading...</section></main></div>;
 
   if (!study) {
-    return (
-      <div className="page-shell">
-        <main className="container narrow">
-          <section className="card">
-            <h1>Test unavailable</h1>
-            <p>{message}</p>
-          </section>
-        </main>
-      </div>
-    );
+    return <div className="page-shell"><main className="container narrow"><section className="card"><h1>Test unavailable</h1><p>{message}</p></section></main></div>;
   }
 
   if (screen === "welcome") {
@@ -270,16 +272,8 @@ export default function TestRunnerPage({ slug }) {
             <span className="badge">Tree test</span>
             <h1>{study.title}</h1>
             {(study.welcome_text || []).map((text, index) => <p key={index}>{text}</p>)}
-            {whatTheTestIs.length ? (
-              <div className="intro-card">
-                <h2>What the test is</h2>
-                {whatTheTestIs.map((text, index) => <p key={index}>{text}</p>)}
-              </div>
-            ) : null}
-            <div className="privacy-card">
-              <h2>Privacy</h2>
-              <ul>{(study.privacy_text || []).map((text, index) => <li key={index}>{text}</li>)}</ul>
-            </div>
+            {whatTheTestIs.length ? <div className="intro-card"><h2>What the test is</h2>{whatTheTestIs.map((text, index) => <p key={index}>{text}</p>)}</div> : null}
+            <div className="privacy-card"><h2>Privacy</h2><ul>{(study.privacy_text || []).map((text, index) => <li key={index}>{text}</li>)}</ul></div>
             <button className="primary-button start-button" onClick={startTest}>Start test</button>
           </section>
         </main>
@@ -295,18 +289,8 @@ export default function TestRunnerPage({ slug }) {
             <span className="badge">Before you start</span>
             <h1>Before you start</h1>
             <p className="muted-text">Please answer these optional questions before the tasks.</p>
-            {preQuestions.map((question) => (
-              <QuestionBlock
-                key={question.id || question.question_key}
-                question={question}
-                answers={preAnswers}
-                onChange={(key, value) => setPreAnswers({ ...preAnswers, [key]: value })}
-              />
-            ))}
-            <div className="button-row">
-              <button className="secondary-button" onClick={backFromPre}>Back</button>
-              <button className="primary-button" onClick={continueFromPre}>Continue</button>
-            </div>
+            {preQuestions.map((question) => <QuestionBlock key={question.id || question.question_key} question={question} answers={preAnswers} onChange={(key, value) => setPreAnswers({ ...preAnswers, [key]: value })} />)}
+            <div className="button-row"><button className="secondary-button" onClick={backFromPre}>Back</button><button className="primary-button" onClick={continueFromPre}>Continue</button></div>
           </section>
         </main>
       </div>
@@ -318,20 +302,11 @@ export default function TestRunnerPage({ slug }) {
       <div ref={topRef} className="page-shell">
         <main className="container narrow">
           <section className="card">
+            {showNextNotice ? <div className="next-toast">Next question loaded</div> : null}
             <h1>Final questions</h1>
-            {finalQuestions.map((question) => (
-              <QuestionBlock
-                key={question.id || question.question_key}
-                question={question}
-                answers={finalAnswers}
-                onChange={(key, value) => setFinalAnswers({ ...finalAnswers, [key]: value })}
-              />
-            ))}
+            {finalQuestions.map((question) => <QuestionBlock key={question.id || question.question_key} question={question} answers={finalAnswers} onChange={(key, value) => setFinalAnswers({ ...finalAnswers, [key]: value })} />)}
             {message ? <p className="error-box">{message}</p> : null}
-            <div className="button-row">
-              <button className="secondary-button" onClick={backFromFinal}>Back</button>
-              <button className="primary-button" onClick={submitFinal}>Submit</button>
-            </div>
+            <div className="button-row"><button className="secondary-button" onClick={backFromFinal}>Back</button><button className="primary-button" onClick={submitFinal}>Submit</button></div>
           </section>
         </main>
       </div>
@@ -339,40 +314,24 @@ export default function TestRunnerPage({ slug }) {
   }
 
   if (screen === "done") {
-    return (
-      <div ref={topRef} className="page-shell">
-        <main className="container narrow">
-          <section className="card done-card">
-            <CheckCircle2 className="done-icon" />
-            <h1>Thank you</h1>
-            {(study.end_text || []).map((text, index) => <p key={index}>{text}</p>)}
-          </section>
-        </main>
-      </div>
-    );
+    return <div ref={topRef} className="page-shell"><main className="container narrow"><section className="card done-card"><CheckCircle2 className="done-icon" /><h1>Thank you</h1>{(study.end_text || []).map((text, index) => <p key={index}>{text}</p>)}</section></main></div>;
   }
 
   return (
     <div ref={topRef} className="page-shell">
       <main className="container">
+        {showNextNotice ? <div className="next-toast">Next question loaded</div> : null}
         <section className="task-card">
           <span className="badge">Task {taskIndex + 1} of {tasks.length}</span>
           <h1>Choose where you would go</h1>
           <p>{task.task_text}</p>
         </section>
-        <section className="card">
-          <h2>Menu</h2>
-          <TreeView tree={tree} selectedPath={currentAnswer.selected_path || ""} onSelect={selectPath} />
-        </section>
+        <section className="card"><h2>Menu</h2><TreeView tree={tree} selectedPath={currentAnswer.selected_path || ""} onSelect={selectPath} /></section>
         <section className="card selected-card">
           <h2>Your selected place</h2>
           <div className="selected-path">{currentAnswer.skipped ? "Skipped" : currentAnswer.selected_path || "No selection yet"}</div>
           {message ? <p className="error-box">{message}</p> : null}
-          <div className="action-grid three">
-            <button className="secondary-button" onClick={back}>Back</button>
-            <button className="primary-button" disabled={!currentAnswer.selected_path} onClick={() => next(false)}>Next</button>
-            <button className="secondary-button" onClick={() => next(true)}>Skip this task</button>
-          </div>
+          <div className="action-grid three"><button className="secondary-button" onClick={back}>Back</button><button className="primary-button" disabled={!currentAnswer.selected_path} onClick={() => next(false)}>Next</button><button className="secondary-button" onClick={() => next(true)}>Skip this task</button></div>
         </section>
       </main>
     </div>

@@ -10,7 +10,7 @@ function secondsSince(value) {
 
 function QuestionBlock({ question, answers, onChange }) {
   return (
-    <div className="question-card" key={question.id}>
+    <div className="question-card" key={question.id || question.question_key}>
       <p className="form-label">{question.question_text}</p>
       {question.question_type === "choice" ? (
         <div className="choice-grid">
@@ -41,6 +41,7 @@ function QuestionBlock({ question, answers, onChange }) {
 
 export default function PreviewRunnerPage({ profile, studyId }) {
   const topRef = useRef(null);
+  const nextNoticeTimerRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [study, setStudy] = useState(null);
   const [tree, setTree] = useState([]);
@@ -52,6 +53,7 @@ export default function PreviewRunnerPage({ profile, studyId }) {
   const [answers, setAnswers] = useState({});
   const [preAnswers, setPreAnswers] = useState({});
   const [finalAnswers, setFinalAnswers] = useState({});
+  const [showNextNotice, setShowNextNotice] = useState(false);
   const [startedAt, setStartedAt] = useState(Date.now());
   const [message, setMessage] = useState("");
 
@@ -60,14 +62,23 @@ export default function PreviewRunnerPage({ profile, studyId }) {
     ? answers[task.id] || { selected_path: "", skipped: false, first_click_path: "", click_history: [] }
     : null;
 
-  const currentMatch = useMemo(() => {
-    if (!task || !currentAnswer) return null;
-    return getMatchResult(task, currentAnswer.skipped ? "" : currentAnswer.selected_path, currentAnswer.skipped, study?.data_collection_settings || {});
-  }, [task, currentAnswer, study]);
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [screen, taskIndex]);
+
+  useEffect(() => {
+    return () => {
+      if (nextNoticeTimerRef.current) window.clearTimeout(nextNoticeTimerRef.current);
+    };
+  }, []);
+
+  function showNextQuestionNotice() {
+    setShowNextNotice(true);
+    if (nextNoticeTimerRef.current) window.clearTimeout(nextNoticeTimerRef.current);
+    nextNoticeTimerRef.current = window.setTimeout(() => {
+      setShowNextNotice(false);
+    }, 1200);
+  }
 
   async function load() {
     const { data: studyData, error } = await supabase
@@ -130,8 +141,10 @@ export default function PreviewRunnerPage({ profile, studyId }) {
     if (taskIndex < tasks.length - 1) {
       setTaskIndex(taskIndex + 1);
       setStartedAt(Date.now());
+      showNextQuestionNotice();
     } else {
       setScreen("final");
+      showNextQuestionNotice();
     }
   }
 
@@ -155,7 +168,7 @@ export default function PreviewRunnerPage({ profile, studyId }) {
     setStartedAt(Date.now());
   }
 
-  function startPreview() {
+  function startTest() {
     setTaskIndex(0);
     setStartedAt(Date.now());
     setScreen(preQuestions.length ? "pre" : "test");
@@ -172,30 +185,14 @@ export default function PreviewRunnerPage({ profile, studyId }) {
   }
 
   function PreviewBanner() {
-    return (
-      <section className="preview-banner">
-        <strong>Preview mode</strong>
-        <span>Responses are not saved.</span>
-      </section>
-    );
+    return <section className="preview-banner"><strong>Preview mode</strong><span>Responses are not saved.</span></section>;
   }
 
-  if (loading) {
-    return <div className="page-shell"><main className="container narrow"><section className="card">Loading preview...</section></main></div>;
-  }
+
+  if (loading) return <div className="page-shell"><main className="container narrow"><section className="card">Loading...</section></main></div>;
 
   if (!study) {
-    return (
-      <div className="page-shell">
-        <main className="container narrow">
-          <section className="card">
-            <h1>Preview unavailable</h1>
-            <p>{message}</p>
-            <a className="primary-button" href="/admin">Back to test collection</a>
-          </section>
-        </main>
-      </div>
-    );
+    return <div className="page-shell"><main className="container narrow"><section className="card"><h1>Preview unavailable</h1><p>{message}</p><a className="primary-button" href="/admin">Back to test collection</a></section></main></div>;
   }
 
   if (screen === "welcome") {
@@ -208,20 +205,9 @@ export default function PreviewRunnerPage({ profile, studyId }) {
             <span className="badge">Tree test</span>
             <h1>{study.title}</h1>
             {(study.welcome_text || []).map((text, index) => <p key={index}>{text}</p>)}
-            {whatTheTestIs.length ? (
-              <div className="intro-card">
-                <h2>What the test is</h2>
-                {whatTheTestIs.map((text, index) => <p key={index}>{text}</p>)}
-              </div>
-            ) : null}
-            <div className="privacy-card">
-              <h2>Privacy</h2>
-              <ul>{(study.privacy_text || []).map((text, index) => <li key={index}>{text}</li>)}</ul>
-            </div>
-            <div className="button-row">
-              <button className="primary-button start-button" onClick={startPreview}>Start preview</button>
-              <a className="secondary-button" href={`/builder/${study.id}`}>Back to editor</a>
-            </div>
+            {whatTheTestIs.length ? <div className="intro-card"><h2>What the test is</h2>{whatTheTestIs.map((text, index) => <p key={index}>{text}</p>)}</div> : null}
+            <div className="privacy-card"><h2>Privacy</h2><ul>{(study.privacy_text || []).map((text, index) => <li key={index}>{text}</li>)}</ul></div>
+            <button className="primary-button start-button" onClick={startTest}>Start preview</button>
           </section>
         </main>
       </div>
@@ -237,18 +223,8 @@ export default function PreviewRunnerPage({ profile, studyId }) {
             <span className="badge">Before you start</span>
             <h1>Before you start</h1>
             <p className="muted-text">Please answer these optional questions before the tasks.</p>
-            {preQuestions.map((question) => (
-              <QuestionBlock
-                key={question.id || question.question_key}
-                question={question}
-                answers={preAnswers}
-                onChange={(key, value) => setPreAnswers({ ...preAnswers, [key]: value })}
-              />
-            ))}
-            <div className="button-row">
-              <button className="secondary-button" onClick={backFromPre}>Back</button>
-              <button className="primary-button" onClick={continueFromPre}>Continue</button>
-            </div>
+            {preQuestions.map((question) => <QuestionBlock key={question.id || question.question_key} question={question} answers={preAnswers} onChange={(key, value) => setPreAnswers({ ...preAnswers, [key]: value })} />)}
+            <div className="button-row"><button className="secondary-button" onClick={backFromPre}>Back</button><button className="primary-button" onClick={continueFromPre}>Continue</button></div>
           </section>
         </main>
       </div>
@@ -261,19 +237,11 @@ export default function PreviewRunnerPage({ profile, studyId }) {
         <main className="container narrow">
           <PreviewBanner />
           <section className="card">
+            {showNextNotice ? <div className="next-toast">Next question loaded</div> : null}
             <h1>Final questions</h1>
-            {finalQuestions.map((question) => (
-              <QuestionBlock
-                key={question.id || question.question_key}
-                question={question}
-                answers={finalAnswers}
-                onChange={(key, value) => setFinalAnswers({ ...finalAnswers, [key]: value })}
-              />
-            ))}
-            <div className="button-row">
-              <button className="secondary-button" onClick={backFromFinal}>Back</button>
-              <button className="primary-button" onClick={finishPreview}>Finish preview</button>
-            </div>
+            {finalQuestions.map((question) => <QuestionBlock key={question.id || question.question_key} question={question} answers={finalAnswers} onChange={(key, value) => setFinalAnswers({ ...finalAnswers, [key]: value })} />)}
+            {message ? <p className="error-box">{message}</p> : null}
+            <div className="button-row"><button className="secondary-button" onClick={backFromFinal}>Back</button><button className="primary-button" onClick={finishPreview}>Finish preview</button></div>
           </section>
         </main>
       </div>
@@ -281,46 +249,25 @@ export default function PreviewRunnerPage({ profile, studyId }) {
   }
 
   if (screen === "done") {
-    return (
-      <div ref={topRef} className="page-shell">
-        <main className="container narrow">
-          <PreviewBanner />
-          <section className="card done-card">
-            <CheckCircle2 className="done-icon" />
-            <h1>Preview complete</h1>
-            <p>Responses were not saved.</p>
-            <div className="button-row action-center">
-              <a className="primary-button" href={`/builder/${study.id}`}>Back to editor</a>
-              <a className="secondary-button" href="/admin">Back to test collection</a>
-            </div>
-          </section>
-        </main>
-      </div>
-    );
+    return <div ref={topRef} className="page-shell"><main className="container narrow"><PreviewBanner /><section className="card done-card"><CheckCircle2 className="done-icon" /><h1>Preview complete</h1><p>Responses were not saved.</p><div className="button-row action-center"><a className="primary-button" href={`/builder/${study.id}`}>Back to editor</a><a className="secondary-button" href="/admin">Back to test collection</a></div></section></main></div>;
   }
 
   return (
     <div ref={topRef} className="page-shell">
       <main className="container">
         <PreviewBanner />
+        {showNextNotice ? <div className="next-toast">Next question loaded</div> : null}
         <section className="task-card">
           <span className="badge">Task {taskIndex + 1} of {tasks.length}</span>
           <h1>Choose where you would go</h1>
           <p>{task.task_text}</p>
         </section>
-        <section className="card">
-          <h2>Menu</h2>
-          <TreeView tree={tree} selectedPath={currentAnswer.selected_path || ""} onSelect={selectPath} />
-        </section>
+        <section className="card"><h2>Menu</h2><TreeView tree={tree} selectedPath={currentAnswer.selected_path || ""} onSelect={selectPath} /></section>
         <section className="card selected-card">
           <h2>Your selected place</h2>
           <div className="selected-path">{currentAnswer.skipped ? "Skipped" : currentAnswer.selected_path || "No selection yet"}</div>
-          {currentMatch ? <p className="muted-text">Preview match: {currentMatch.match_type}</p> : null}
-          <div className="action-grid three">
-            <button className="secondary-button" onClick={back}>Back</button>
-            <button className="primary-button" disabled={!currentAnswer.selected_path} onClick={() => next(false)}>Next</button>
-            <button className="secondary-button" onClick={() => next(true)}>Skip this task</button>
-          </div>
+          {message ? <p className="error-box">{message}</p> : null}
+          <div className="action-grid three"><button className="secondary-button" onClick={back}>Back</button><button className="primary-button" disabled={!currentAnswer.selected_path} onClick={() => next(false)}>Next</button><button className="secondary-button" onClick={() => next(true)}>Skip this task</button></div>
         </section>
       </main>
     </div>
