@@ -1284,3 +1284,48 @@ select:focus {
     padding: 8px 15px;
   }
 }
+
+/* Expiry and preview controls */
+.expiry-card {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+
+.study-expiry-text {
+  margin: 0 0 12px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.preview-banner {
+  justify-content: space-between;
+}
+
+.preview-banner-text {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.preview-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.preview-banner-actions .secondary-button {
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+@media (max-width: 639px) {
+  .preview-banner-actions,
+  .preview-banner-actions .secondary-button {
+    width: 100%;
+  }
+}
+
