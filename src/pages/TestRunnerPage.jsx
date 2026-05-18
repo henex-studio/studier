@@ -79,7 +79,7 @@ export default function TestRunnerPage({ slug }) {
     if (nextNoticeTimerRef.current) window.clearTimeout(nextNoticeTimerRef.current);
     nextNoticeTimerRef.current = window.setTimeout(() => {
       setShowNextNotice(false);
-    }, 1200);
+    }, 1500);
   }
 
   async function load() {
