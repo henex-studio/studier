@@ -26,7 +26,7 @@ export default function AppHeader({ profile }) {
   return (
     <header className="app-header">
       <div className="app-header-inner">
-        <div style={{ display: "inline-flex", alignItems: "baseline", gap: "8px" }}>
+        <div className="app-brand">
           <button
             className="app-wordmark"
             type="button"
@@ -36,20 +36,11 @@ export default function AppHeader({ profile }) {
             Studier
           </button>
           <button
+            className="app-version-link"
             type="button"
             onClick={openVersionHistory}
             title="View version history"
             aria-label={`View Studier ${APP_VERSION} version history`}
-            style={{
-              border: 0,
-              background: "transparent",
-              color: "#64748b",
-              cursor: "pointer",
-              fontSize: "12px",
-              fontWeight: 700,
-              opacity: 0.78,
-              padding: 0
-            }}
           >
             {APP_VERSION}
           </button>
