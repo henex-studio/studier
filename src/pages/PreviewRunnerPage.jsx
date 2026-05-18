@@ -185,7 +185,18 @@ export default function PreviewRunnerPage({ profile, studyId }) {
   }
 
   function PreviewBanner() {
-    return <section className="preview-banner"><strong>Preview mode</strong><span>Responses are not saved.</span></section>;
+    return (
+      <section className="preview-banner">
+        <div className="preview-banner-text">
+          <strong>Preview mode</strong>
+          <span>Responses are not saved.</span>
+        </div>
+        <div className="preview-banner-actions">
+          <a className="secondary-button" href={`/builder/${study.id}`}>Back to editor</a>
+          <a className="secondary-button" href="/admin">Back to test collection</a>
+        </div>
+      </section>
+    );
   }
 
 

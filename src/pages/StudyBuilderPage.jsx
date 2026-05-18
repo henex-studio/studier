@@ -48,6 +48,56 @@ function makeQuestionKey(text, index, position = "final") {
   return `${prefix}_${base || `q${index + 1}`}`;
 }
 
+
+
+const NZ_TIME_ZONE = "Pacific/Auckland";
+
+function formatNzDateTime(value) {
+  if (!value) return "Not set";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not set";
+  return new Intl.DateTimeFormat("en-NZ", {
+    timeZone: NZ_TIME_ZONE,
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short"
+  }).format(date);
+}
+
+function toDateTimeLocalValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-NZ", {
+    timeZone: NZ_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date);
+  const get = (type) => parts.find((part) => part.type === type)?.value || "";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}
+
+function dateTimeLocalToIso(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
+function isPastExpiry(value) {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getTime() <= Date.now();
+}
+
 function splitCsvRow(row) {
   return row.split(",").map((cell) => cell.trim());
 }
@@ -130,6 +180,7 @@ function getReadinessChecks(study, treeRecord, tasks, preQuestions, finalQuestio
   if (!(study?.privacy_text || []).some((text) => String(text || "").trim())) errors.push("Add a privacy note.");
   if (!treeRecord?.tree_json?.length) errors.push("Add a valid IA tree CSV.");
   if (csvChecks.errors.length) errors.push("Fix CSV errors before publishing.");
+  if (isPastExpiry(study?.expires_at)) errors.push("Set the closing time to a future New Zealand time, or clear it before publishing.");
 
   if (!tasks.length) {
     errors.push("Add at least one task.");
@@ -451,6 +502,7 @@ export default function StudyBuilderPage({ profile, studyId }) {
       privacy_text: study.privacy_text,
       end_text: study.end_text?.length ? study.end_text : ["You have completed the test.", "Thank you for helping improve the navigation."],
       data_collection_settings: study.data_collection_settings,
+      expires_at: study.expires_at || null,
       updated_at: new Date().toISOString()
     }).eq("id", studyId);
 
@@ -587,6 +639,23 @@ export default function StudyBuilderPage({ profile, studyId }) {
         onUpdateOption={(index, optionIndex, value) => updateChoiceOption("final", index, optionIndex, value)}
         onRemoveOption={(index, optionIndex) => removeChoiceOption("final", index, optionIndex)}
       />
+
+      <section className="card">
+        <h2>Test closing time</h2>
+        <p className="muted-text">Optional. The test link will close after this time. Time is shown in New Zealand time.</p>
+        <label className="form-block">
+          <span className="form-label">Test closes at</span>
+          <input
+            className="text-input"
+            type="datetime-local"
+            value={toDateTimeLocalValue(study.expires_at)}
+            onChange={(event) => updateStudy({ expires_at: dateTimeLocalToIso(event.target.value) })}
+          />
+        </label>
+        <p className={isPastExpiry(study.expires_at) ? "error-box" : "muted-text"}>
+          {study.expires_at ? `Current closing time: ${formatNzDateTime(study.expires_at)}` : "No closing time is set."}
+        </p>
+      </section>
 
       <section className="card">
         <h2>Test readiness checks</h2>

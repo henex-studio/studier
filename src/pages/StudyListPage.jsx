@@ -2,6 +2,37 @@ import React, { useEffect, useMemo, useState } from "react";
 import AdminShell from "../components/AdminShell";
 import { supabase } from "../lib/supabase";
 
+
+const NZ_TIME_ZONE = "Pacific/Auckland";
+
+function formatNzDateTime(value) {
+  if (!value) return "No closing time set";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "No closing time set";
+  return new Intl.DateTimeFormat("en-NZ", {
+    timeZone: NZ_TIME_ZONE,
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short"
+  }).format(date);
+}
+
+function isPastExpiry(value) {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getTime() <= Date.now();
+}
+
+function expiryLabel(study) {
+  if (!study.expires_at) return "No closing time set";
+  const prefix = study.status === "closed" || isPastExpiry(study.expires_at) ? "Closed" : "Closes";
+  return `${prefix} ${formatNzDateTime(study.expires_at)}`;
+}
+
 function makeSlug(title) {
   return (
     String(title || "test")
@@ -49,6 +80,7 @@ function getPublishIssues(study, treeRecord, tasks, finalQuestions) {
   if (!hasTextListValue(study?.welcome_text)) issues.push("Add a welcome note.");
   if (!hasTextListValue(study?.privacy_text)) issues.push("Add a privacy note.");
   if (!treeRecord?.tree_json?.length) issues.push("Add a valid IA tree CSV.");
+  if (isPastExpiry(study?.expires_at)) issues.push("Set the closing time to a future New Zealand time, or clear it before publishing.");
 
   if (!tasks.length) {
     issues.push("Add at least one task.");
@@ -121,7 +153,16 @@ export default function StudyListPage({ profile }) {
       return;
     }
 
-    const studyRows = data || [];
+    let studyRows = data || [];
+    const expiredPublishedStudies = studyRows.filter((study) => study.status === "published" && isPastExpiry(study.expires_at));
+
+    if (expiredPublishedStudies.length > 0) {
+      const expiredIds = expiredPublishedStudies.map((study) => study.id);
+      const closedAt = new Date().toISOString();
+      await supabase.from("studies").update({ status: "closed", closed_at: closedAt, updated_at: closedAt }).in("id", expiredIds);
+      studyRows = studyRows.map((study) => expiredIds.includes(study.id) ? { ...study, status: "closed", closed_at: closedAt } : study);
+    }
+
     setStudies(studyRows);
 
     const ownerIds = [...new Set(studyRows.map((study) => study.owner_id).filter(Boolean))];
@@ -173,7 +214,8 @@ export default function StudyListPage({ profile }) {
         "Please do not enter personal or case details."
       ],
       end_text: ["You have completed the test.", "Thank you for helping improve the navigation."],
-      data_collection_settings: {
+      expires_at: null,
+    data_collection_settings: {
         record_match_type: true,
         record_time_seconds: true,
         record_first_click: true,
@@ -226,7 +268,10 @@ export default function StudyListPage({ profile }) {
     });
 
     const payload = { status, updated_at: new Date().toISOString() };
-    if (status === "published") payload.published_at = new Date().toISOString();
+    if (status === "published") {
+      payload.published_at = new Date().toISOString();
+      payload.closed_at = null;
+    }
     if (status === "closed") payload.closed_at = new Date().toISOString();
 
     const { error } = await supabase.from("studies").update(payload).eq("id", study.id);
@@ -343,6 +388,7 @@ export default function StudyListPage({ profile }) {
 
                 <h2>{study.title}</h2>
                 <p className="study-link-code" title={fullLink}>Test link code: <span>/{study.slug}</span></p>
+              <p className="study-expiry-text">{expiryLabel(study)}</p>
 
                 <div className="button-row">
                   <a className="secondary-button" href={`/builder/${study.id}`}>Edit</a>
@@ -403,7 +449,7 @@ export default function StudyListPage({ profile }) {
 
                       {publishIssues.length || isCopied ? (
                         <tr className="list-feedback-row">
-                          <td colSpan={profile.role === "admin" ? 6 : 5}>
+                          <td colSpan={profile.role === "admin" ? 7 : 6}>
                             <PublishIssues issues={publishIssues} />
                             {isCopied ? <div className="copy-toast">{fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}</div> : null}
                           </td>

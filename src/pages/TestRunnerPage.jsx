@@ -5,6 +5,16 @@ import { getParticipantId } from "../lib/participantId";
 import { getMatchResult } from "../lib/matching";
 import { CheckCircle2 } from "lucide-react";
 
+
+const NZ_TIME_ZONE = "Pacific/Auckland";
+
+function isPastExpiry(value) {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getTime() <= Date.now();
+}
+
 function secondsSince(value) {
   return Math.max(1, Math.round((Date.now() - value) / 1000));
 }
@@ -87,11 +97,27 @@ export default function TestRunnerPage({ slug }) {
       .from("studies")
       .select("*")
       .eq("slug", slug)
-      .eq("status", "published")
       .single();
 
-    if (error) {
+    if (error || !studyData) {
       setMessage("This test link is not available.");
+      setLoading(false);
+      return;
+    }
+
+    if (studyData.status === "published" && isPastExpiry(studyData.expires_at)) {
+      const closedAt = new Date().toISOString();
+      await supabase
+        .from("studies")
+        .update({ status: "closed", closed_at: closedAt, updated_at: closedAt })
+        .eq("id", studyData.id);
+      setStudy({ ...studyData, status: "closed", closed_at: closedAt });
+      setLoading(false);
+      return;
+    }
+
+    if (studyData.status !== "published") {
+      setStudy(studyData);
       setLoading(false);
       return;
     }
@@ -261,6 +287,24 @@ export default function TestRunnerPage({ slug }) {
 
   if (!study) {
     return <div className="page-shell"><main className="container narrow"><section className="card"><h1>Test unavailable</h1><p>{message}</p></section></main></div>;
+  }
+
+  if (study.status === "closed") {
+    return (
+      <div ref={topRef} className="page-shell">
+        <main className="container narrow">
+          <section className="card done-card">
+            <CheckCircle2 className="done-icon" />
+            <h1>Sorry, this test is now closed.</h1>
+            <p>Do not worry. If you want to take part, please contact the person who shared this test with you.</p>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  if (study.status !== "published") {
+    return <div className="page-shell"><main className="container narrow"><section className="card"><h1>Test unavailable</h1><p>This test link is not available.</p></section></main></div>;
   }
 
   if (screen === "welcome") {
