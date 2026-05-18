@@ -124,6 +124,7 @@ export default function StudyListPage({ profile }) {
   const [fallbackLink, setFallbackLink] = useState("");
   const [publishIssuesByStudyId, setPublishIssuesByStudyId] = useState({});
   const [publishingStudyId, setPublishingStudyId] = useState("");
+  const [clearingStudyId, setClearingStudyId] = useState("");
   const [viewMode, setViewMode] = useState("cards");
   const [loading, setLoading] = useState(true);
 
@@ -279,6 +280,64 @@ export default function StudyListPage({ profile }) {
     await loadStudies();
   }
 
+  async function clearResponseData(study) {
+    setCopiedStudyId("");
+    setFallbackLink("");
+    setMessage("");
+    const typed = window.prompt(
+      `Clear all response data for "${study.title}"? This will permanently delete task responses, final question responses, and participant session records. Type CLEAR to continue.`
+    );
+    if (typed !== "CLEAR") return false;
+
+    setClearingStudyId(study.id);
+    const tables = ["task_responses", "final_responses", "participant_sessions"];
+    for (const table of tables) {
+      const { error } = await supabase.from(table).delete().eq("study_id", study.id);
+      if (error) {
+        setClearingStudyId("");
+        setMessage(error.message);
+        return false;
+      }
+    }
+    setClearingStudyId("");
+    setMessage("Response data cleared.");
+    await loadStudies();
+    return true;
+  }
+
+  async function clearDataAndPublish(study) {
+    setCopiedStudyId("");
+    setFallbackLink("");
+    setMessage("");
+    setPublishingStudyId(study.id);
+    const issues = await validateBeforePublish(study);
+    setPublishingStudyId("");
+    if (issues.length > 0) {
+      setPublishIssuesByStudyId((previous) => ({ ...previous, [study.id]: issues }));
+      return;
+    }
+
+    const cleared = await clearResponseData(study);
+    if (!cleared) return;
+
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("studies")
+      .update({ status: "published", published_at: now, closed_at: null, updated_at: now })
+      .eq("id", study.id);
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+    setPublishIssuesByStudyId((previous) => {
+      const next = { ...previous };
+      delete next[study.id];
+      return next;
+    });
+    setMessage("Response data cleared and test published.");
+    await loadStudies();
+  }
+
   async function deleteStudy(study) {
     setCopiedStudyId("");
     setFallbackLink("");
@@ -311,22 +370,36 @@ export default function StudyListPage({ profile }) {
 
   function renderActions(study) {
     const isPublishing = publishingStudyId === study.id;
+    const isClearing = clearingStudyId === study.id;
+    const isBusy = isPublishing || isClearing;
 
     return (
       <div className="button-row stable-action-row">
         {study.status !== "published" ? (
-          <button className="primary-button" disabled={isPublishing} onClick={() => updateStatus(study, "published")}>
+          <button className="primary-button" disabled={isBusy} onClick={() => updateStatus(study, "published")}>
             {isPublishing ? "Checking..." : "Publish"}
           </button>
         ) : (
-          <button className="secondary-button" onClick={() => updateStatus(study, "closed")}>Close</button>
+          <button className="secondary-button" disabled={isBusy} onClick={() => updateStatus(study, "closed")}>Close</button>
         )}
 
         {study.status === "published" ? (
-          <button className="secondary-button" type="button" onClick={() => copyTestLink(study)}>Copy link</button>
+          <button className="secondary-button" type="button" disabled={isBusy} onClick={() => copyTestLink(study)}>Copy link</button>
         ) : null}
 
-        <button className="danger-button" onClick={() => deleteStudy(study)}>Delete</button>
+        {study.status !== "published" ? (
+          <button className="secondary-button" type="button" disabled={isBusy} onClick={() => clearResponseData(study)}>
+            {isClearing ? "Clearing..." : "Clear test data"}
+          </button>
+        ) : null}
+
+        {study.status !== "published" ? (
+          <button className="secondary-button" type="button" disabled={isBusy} onClick={() => clearDataAndPublish(study)}>
+            {isBusy ? "Working..." : "Clear data and publish"}
+          </button>
+        ) : null}
+
+        <button className="danger-button" disabled={isBusy} onClick={() => deleteStudy(study)}>Delete</button>
       </div>
     );
   }
@@ -449,7 +522,7 @@ export default function StudyListPage({ profile }) {
 
                       {publishIssues.length || isCopied ? (
                         <tr className="list-feedback-row">
-                          <td colSpan={profile.role === "admin" ? 7 : 6}>
+                          <td colSpan={profile.role === "admin" ? 6 : 5}>
                             <PublishIssues issues={publishIssues} />
                             {isCopied ? <div className="copy-toast">{fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}</div> : null}
                           </td>
