@@ -1596,3 +1596,36 @@ select:focus {
   }
 }
 
+/* App version link in top navigation */
+.app-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-version-link {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.78;
+  padding: 0;
+}
+
+.app-version-link:hover,
+.app-version-link:focus-visible {
+  color: #1d4ed8;
+  opacity: 1;
+  text-decoration: underline;
+}
+
+@media (max-width: 639px) {
+  .app-brand {
+    width: 100%;
+  }
+}
+
