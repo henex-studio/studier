@@ -38,6 +38,7 @@ function shouldCollapseByDefault() {
 
 export default function TreeView({ tree = [], selectedPath = "", onSelect, defaultExpanded }) {
   const startExpanded = defaultExpanded ?? !shouldCollapseByDefault();
+  const shouldResetWhenSelectionClears = !startExpanded;
 
   const initialExpandedPaths = useMemo(() => {
     return startExpanded ? collectExpandablePaths(tree) : [];
@@ -48,6 +49,12 @@ export default function TreeView({ tree = [], selectedPath = "", onSelect, defau
   useEffect(() => {
     setExpandedPaths(initialExpandedPaths);
   }, [initialExpandedPaths]);
+
+  useEffect(() => {
+    if (shouldResetWhenSelectionClears && !selectedPath) {
+      setExpandedPaths([]);
+    }
+  }, [selectedPath, shouldResetWhenSelectionClears]);
 
   function togglePath(path) {
     setExpandedPaths((current) => {
@@ -80,10 +87,10 @@ export default function TreeView({ tree = [], selectedPath = "", onSelect, defau
             type="button"
             onClick={() => handleSelect(path, hasChildren)}
             aria-expanded={hasChildren ? isExpanded : undefined}
-            style={{ marginLeft: depth ? `${depth * 14}px` : 0 }}
+            style={{ paddingLeft: `${12 + depth * 14}px` }}
           >
             <span className="tree-label-wrap">
-              {isSelected ? <span className="tree-icon-selected">✓</span> : <span className="tree-icon-empty" />}
+              {isSelected ? <span className="tree-icon-selected" aria-hidden="true">✓</span> : <span className="tree-icon-empty" aria-hidden="true" />}
               <span className="tree-label">{label}</span>
             </span>
 
