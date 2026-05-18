@@ -436,7 +436,7 @@ export default function TestRunnerPage({ slug }) {
             <p>This answer has already been submitted. To keep the test focused on your first instinct, submitted answers cannot be changed.</p>
           </section>
         ) : null}
-        <section className="card"><h2>Menu</h2><TreeView tree={tree} selectedPath={displayedAnswer.selected_path || ""} onSelect={isReviewingSubmittedTask ? undefined : selectPath} /></section>
+        <section className="card"><h2>Menu</h2><TreeView tree={tree} selectedPath={displayedAnswer.selected_path || ""} expandToPath={isReviewingSubmittedTask ? displayedAnswer.selected_path || "" : ""} onSelect={isReviewingSubmittedTask ? undefined : selectPath} /></section>
         <section className="card selected-card">
           <h2>{isReviewingSubmittedTask ? "Submitted answer" : "Your selected place"}</h2>
           <div className="selected-path">{displayedAnswer.skipped ? "Skipped" : displayedAnswer.selected_path || "No selection yet"}</div>
