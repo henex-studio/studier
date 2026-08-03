@@ -1,0 +1,110 @@
+{
+  "_comment": "Harness project configuration. See harness-core/docs/ai-harness-architecture.md Section 9.1 and decision-log.md H-6. The review_paths field is an extension added by H-6.10 and is not in the v2.0 architecture.",
+
+  "project_id": "studier",
+  "project_name": "Studier Tone Test",
+  "phase": "setup",
+  "data_classification": "internal",
+  "approval_mode": "A",
+
+  "_protected_paths_comment": "Absolute deny. The PreToolUse hook refuses any write here. Existing platform code that Tone Test has no reason to touch, plus credentials, plus harness governance files.",
+  "protected_paths": [
+    ".env",
+    ".env.local",
+    ".env.example",
+    ".gitignore",
+    "vercel.json",
+    "index.html",
+    "src/main.jsx",
+    "src/lib/supabase.js",
+    "src/lib/matching.js",
+    "src/lib/treeParser.js",
+    "src/lib/participantId.js",
+    "src/pages/ConsentPage.jsx",
+    "src/pages/RegisterPage.jsx",
+    "src/pages/LoginPage.jsx",
+    "src/pages/TreeView.jsx",
+    "supabase/schema.sql",
+    "supabase/clear_test_data_delete_policies.sql",
+    "supabase/consent_v2_registration_update.sql",
+    "supabase/expiry_date.sql",
+    "supabase/invite_registration.sql",
+    "supabase/pre_task_questions.sql",
+    "supabase/studier_display_name.sql",
+    "project-config.json",
+    ".claude/",
+    "harness-docs/decision-log.md"
+  ],
+
+  "_review_paths_comment": "Halt and ask, rather than refuse. Two groups. The first nine are shared platform files that Tone Test must change, so a blanket deny would block the feature at build plan Task 1; edits here should be study-type dispatch only, routing to a new module, and anything larger means logic is leaking into shared code (H-6.10 control two). The last entry covers the source specification documents, which may need correcting under D-1 and D-2 but should never be rewritten without the operator seeing it.",
+  "review_paths": [
+    "src/App.jsx",
+    "src/pages/StudyListPage.jsx",
+    "src/pages/StudyBuilderPage.jsx",
+    "src/pages/TestRunnerPage.jsx",
+    "src/pages/PreviewRunnerPage.jsx",
+    "src/pages/DashboardPage.jsx",
+    "src/pages/GuidePage.jsx",
+    "src/lib/csvExport.js",
+    "src/style.css",
+    "docs/tone-test/"
+  ],
+
+  "_review_line_budget_comment": "H-6.10 control one. Guidance for the Evaluator and the operator, not enforced by the hook. An edit to a review path adding more than this many lines should be questioned.",
+  "review_line_budget": 30,
+
+  "_writable_paths_comment": "New territory. Tone Test logic lives here and nowhere else.",
+  "writable_paths": [
+    "src/pages/tonetest/",
+    "src/lib/tonetest/",
+    "src/components/tonetest/",
+    "supabase/migrations/",
+    "scripts/",
+    "tests/",
+    "artifacts/",
+    "harness-docs/plan.md",
+    "harness-docs/guard-test.md",
+    "harness-docs/open-questions.md",
+    "harness-docs/codebase-survey.md",
+    "run-state.json",
+    "CLAUDE.md"
+  ],
+
+  "allowed_commands": [
+    "git status",
+    "git diff",
+    "git log",
+    "git branch",
+    "git checkout",
+    "git add",
+    "git commit",
+    "git push origin dev",
+    "npm install",
+    "npm run build",
+    "npm run dev",
+    "npx playwright",
+    "supabase migration new",
+    "supabase migration list",
+    "supabase db diff"
+  ],
+
+  "_forbidden_commands_comment": "Stated explicitly because the damage is not reversible. git push origin main violates H-3.5, which reserves promotion to the operator. Force push and history rewriting violate architecture Section 14.2.",
+  "forbidden_commands": [
+    "git push origin main",
+    "git push --force",
+    "git reset --hard",
+    "git rebase",
+    "supabase db push",
+    "supabase db reset",
+    "rm -rf"
+  ],
+
+  "retry_limit": 2,
+  "task_time_limit_minutes": 30,
+  "notification_topic": "studier-harness",
+
+  "_branch_comment": "H-3.5. The harness works on task branches and may merge to dev. Only the operator promotes to main.",
+  "integration_branch": "dev",
+  "production_branch": "main",
+  "rollback_tag": "pre-harness-baseline"
+}

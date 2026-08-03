@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tone and Assurance Testing Proposal</title>
+  <meta name="description" content="A lightweight research proposal page for Tone and Assurance Testing, designed for sensitive service content decisions." />
+  <style>
+    :root {
+      --color-slate-950: #020617;
+      --color-slate-900: #0f172a;
+      --color-slate-800: #1e293b;
+      --color-slate-700: #334155;
+      --color-slate-300: #cbd5e1;
+      --color-slate-200: #e2e8f0;
+      --color-slate-100: #f1f5f9;
+      --color-slate-50: #f8fafc;
+      --color-white: #ffffff;
+      --color-blue-950: #172554;
+      --color-blue-700: #1d4ed8;
+      --color-blue-400: #60a5fa;
+      --color-blue-300: #93c5fd;
+      --color-blue-200: #bfdbfe;
+      --color-blue-100: #dbeafe;
+      --color-blue-50: #eff6ff;
+      --color-amber-700: #b45309;
+      --color-amber-50: #fffbeb;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
+      --shadow-2xl: 0 25px 50px rgba(15, 23, 42, 0.35);
+      --radius-2xl: 1rem;
+      --radius-3xl: 1.5rem;
+      --max-width: 80rem;
+      --space-page-x: 1.5rem;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--color-slate-50);
+      color: var(--color-slate-950);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page-shell {
+      min-height: 100vh;
+      background: var(--color-slate-50);
+      color: var(--color-slate-950);
+    }
+
+    .container {
+      width: min(100%, var(--max-width));
+      margin: 0 auto;
+      padding-left: var(--space-page-x);
+      padding-right: var(--space-page-x);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--color-slate-950), var(--color-slate-900) 45%, var(--color-blue-950));
+      color: var(--color-white);
+    }
+
+    .hero-grid {
+      display: grid;
+      gap: 2.5rem;
+      padding-top: 4rem;
+      padding-bottom: 4rem;
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid rgba(147, 197, 253, 0.3);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.5rem 1rem;
+      color: var(--color-blue-100);
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-eyebrow {
+      color: var(--color-blue-700);
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .section-eyebrow-light {
+      color: var(--color-blue-200);
+    }
+
+    h1, h2, h3, p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 56rem;
+      font-size: clamp(2.5rem, 7vw, 4rem);
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: clamp(1.875rem, 4vw, 2.25rem);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      line-height: 1.3;
+      margin-bottom: 0.75rem;
+      font-weight: 700;
+    }
+
+    .hero-lead {
+      max-width: 48rem;
+      color: var(--color-slate-200);
+      font-size: 1.125rem;
+      line-height: 1.75;
+      margin-bottom: 0;
+    }
+
+    .button-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 2rem;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      min-height: 3.25rem;
+      border-radius: var(--radius-2xl);
+      padding: 0.875rem 1.5rem;
+      border: 1px solid transparent;
+      font-size: 1rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 160ms ease, background 160ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button-primary {
+      background: var(--color-blue-400);
+      color: var(--color-slate-950);
+    }
+
+    .button-primary:hover {
+      background: var(--color-blue-300);
+    }
+
+    .button-secondary {
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--color-white);
+    }
+
+    .button-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .card {
+      border: 1px solid var(--color-slate-200);
+      border-radius: var(--radius-3xl);
+      background: var(--color-white);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .card-content {
+      padding: 1.75rem;
+    }
+
+    .hero-card {
+      border-color: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--color-white);
+      box-shadow: var(--shadow-2xl);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-card .section-eyebrow {
+      color: var(--color-blue-200);
+    }
+
+    .hero-card h2 {
+      font-size: 1.5rem;
+    }
+
+    .hero-card p {
+      color: var(--color-slate-200);
+      line-height: 1.7;
+    }
+
+    .decision-rule {
+      margin-top: 1.5rem;
+      border-radius: var(--radius-2xl);
+      background: rgba(2, 6, 23, 0.5);
+      padding: 1.25rem;
+    }
+
+    .decision-rule p:first-child {
+      color: var(--color-slate-300);
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .decision-rule p:last-child {
+      color: var(--color-white);
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0;
+    }
+
+    .section {
+      padding-top: 3.5rem;
+      padding-bottom: 3.5rem;
+    }
+
+    .section-white {
+      background: var(--color-white);
+    }
+
+    .section-dark {
+      background: var(--color-slate-950);
+      color: var(--color-white);
+    }
+
+    .section-intro {
+      max-width: 48rem;
+    }
+
+    .section-intro p,
+    .section-copy {
+      color: var(--color-slate-700);
+      font-size: 1.125rem;
+      line-height: 1.75;
+    }
+
+    .section-dark .section-copy {
+      color: var(--color-slate-300);
+    }
+
+    .pillars-grid {
+      display: grid;
+      gap: 1.25rem;
+      margin-top: 2.25rem;
+    }
+
+    .icon-box {
+      display: flex;
+      width: 3rem;
+      height: 3rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-2xl);
+      background: var(--color-blue-50);
+      color: var(--color-blue-700);
+      margin-bottom: 1.25rem;
+    }
+
+    .icon-box-amber {
+      background: var(--color-amber-50);
+      color: var(--color-amber-700);
+    }
+
+    .card p,
+    .workflow-item p,
+    .benefit-item p {
+      color: var(--color-slate-700);
+      line-height: 1.75;
+      margin-bottom: 0;
+    }
+
+    .workflow-layout,
+    .two-column-grid,
+    .dark-layout {
+      display: grid;
+      gap: 2.5rem;
+    }
+
+    .workflow-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .workflow-item {
+      display: grid;
+      gap: 1rem;
+      border: 1px solid var(--color-slate-200);
+      border-radius: var(--radius-3xl);
+      background: var(--color-slate-50);
+      padding: 1.25rem;
+    }
+
+    .step-number {
+      display: flex;
+      width: 3rem;
+      height: 3rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-2xl);
+      background: var(--color-slate-950);
+      color: var(--color-white);
+      font-size: 1.125rem;
+      font-weight: 700;
+    }
+
+    .risk-list {
+      list-style: none;
+      margin: 1.25rem 0 0;
+      padding: 0;
+      display: grid;
+      gap: 0.75rem;
+      color: var(--color-slate-700);
+    }
+
+    .risk-list li,
+    .benefit-item {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+
+    .risk-list svg,
+    .benefit-item svg {
+      flex: 0 0 auto;
+      margin-top: 0.125rem;
+      color: var(--color-blue-700);
+    }
+
+    .score-table {
+      margin-top: 1.25rem;
+      border: 1px solid var(--color-slate-200);
+      border-radius: var(--radius-2xl);
+      overflow: hidden;
+    }
+
+    .score-row {
+      display: grid;
+      gap: 0.75rem;
+      padding: 1rem;
+    }
+
+    .score-row:not(:last-child) {
+      border-bottom: 1px solid var(--color-slate-200);
+    }
+
+    .score-title {
+      color: var(--color-slate-950);
+      font-weight: 700;
+    }
+
+    .score-weight {
+      color: var(--color-blue-700);
+      font-weight: 700;
+    }
+
+    .score-description {
+      color: var(--color-slate-700);
+    }
+
+    .benefit-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .benefit-item {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-3xl);
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1.25rem;
+    }
+
+    .benefit-item p {
+      color: var(--color-slate-100);
+    }
+
+    .benefit-item svg {
+      color: var(--color-blue-200);
+    }
+
+    .pilot-card {
+      background: var(--color-blue-50);
+    }
+
+    .pilot-measure {
+      margin-top: 1.5rem;
+      border-radius: var(--radius-2xl);
+      background: var(--color-white);
+      padding: 1.25rem;
+      color: var(--color-slate-800);
+    }
+
+    .pilot-measure p:first-child {
+      font-weight: 700;
+      color: var(--color-slate-950);
+      margin-bottom: 0.5rem;
+    }
+
+    .pilot-measure p:last-child {
+      margin-bottom: 0;
+    }
+
+    .icon {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .icon-small {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .icon-large {
+      width: 2rem;
+      height: 2rem;
+      color: var(--color-blue-700);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (min-width: 640px) {
+      .button-row {
+        flex-direction: row;
+      }
+
+      .workflow-item {
+        grid-template-columns: 3rem 1fr;
+      }
+
+      .score-row {
+        grid-template-columns: 1.1fr 0.4fr 1.5fr;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .pillars-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      :root {
+        --space-page-x: 2.5rem;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1.1fr 0.9fr;
+        padding-top: 6rem;
+        padding-bottom: 6rem;
+      }
+
+      .workflow-layout {
+        grid-template-columns: 0.85fr 1.15fr;
+      }
+
+      .two-column-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .dark-layout {
+        grid-template-columns: 0.8fr 1.2fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-content">
+          <div class="eyebrow">
+            <svg class="icon-small" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path><path d="m9 12 2 2 4-4"></path></svg>
+            Proposal for a lightweight research tool
+          </div>
+          <h1 id="page-title">Tone and Assurance Testing</h1>
+          <p class="hero-lead">A practical way to test sensitive service wording with the people who need it, the teams who must publish it, and the specialists who check plain language and accessibility.</p>
+          <div class="button-row" aria-label="Primary actions">
+            <a class="button button-primary" href="#pilot">Use it to support content decisions <svg class="icon-small" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>
+            <a class="button button-secondary" href="#why-it-matters">Start with victim information content</a>
+          </div>
+        </div>
+        <article class="card hero-card" aria-labelledby="problem-title">
+          <div class="card-content">
+            <p class="section-eyebrow">The problem</p>
+            <h2 id="problem-title">Good intentions are not enough for high sensitivity content.</h2>
+            <p>A message can feel warm to the public but promise more than the organisation can deliver. Another message can be legally accurate but feel cold, blaming, or unclear to victims. Teams need a safe way to compare wording before publication.</p>
+            <div class="decision-rule">
+              <p>Recommended decision rule</p>
+              <p>Rank by evidence. Publish only if risk gates pass.</p>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="what-it-is-title">
+      <div class="container">
+        <div class="section-intro">
+          <p class="section-eyebrow">What it is</p>
+          <h2 id="what-it-is-title">A three stream validation method for wording decisions</h2>
+          <p>Tone and Assurance Testing is a lightweight research method that combines public response, organisational assurance, and technical content quality checks. It does not replace formal approval. It gives teams better evidence before approval.</p>
+        </div>
+        <div class="pillars-grid">
+          <article class="card">
+            <div class="card-content">
+              <div class="icon-box"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+              <h3>Audience evidence</h3>
+              <p>Tests whether people understand the message, trust it, feel respected, and know what to do next.</p>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-content">
+              <div class="icon-box"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="m9 15 2 2 4-4"></path></svg></div>
+              <h3>Comms and policy assurance</h3>
+              <p>Checks whether the message is accurate, publishable, aligned to policy, and does not promise more than the organisation can deliver.</p>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-content">
+              <div class="icon-box"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></div>
+              <h3>Plain language and accessibility review</h3>
+              <p>Checks whether the wording is clear, structured, readable, and suitable for people using different devices, assistive technologies, and literacy levels.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-white" aria-labelledby="workflow-title">
+      <div class="container workflow-layout">
+        <div>
+          <p class="section-eyebrow">How it works</p>
+          <h2 id="workflow-title">A simple workflow that fits into content writing</h2>
+          <p class="section-copy">The tool is designed to support research and writing during a live project. It is intentionally lighter than a full approval system, but it still records evidence, risk checks, and decisions.</p>
+        </div>
+        <div class="workflow-list">
+          <article class="workflow-item"><div class="step-number">1</div><div><h3>Set the scenario</h3><p>Define the user situation, content goal, target audience, sensitivity level, and the decision that the test needs to support.</p></div></article>
+          <article class="workflow-item"><div class="step-number">2</div><div><h3>Prepare wording options</h3><p>Add two to four versions of the message. Each version should be realistic and safe enough to test with participants.</p></div></article>
+          <article class="workflow-item"><div class="step-number">3</div><div><h3>Run three review streams</h3><p>Audience participants test understanding and response. Comms and policy reviewers test publishability. Plain language and accessibility reviewers test clarity and inclusion.</p></div></article>
+          <article class="workflow-item"><div class="step-number">4</div><div><h3>Apply risk gates</h3><p>The tool checks critical gates such as policy accuracy, operational promise, safety, harm and blame, privacy, and accessibility.</p></div></article>
+          <article class="workflow-item"><div class="step-number">5</div><div><h3>Generate a recommendation</h3><p>The report ranks versions by evidence strength, shows risks, lists required edits, and records the decision for future audit and learning.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="risk-title">
+      <div class="container two-column-grid">
+        <article class="card">
+          <div class="card-content">
+            <div class="icon-box icon-box-amber"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg></div>
+            <h2 id="risk-title">Risk gates protect the decision</h2>
+            <p>A high score should not automatically select a version. If a message fails a critical gate, it should be marked as not publishable until it is revised and reviewed again.</p>
+            <ul class="risk-list">
+              <li><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg><span>Policy accuracy</span></li>
+              <li><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg><span>Operational promise</span></li>
+              <li><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg><span>Safety risk</span></li>
+              <li><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg><span>Harm, blame, and stigma</span></li>
+              <li><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg><span>Privacy and consent</span></li>
+              <li><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg><span>Accessibility and readability</span></li>
+            </ul>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-content">
+            <div class="icon-box"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg></div>
+            <h2>Suggested scoring model</h2>
+            <p>The score is configurable. For victim information content, the model should give strong weight to audience evidence, while still protecting institutional accountability and accessibility.</p>
+            <div class="score-table" role="table" aria-label="Suggested scoring model">
+              <div class="score-row" role="row"><div class="score-title" role="cell">Audience Evidence Score</div><div class="score-weight" role="cell">35%</div><div class="score-description" role="cell">Clear understanding, correct next step, trust, respect, support, and confidence to act.</div></div>
+              <div class="score-row" role="row"><div class="score-title" role="cell">Comms and Policy Assurance Score</div><div class="score-weight" role="cell">30%</div><div class="score-description" role="cell">Policy fit, operational accuracy, legal risk, publishability, and tone of voice fit.</div></div>
+              <div class="score-row" role="row"><div class="score-title" role="cell">Plain Language and Accessibility Score</div><div class="score-weight" role="cell">20%</div><div class="score-description" role="cell">Plain language, structure, readability, cognitive load, WCAG related content checks, and inclusive wording.</div></div>
+              <div class="score-row" role="row"><div class="score-title" role="cell">Evidence Confidence Score</div><div class="score-weight" role="cell">15%</div><div class="score-description" role="cell">Sample relevance, number of responses, segment coverage, reviewer quality, and strength of supporting comments.</div></div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="why-it-matters" class="section section-dark" aria-labelledby="why-title">
+      <div class="container dark-layout">
+        <div>
+          <p class="section-eyebrow section-eyebrow-light">Why it matters</p>
+          <h2 id="why-title">Better wording decisions for sensitive services</h2>
+          <p class="section-copy">Victim information content must be clear, respectful, safe, and operationally honest. This tool helps teams test these qualities before publication, not after harm or confusion has already occurred.</p>
+        </div>
+        <div class="benefit-list">
+          <div class="benefit-item"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08v0c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg><p>Reduces the risk of publishing content that sounds helpful but creates unsafe or unrealistic expectations.</p></div>
+          <div class="benefit-item"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08v0c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg><p>Gives content designers evidence before final wording decisions are made.</p></div>
+          <div class="benefit-item"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08v0c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg><p>Helps comms, policy, operations, accessibility, and research teams discuss wording with a shared framework.</p></div>
+          <div class="benefit-item"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08v0c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg><p>Creates a decision record that explains why a version was chosen, what risks were checked, and what still needs review.</p></div>
+          <div class="benefit-item"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08v0c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg><p>Supports sensitive service content, especially victim information, where tone, trust, safety, and operational accuracy all matter.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pilot" class="section" aria-labelledby="difference-title">
+      <div class="container two-column-grid">
+        <article class="card">
+          <div class="card-content">
+            <svg class="icon-large" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="M7 21h10"></path><path d="M12 3v18"></path><path d="M3 7h2c2 0 5-1 7-4 2 3 5 4 7 4h2"></path></svg>
+            <h2 id="difference-title">What makes it different from existing tools</h2>
+            <p>Existing UX platforms can run surveys, preference tests, tree tests, card sorts, first click tests, and prototype tests. This proposal adds a government focused decision layer that combines public understanding, institutional assurance, accessibility, risk gates, and a reusable decision record.</p>
+          </div>
+        </article>
+        <article class="card pilot-card">
+          <div class="card-content">
+            <h2>Recommended first pilot</h2>
+            <p>Run one pilot on a high sensitivity victim information message. Test three wording options with a small audience group, two comms or policy reviewers, and one plain language or accessibility reviewer. Use the report to decide whether the method gives enough value to add to the existing tree test platform.</p>
+            <div class="pilot-measure">
+              <p>Pilot success measure</p>
+              <p>The team can clearly explain which version is safer, clearer, more publishable, and why.</p>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

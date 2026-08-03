@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tone Test, Evidence-Based Wording Decisions</title>
+  <meta name="description" content="A concise pitch page for Tone Test, a lightweight Studier study type that turns sensitive wording review into shared evidence." />
+  <style>
+    :root {
+      --slate-950: #020617;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-300: #cbd5e1;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+      --white: #ffffff;
+      --blue-950: #172554;
+      --blue-800: #1e40af;
+      --blue-700: #1d4ed8;
+      --blue-100: #dbeafe;
+      --blue-50: #eff6ff;
+      --green-700: #15803d;
+      --green-50: #f0fdf4;
+      --amber-700: #b45309;
+      --amber-50: #fffbeb;
+      --max-width: 1120px;
+      --radius-xl: 18px;
+      --radius-2xl: 28px;
+      --shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--slate-950);
+      background: var(--slate-50);
+      line-height: 1.5;
+    }
+    main { min-height: 100vh; }
+    .container { width: min(100% - 32px, var(--max-width)); margin: 0 auto; }
+
+    .hero {
+      color: var(--white);
+      background:
+        radial-gradient(circle at 90% 12%, rgba(147, 197, 253, 0.38), transparent 28%),
+        linear-gradient(135deg, var(--slate-950), var(--slate-900) 52%, var(--blue-950));
+      padding: 58px 0 48px;
+    }
+    .hero-grid { display: grid; gap: 28px; align-items: center; }
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      margin: 0 0 18px;
+      padding: 8px 13px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      color: var(--blue-100);
+      background: rgba(255, 255, 255, 0.1);
+      font-size: 14px;
+      font-weight: 800;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 860px;
+      margin-bottom: 18px;
+      font-size: clamp(44px, 7vw, 76px);
+      line-height: 0.97;
+      letter-spacing: -0.058em;
+    }
+    h2 {
+      margin-bottom: 14px;
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+    }
+    h3 { margin-bottom: 8px; font-size: 20px; line-height: 1.25; }
+    .lead {
+      max-width: 760px;
+      margin-bottom: 0;
+      color: var(--slate-200);
+      font-size: clamp(18px, 2vw, 22px);
+      line-height: 1.65;
+    }
+    .button-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      font-weight: 850;
+      text-decoration: none;
+      color: var(--slate-950);
+      background: #93c5fd;
+    }
+    .button-secondary {
+      color: var(--white);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .hero-card {
+      padding: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius-2xl);
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .hero-card p { margin: 0; color: var(--slate-200); font-size: 17px; line-height: 1.7; }
+    .quote-box {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: var(--radius-xl);
+      color: var(--white);
+      background: rgba(2, 6, 23, 0.52);
+      font-weight: 850;
+      line-height: 1.5;
+    }
+
+    .section { padding: 44px 0; }
+    .section-white { background: var(--white); }
+    .section-dark { color: var(--white); background: var(--slate-950); }
+    .section-label {
+      margin-bottom: 10px;
+      color: var(--blue-700);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .section-dark .section-label { color: #bfdbfe; }
+    .section-intro { max-width: 820px; margin-bottom: 24px; }
+    .section-intro p { color: var(--slate-700); font-size: 18px; line-height: 1.7; }
+    .section-dark .section-intro p { color: var(--slate-300); }
+    .grid-3 { display: grid; gap: 16px; }
+    .grid-2 { display: grid; gap: 18px; }
+    .card {
+      padding: 22px;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-2xl);
+      background: var(--white);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .card p { margin-bottom: 0; color: var(--slate-700); line-height: 1.65; }
+    .number-pill {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 14px;
+      border-radius: 999px;
+      color: var(--blue-700);
+      background: var(--blue-50);
+      font-weight: 900;
+    }
+    .pain-card {
+      background: var(--amber-50);
+      border-color: #fde68a;
+    }
+    .pain-card p { color: var(--slate-800); }
+    .flow { display: grid; gap: 12px; }
+    .flow-step {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 16px;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-xl);
+      background: var(--slate-50);
+    }
+    .step-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      color: var(--white);
+      background: var(--slate-950);
+      font-weight: 900;
+    }
+    .flow-step p { margin-bottom: 0; color: var(--slate-700); }
+    .value-list { display: grid; gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; }
+    .value-list li { display: flex; gap: 10px; color: var(--slate-700); }
+    .value-list span { flex: 0 0 auto; color: var(--green-700); font-weight: 900; }
+    .dark-card {
+      color: var(--white);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .dark-card p { color: var(--slate-300); }
+    .dark-card strong { color: var(--white); }
+    .footer-note { margin-top: 18px; color: var(--slate-300); font-size: 14px; }
+
+    @media (min-width: 780px) {
+      .hero-grid { grid-template-columns: 1.18fr 0.82fr; }
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .grid-2 { grid-template-columns: 0.95fr 1.05fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div>
+          <p class="eyebrow">Studier extension, concept pitch</p>
+          <h1 id="page-title">Tone Test</h1>
+          <p class="lead">A lightweight way to turn sensitive wording decisions into shared evidence, especially when advisors need agency feedback on tone, policy fit, user understanding, plain language, and accessibility.</p>
+          <div class="button-row" aria-label="Page navigation">
+            <a class="button" href="#pain-point">Start with the pain point</a>
+            <a class="button button-secondary" href="#value">See the value</a>
+          </div>
+        </div>
+        <aside class="hero-card" aria-labelledby="headline-point">
+          <h2 id="headline-point">Style helps people write. Tone Test helps teams decide.</h2>
+          <p>A style guide can guide wording, but it cannot confirm whether a specific piece of content works for the audience, the agency, the policy position, and digital content requirements.</p>
+          <div class="quote-box">The value is evidence before wording decisions become delays.</div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="pain-point" class="section section-white" aria-labelledby="pain-title">
+      <div class="container grid-2">
+        <div class="section-intro">
+          <p class="section-label">Pain point</p>
+          <h2 id="pain-title">Cross-agency writing often depends on repeated review cycles</h2>
+          <p>In cross-agency projects, advisors often write content when they are not the policy or publishing owner. They may have a style guide, or they may not. Either way, the final wording still needs judgement from the right people.</p>
+        </div>
+        <article class="card pain-card">
+          <h3>What happens now</h3>
+          <p>Teams write multiple versions, send them around, wait for comments, discuss feedback in meetings, and revise again. The feedback is useful, but it is often hard to compare, hard to trace, and hard to reuse.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="risk-title">
+      <div class="container">
+        <div class="section-intro">
+          <p class="section-label">Why it matters</p>
+          <h2 id="risk-title">Sensitive wording is more than style</h2>
+          <p>For victim information and other high sensitivity content, wording affects trust, safety, policy accuracy, service expectations, plain language, and accessibility. A version can sound supportive but overpromise. Another can be accurate but unclear or hard to act on.</p>
+        </div>
+        <div class="grid-3" aria-label="Three evidence streams">
+          <article class="card">
+            <div class="number-pill">1</div>
+            <h3>Audience evidence</h3>
+            <p>Checks whether people understand the message, trust it, feel respected, and know what to do next.</p>
+          </article>
+          <article class="card">
+            <div class="number-pill">2</div>
+            <h3>Agency assurance</h3>
+            <p>Checks tone, policy fit, operational boundaries, and whether the wording overpromises.</p>
+          </article>
+          <article class="card">
+            <div class="number-pill">3</div>
+            <h3>Content quality</h3>
+            <p>Checks plain language, readability, structure, accessibility needs, and digital content quality.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="section section-white" aria-labelledby="how-title">
+      <div class="container grid-2">
+        <div>
+          <p class="section-label">What Tone Test does</p>
+          <h2 id="how-title">One online place for asynchronous feedback</h2>
+          <p style="color: var(--slate-700); font-size: 18px; line-height: 1.7;">Participants do not need accounts. They open one link, choose their role, and answer questions matched to their responsibility. This supports digital ways of working without turning the tool into a formal approval system.</p>
+        </div>
+        <div class="flow">
+          <article class="flow-step">
+            <div class="step-number">1</div>
+            <div>
+              <h3>Create</h3>
+              <p>Add the scenario, content goal, and two to four wording variants.</p>
+            </div>
+          </article>
+          <article class="flow-step">
+            <div class="step-number">2</div>
+            <div>
+              <h3>Share</h3>
+              <p>Send one public link to audience participants, agency reviewers, and content specialists.</p>
+            </div>
+          </article>
+          <article class="flow-step">
+            <div class="step-number">3</div>
+            <div>
+              <h3>Collect</h3>
+              <p>Capture scores, comments, preferences, and risk gate responses by role.</p>
+            </div>
+          </article>
+          <article class="flow-step">
+            <div class="step-number">4</div>
+            <div>
+              <h3>Use</h3>
+              <p>Review a simple evidence summary and export CSV if deeper analysis is needed.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="value" class="section" aria-labelledby="value-title">
+      <div class="container grid-2">
+        <div>
+          <p class="section-label">Meaning and value</p>
+          <h2 id="value-title">From wording debate to evidence-based content decisions</h2>
+          <ul class="value-list">
+            <li><span>✓</span><div>Reduces repeated first-round feedback loops.</div></li>
+            <li><span>✓</span><div>Separates audience, agency, and accessibility perspectives.</div></li>
+            <li><span>✓</span><div>Creates a reusable evidence base for future wording decisions.</div></li>
+            <li><span>✓</span><div>Uses risk gates so high scores do not hide policy, safety, privacy, or accessibility concerns.</div></li>
+          </ul>
+        </div>
+        <article class="card">
+          <h3>What the team gets</h3>
+          <p>A clearer explanation of which wording option is easier to understand, safer to use, more publishable, and why. The tool supports human judgement instead of replacing it.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section-dark" aria-labelledby="outcome-title">
+      <div class="container grid-2">
+        <div class="section-intro">
+          <p class="section-label">Expected outcome</p>
+          <h2 id="outcome-title">A reusable tool for government content work</h2>
+          <p>Tone Test aligns with evidence-based government work and digital workflow improvement. It helps teams capture structured feedback online, reduce reliance on synchronous meetings, and make content decisions easier to explain.</p>
+        </div>
+        <article class="card dark-card">
+          <h3>Core value</h3>
+          <p><strong>The team can say which version is clearer, safer, more publishable, and why.</strong></p>
+          <p class="footer-note">Tone Test supports research and content decisions. It does not replace policy, legal, operational, privacy, comms, or accessibility approval.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
