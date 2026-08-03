@@ -1,0 +1,40 @@
+{
+  "_comment": "State of record. See architecture Section 9.3 and H-3.7. This file plus git history must be enough to resume after any interruption. If the state exists only in a session, it does not exist.",
+
+  "run_id": null,
+  "project_id": "studier",
+  "plan_id": null,
+  "current_task": null,
+  "status": "SETUP",
+  "attempt": 0,
+  "attempt_limit": 2,
+  "started_at": null,
+  "last_checkpoint": "1e7f1e5",
+  "branch": "dev",
+  "failure_signatures": [],
+  "blocked_reason": null,
+  "model_used": {},
+
+  "_setup_progress_comment": "Mirrors harness-core/setup/setup-checklist.md. Kept here so a session can see where the system is without reading another repository.",
+  "setup_progress": {
+    "stage_0_environment": "complete",
+    "stage_1_repository": "complete",
+    "stage_2_hygiene": "complete",
+    "stage_3_local_env": "not started",
+    "stage_4_database": "not started",
+    "stage_5_configuration": "in progress. Guard, config and CLAUDE.md complete and tested. Subagents installed. Planner model verified as opus per H-2.6; generator, evaluator and reporter not yet verified.",
+    "stage_6_scripts": "partial. guard-paths.sh complete and passed all seven tests on 3 August 2026. verify.sh, check-build.sh, check-regression.sh, checkpoint.sh, notify.sh and run-task.sh pending. Playwright not installed.",
+    "stage_7_first_task": "not started",
+    "stage_8_validation": "not started"
+  },
+
+  "_blockers_comment": "What prevents the next stage. Read before planning anything.",
+  "open_blockers": [
+    "11 product questions open in harness-docs/open-questions.md. Q-1 through Q-9, Q-14, Q-15.",
+    "Q-2, Q-3, Q-4 and Q-7 together define the entire scoring computation and block build plan tasks 2, 8, 14, 15, 16 and 17.",
+    "No local development environment yet, so no build or regression verification exists.",
+    "No Supabase development branch yet, so all database work is blocked."
+  ],
+
+  "_status_values_comment": "SETUP, PLANNED, IN_PROGRESS, VERIFIED, EVALUATED, DONE, FAILED, BLOCKED, PAUSED. FAILED means the work missed its criteria and a fix may be attempted. BLOCKED means it cannot proceed and the system must not try. PAUSED means waiting on allowance, input or approval, and is a normal operating state rather than an error."
+}

@@ -133,7 +133,15 @@ Ask the session:
 
 All seven must pass. Record the date here when they do.
 
-**Result:** not yet run.
+**Result: all seven passed, 3 August 2026.**
+
+Test 1 was run in the Cowork sandbox against the script directly. All five decisions were correct: deny on `src/lib/supabase.js`, ask on `src/App.jsx`, allow on `src/pages/tonetest/`, ask on an unlisted path, deny on malformed input. A further seventeen paths were checked across all three categories and every one landed correctly.
+
+Tests 2 and 3 were run by the operator in a live Claude Code session. The protected path edit was refused with the exact reason text from `project-config.json`, which confirms the configuration is being read rather than a default applied. The session stopped and reported rather than seeking another route to the file. The review path edit halted for approval rather than being refused, which confirms the feature is not blocked at build plan Task 1. The push to `main` was refused at the permission layer rather than declined by the model.
+
+One incidental confirmation: the session replied in Chinese, which is a rule stated only in `CLAUDE.md`. That file is therefore loading as well.
+
+**Re-run this test after any change to `project-config.json`, `.claude/settings.json` or `scripts/guard-paths.sh`.** All three are protected paths, so such a change is always a deliberate operator action, which makes it exactly the moment the guard is most likely to be broken without anyone noticing.
 
 ---
 

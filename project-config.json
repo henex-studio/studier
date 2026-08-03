@@ -32,8 +32,11 @@
     "supabase/pre_task_questions.sql",
     "supabase/studier_display_name.sql",
     "project-config.json",
+    "models.conf",
     ".claude/",
-    "harness-docs/decision-log.md"
+    "harness-docs/agents/",
+    "harness-docs/decision-log.md",
+    "scripts/guard-paths.sh"
   ],
 
   "_review_paths_comment": "Halt and ask, rather than refuse. Two groups. The first nine are shared platform files that Tone Test must change, so a blanket deny would block the feature at build plan Task 1; edits here should be study-type dispatch only, routing to a new module, and anything larger means logic is leaking into shared code (H-6.10 control two). The last entry covers the source specification documents, which may need correcting under D-1 and D-2 but should never be rewritten without the operator seeing it.",
