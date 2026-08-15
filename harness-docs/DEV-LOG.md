@@ -53,7 +53,34 @@ Separately, this working folder (`Work/Harness/projects/studier`) is where the a
 
 ---
 
-### Step 2. Create the Tone Test tables — NOT STARTED
+### Step 2. Create the Tone Test tables — DONE, 15 August 2026
+
+**Model used:** Opus. This step designed table structure and access rules, which are expensive to change once data exists.
+
+**What happened.** Created two new tables. Nothing existing was touched, so Tree Test could not be affected.
+
+`tone_test_settings` holds one row per Tone Test: the scenario, the content goal, the sensitivity level, the variant mode, the Content Score weights, which roles are active, and a spare field for Evidence Confidence settings. The weights and active roles start at the agreed defaults, so a new Tone Test is usable without configuring anything.
+
+`tone_variants` holds one row per wording variant: a label, the wording, an optional private note, and a display order.
+
+Access rules were copied from the existing `study_tasks` pattern and reuse the three permission functions already in the database. Owners and admins have full access to their own studies. Anonymous participants can read only from published studies.
+
+**One design decision worth recording.** Access rules in this database control which *rows* someone can see, not which *fields*. Left at that, an anonymous participant reading a published study's variants would also receive the creator's private note on each variant, and the scoring weights. Neither is meant for participants, and the private note in particular could contain internal reasoning about the wording.
+
+Postgres can restrict access field by field, so it is now doing that. Anonymous participants receive the variant label, wording and order, and the study's scenario, content goal, sensitivity level, variant mode and active roles. They do not receive the private note, the Content Score weights, or the Evidence Confidence settings. Verified after applying by listing exactly which fields the anonymous role can read.
+
+This is a new mechanism for this repository, introduced because the alternative was a real information leak that would have been harder to correct once participants existed.
+
+**Two fields with no defined meaning.**
+
+`sensitivity_level` was included because the development plan and the specification both call for it, but nothing has decided what values it takes or what it changes. It is stored as free text with no constraint. This remains one of the three open product questions.
+
+`variant_source` appears in the specification's field list and nowhere else, with no values and no stated purpose. It was left out. Adding a column later is a small change, as Step 1 showed; removing a field that code has started to rely on is not.
+
+**Also done.** The two migrations applied so far were written into `supabase/migrations/` so the repository carries a record of what the database looks like. The seven older loose SQL files in `supabase/` are history and are not the migration sequence.
+
+**Operator checks.** Nothing visible yet. The interface changes begin at Step 3.
+
 
 ### Step 3. Choose a study type when creating — NOT STARTED
 
