@@ -153,3 +153,15 @@ The role rename has not been propagated to the older documents. Development uses
 Three product questions remain open and none of them blocks Milestone 1: what sensitivity level does, whether a variant can be deleted after publishing when responses exist, and whether Evidence Confidence should include researcher judgement. Each is answered when the step that needs it arrives.
 
 The scoring specification was going to be written as a separate document. It is not needed. The product definition in `HANDOVER.md` section 2.5 is complete enough to build from, and a separate specification would be a third copy of the same decisions, which is how documents drift apart.
+
+---
+
+## Deferred work, raised 15 August 2026
+
+Two changes the operator wants, not part of Tone Test and not started. Raised now so they are not forgotten, planned in detail after Milestone 1.
+
+**Privacy policy.** Align Studier's privacy policy with the approach already working in the operator's other product, fevnote. The entity is Henex Studio, the contact address is privacy@henex.uk. Studier already collects some personal data at registration, so this is a real gap, not a nice-to-have.
+
+**Registration and account management.** Replace the current invite-code registration with the fevnote model: email verification and password reset as standard account management, rather than invite-only access.
+
+Both touch the registration and consent flow, which is shared platform code rather than Tone Test code, so both are planned separately once Milestone 1 is out of the way and the current fevnote implementation can be reviewed as the reference.

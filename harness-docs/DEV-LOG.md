@@ -96,9 +96,23 @@ Choosing Tone Test creates a study with `study_type` set to `tone_test`, minimal
 
 **Operator checks still open:** on the preview URL, create a Tree Test the way you always have and confirm nothing changed. Then create a Tone Test and confirm it opens a new, mostly empty page that shows the title you gave it.
 
-### Step 4. Tone Test builder, basic fields — NOT STARTED
+### Step 4. Tone Test builder, basic fields — DONE, 15 August 2026
 
-### Step 4. Tone Test builder, basic fields — NOT STARTED
+**Model used:** Sonnet. Interface work, fields and layout already defined in the product definition.
+
+**What happened.** The placeholder page from Step 3 was replaced with a real setup screen: test title, scenario, content goal, sensitivity level, welcome message, privacy message, end message, and an optional closing time. Layout follows the existing Tree Test builder's patterns (the same field blocks, the same text list editor for multi-line content) so the two look like one product.
+
+The first time a Tone Test is opened in the builder, its `tone_test_settings` row is created automatically if it does not already exist. Every Tone Test has exactly one settings row from that point on.
+
+**Sensitivity level is stored but does nothing**, and the field says so in the interface. This matches the standing open question; nothing was invented to fill the gap.
+
+**A wording variants section is visible but empty**, with a note that it is coming next. This is Step 5.
+
+**Files touched.** `src/pages/tonetest/ToneBuilderPage.jsx`, replacing the Step 3 placeholder in full. No other files changed.
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks.** Open a Tone Test, fill in every field, save, leave the page, come back, and confirm everything is still there. This is the first real test that Tone Test data is being stored correctly, not just that the page loads.
 
 ### Step 5. Wording variants — NOT STARTED
 
