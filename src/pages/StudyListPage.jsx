@@ -119,6 +119,7 @@ export default function StudyListPage({ profile }) {
   const [studies, setStudies] = useState([]);
   const [profiles, setProfiles] = useState([]);
   const [title, setTitle] = useState("");
+  const [studyType, setStudyType] = useState("tree_test");
   const [message, setMessage] = useState("");
   const [copiedStudyId, setCopiedStudyId] = useState("");
   const [fallbackLink, setFallbackLink] = useState("");
@@ -200,11 +201,39 @@ export default function StudyListPage({ profile }) {
       return;
     }
 
+    if (studyType === "tone_test") {
+      const defaultToneStudy = {
+        owner_id: profile.id,
+        title: title.trim(),
+        slug: makeSlug(title),
+        status: "draft",
+        study_type: "tone_test",
+        welcome_text: [],
+        welcome_bullets: [],
+        privacy_text: [
+          "This test does not ask for your name or contact details.",
+          "Please do not enter personal or case details."
+        ],
+        end_text: ["You have completed the test.", "Thank you for your feedback."],
+        expires_at: null,
+        data_collection_settings: {}
+      };
+
+      const { data, error } = await supabase.from("studies").insert(defaultToneStudy).select().single();
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+      navigateTo(`/tone-builder/${data.id}`);
+      return;
+    }
+
     const defaultStudy = {
       owner_id: profile.id,
       title: title.trim(),
       slug: makeSlug(title),
       status: "draft",
+      study_type: "tree_test",
       welcome_text: [
         "Thank you for taking part in this short internal pilot.",
         "You will see short tasks. For each task, choose where you would expect to find the information."
@@ -431,8 +460,17 @@ export default function StudyListPage({ profile }) {
           </div>
         </div>
 
-        <div className="inline-form">
+        <div className="inline-form new-test-form">
           <input className="text-input" placeholder="New test title" value={title} onChange={(event) => setTitle(event.target.value)} />
+          <select
+            className="text-input"
+            aria-label="Test type"
+            value={studyType}
+            onChange={(event) => setStudyType(event.target.value)}
+          >
+            <option value="tree_test">Tree Test</option>
+            <option value="tone_test">Tone Test</option>
+          </select>
           <button className="primary-button" onClick={createStudy}>Add new test</button>
         </div>
 

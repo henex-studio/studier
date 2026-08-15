@@ -82,7 +82,21 @@ This is a new mechanism for this repository, introduced because the alternative 
 **Operator checks.** Nothing visible yet. The interface changes begin at Step 3.
 
 
-### Step 3. Choose a study type when creating — NOT STARTED
+### Step 3. Choose a study type when creating — DONE, 15 August 2026
+
+**Model used:** Sonnet. Interface work following an already-agreed plan.
+
+**What happened.** The test collection page gained a type selector, Tree Test or Tone Test, next to the title box, defaulting to Tree Test so existing habits are unaffected. Choosing Tree Test creates a study exactly as before, using the same default welcome, privacy and end text as always, and opens the existing builder.
+
+Choosing Tone Test creates a study with `study_type` set to `tone_test`, minimal default text, and opens a new placeholder page rather than the Tree Test builder. That placeholder confirms the study saved and named itself, and is where Step 4 builds the real setup screen.
+
+**Files touched.** `StudyListPage.jsx` (the type selector and the branch in `createStudy`), a new file `src/pages/tonetest/ToneBuilderPage.jsx`, one added route in `App.jsx`, and a small CSS addition so the new dropdown fits next to the existing title field on both desktop and mobile widths.
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks still open:** on the preview URL, create a Tree Test the way you always have and confirm nothing changed. Then create a Tone Test and confirm it opens a new, mostly empty page that shows the title you gave it.
+
+### Step 4. Tone Test builder, basic fields — NOT STARTED
 
 ### Step 4. Tone Test builder, basic fields — NOT STARTED
 

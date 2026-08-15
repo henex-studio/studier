@@ -8,6 +8,7 @@ import TestRunnerPage from "./pages/TestRunnerPage";
 import DashboardPage from "./pages/DashboardPage";
 import GuidePage from "./pages/GuidePage";
 import PreviewRunnerPage from "./pages/PreviewRunnerPage";
+import ToneBuilderPage from "./pages/tonetest/ToneBuilderPage";
 import ConsentPage, { hasLocalConsent, hasProfileConsent } from "./pages/ConsentPage";
 
 function parsePath() {
@@ -176,6 +177,7 @@ export default function App() {
   if (first === "guide") return <GuidePage profile={profile} />;
   if (first === "preview" && parts[1]) return <PreviewRunnerPage profile={profile} studyId={parts[1]} />;
   if (first === "builder" && parts[1]) return <StudyBuilderPage profile={profile} studyId={parts[1]} />;
+  if (first === "tone-builder" && parts[1]) return <ToneBuilderPage profile={profile} studyId={parts[1]} />;
   if (first === "dashboard" && parts[1]) return <DashboardPage profile={profile} studyId={parts[1]} />;
 
   return <StudyListPage profile={profile} />;
