@@ -391,7 +391,7 @@ export default function ToneBuilderPage({ profile, studyId }) {
       <AdminShell profile={profile}>
         <section className="card">
           <p className="error-box">{loadError}</p>
-          <button className="secondary-button" onClick={() => navigateTo("/")}>Back to test collection</button>
+          <button className="secondary-button" onClick={() => navigateTo("/admin")}>Back to test collection</button>
         </section>
       </AdminShell>
     );
@@ -402,7 +402,7 @@ export default function ToneBuilderPage({ profile, studyId }) {
       <section className="card">
         <div className="button-row" style={{ justifyContent: "space-between" }}>
           <h1>{study.title || "Tone Test"}</h1>
-          <button className="secondary-button" onClick={() => navigateTo("/")}>Back to test collection</button>
+          <button className="secondary-button" onClick={() => navigateTo("/admin")}>Back to test collection</button>
         </div>
         <p className="muted-text">
           Tone Test helps a team decide which of two to four wordings to publish. It supports the

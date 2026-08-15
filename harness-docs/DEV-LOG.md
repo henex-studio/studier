@@ -148,6 +148,20 @@ The test collection already shows which type each study is (a coloured badge nex
 
 ---
 
+### Fix, found after Milestone 1 — DONE, 15 August 2026
+
+**What the operator saw.** Clicking "Back to test collection" on the Tone Test setup screen went to the consent screen instead, which looked like being signed out.
+
+**Cause.** The button navigated to `/`. The app treats the empty path as the consent screen unconditionally, regardless of login state, because that route is checked before the routes that require a session. This was never a logout. Every other "back to collection" link in the app already avoids this by going to `/admin` instead, which is not a special-cased path and falls through correctly to the test collection.
+
+**Fix.** Both places in the Tone Test setup screen that navigated to `/` now navigate to `/admin`, matching the rest of the app.
+
+**Files touched.** `src/pages/tonetest/ToneBuilderPage.jsx`.
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks.** From the Tone Test setup screen, click "Back to test collection" and confirm it returns to the test list, still signed in.
+
 ## Milestone 1 complete
 
 The operator can create a Tone Test, fill in its content, add wording variants, and find it all again later. It cannot be published or answered yet, which matches the end state Milestone 1 was scoped to reach.
