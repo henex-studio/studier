@@ -114,6 +114,20 @@ The first time a Tone Test is opened in the builder, its `tone_test_settings` ro
 
 **Operator checks.** Open a Tone Test, fill in every field, save, leave the page, come back, and confirm everything is still there. This is the first real test that Tone Test data is being stored correctly, not just that the page loads.
 
+### Fix, found during Step 4 verification — DONE, 15 August 2026
+
+**What the operator saw.** After saving a Tone Test and returning to the test collection, clicking "Edit" opened the Tree Test builder instead of the Tone Test builder, showing tasks, IA tree CSV and other Tree Test-only fields.
+
+**Cause.** The test collection page's "Edit" links, and the test title link in list view, were all written to point at `/builder/:id` unconditionally, regardless of a study's type. This is Step 6's job under the original plan, but leaving it unfixed meant Step 4 could not actually be verified, so it was brought forward.
+
+**Fix.** Every link that opens a study for editing now checks `study_type` and opens `/tone-builder/:id` for a Tone Test or `/builder/:id` for a Tree Test. Both card view and list view got a small coloured type badge next to the status badge, so the two kinds are visibly distinguishable in the collection, which is also part of Step 6's intent.
+
+**Files touched.** `StudyListPage.jsx`, `style.css` (new badge colours).
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks.** From the test collection, open a Tone Test's Edit link and confirm it lands on the Tone Test setup screen from Step 4, not the Tree Test builder. Open a Tree Test's Edit link and confirm nothing changed there.
+
 ### Step 5. Wording variants — NOT STARTED
 
 ### Step 6. Study list shows both types — NOT STARTED

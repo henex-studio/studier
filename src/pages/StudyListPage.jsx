@@ -50,6 +50,18 @@ function navigateTo(path) {
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
+function builderPath(study) {
+  return study.study_type === "tone_test" ? `/tone-builder/${study.id}` : `/builder/${study.id}`;
+}
+
+function typeLabel(study) {
+  return study.study_type === "tone_test" ? "Tone Test" : "Tree Test";
+}
+
+function typeClass(study) {
+  return study.study_type === "tone_test" ? "type-badge type-badge-tone" : "type-badge type-badge-tree";
+}
+
 function statusLabel(status) {
   if (status === "published") return "Published";
   if (status === "closed") return "Closed";
@@ -494,6 +506,7 @@ export default function StudyListPage({ profile }) {
               <article className="card study-card" key={study.id}>
                 <div className="study-card-header">
                   <span className={statusClass(study.status)}>{statusLabel(study.status)}</span>
+                  <span className={typeClass(study)}>{typeLabel(study)}</span>
                   {isAdminView ? <span className={ownerClass(study.owner_id)} title={owner.title}>{owner.label}</span> : null}
                 </div>
 
@@ -502,7 +515,7 @@ export default function StudyListPage({ profile }) {
               <p className="study-expiry-text">{expiryLabel(study)}</p>
 
                 <div className="button-row">
-                  <a className="secondary-button" href={`/builder/${study.id}`}>Edit</a>
+                  <a className="secondary-button" href={builderPath(study)}>Edit</a>
                   <a className="secondary-button" href={`/dashboard/${study.id}`}>Dashboard</a>
                   <a className="secondary-button" href={`/preview/${study.id}`}>Preview</a>
                   {study.status === "published" ? <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open link</a> : null}
@@ -542,14 +555,16 @@ export default function StudyListPage({ profile }) {
                     <React.Fragment key={study.id}>
                       <tr>
                         <td>
-                          <a className="test-title-link" href={`/builder/${study.id}`}>{study.title}</a>
+                          <a className="test-title-link" href={builderPath(study)}>{study.title}</a>
+                          {" "}
+                          <span className={typeClass(study)}>{typeLabel(study)}</span>
                         </td>
                         <td><span className={statusClass(study.status)}>{statusLabel(study.status)}</span></td>
                         {profile.role === "admin" ? <td><span className={ownerClass(study.owner_id)} title={owner.title}>{owner.label}</span></td> : null}
                         <td><span className="list-link-code" title={fullLink}>/{study.slug}</span></td>
                         <td>
                           <div className="list-link-row">
-                            <a href={`/builder/${study.id}`}>Edit</a>
+                            <a href={builderPath(study)}>Edit</a>
                             <a href={`/dashboard/${study.id}`}>Dashboard</a>
                             <a href={`/preview/${study.id}`}>Preview</a>
                             {study.status === "published" ? <a href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open</a> : null}
