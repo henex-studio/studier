@@ -44,9 +44,97 @@ function TextListEditor({ label, helpText, values, onChange }) {
   );
 }
 
+const MIN_VARIANTS = 2;
+const MAX_VARIANTS = 4;
+
+function makeTempKey() {
+  return `new-${Math.random().toString(36).slice(2)}-${Date.now()}`;
+}
+
+function VariantEditor({ variants, onUpdate, onRemove, onMove, onAdd }) {
+  return (
+    <div>
+      {variants.length < MIN_VARIANTS ? (
+        <p className="error-box">Add at least {MIN_VARIANTS} variants before this test can be published.</p>
+      ) : null}
+
+      {variants.map((variant, index) => (
+        <div className="question-card" key={variant.key}>
+          <div className="button-row" style={{ justifyContent: "space-between" }}>
+            <p className="form-label">Variant {index + 1}</p>
+            <div className="button-row">
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={index === 0}
+                onClick={() => onMove(variant.key, -1)}
+              >
+                Move up
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={index === variants.length - 1}
+                onClick={() => onMove(variant.key, 1)}
+              >
+                Move down
+              </button>
+              <button
+                className="danger-button"
+                type="button"
+                disabled={variants.length <= MIN_VARIANTS}
+                onClick={() => onRemove(variant.key)}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+
+          <label className="form-block">
+            <span className="form-label">Label</span>
+            <span className="muted-text">A short name to tell this version apart from the others. Not shown to participants.</span>
+            <input
+              className="text-input"
+              value={variant.label}
+              onChange={(event) => onUpdate(variant.key, "label", event.target.value)}
+            />
+          </label>
+
+          <label className="form-block">
+            <span className="form-label">Wording</span>
+            <span className="muted-text">The actual text participants will read.</span>
+            <textarea
+              className="textarea"
+              value={variant.variant_text}
+              onChange={(event) => onUpdate(variant.key, "variant_text", event.target.value)}
+            />
+          </label>
+
+          <label className="form-block">
+            <span className="form-label">Internal note (optional)</span>
+            <span className="muted-text">For your own reference. Participants never see this.</span>
+            <textarea
+              className="textarea"
+              value={variant.internal_note || ""}
+              onChange={(event) => onUpdate(variant.key, "internal_note", event.target.value)}
+            />
+          </label>
+        </div>
+      ))}
+
+      <button className="secondary-button" type="button" disabled={variants.length >= MAX_VARIANTS} onClick={onAdd}>
+        Add variant
+      </button>
+      {variants.length >= MAX_VARIANTS ? <p className="muted-text">Maximum of {MAX_VARIANTS} variants.</p> : null}
+    </div>
+  );
+}
+
 export default function ToneBuilderPage({ profile, studyId }) {
   const [study, setStudy] = useState(null);
   const [settings, setSettings] = useState(null);
+  const [variants, setVariants] = useState([]);
+  const [removedVariantIds, setRemovedVariantIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
@@ -58,9 +146,14 @@ export default function ToneBuilderPage({ profile, studyId }) {
     async function load() {
       setLoading(true);
 
-      const [{ data: studyData, error: studyError }, { data: settingsData, error: settingsError }] = await Promise.all([
+      const [
+        { data: studyData, error: studyError },
+        { data: settingsData, error: settingsError },
+        { data: variantRows, error: variantError }
+      ] = await Promise.all([
         supabase.from("studies").select("*").eq("id", studyId).single(),
-        supabase.from("tone_test_settings").select("*").eq("study_id", studyId).maybeSingle()
+        supabase.from("tone_test_settings").select("*").eq("study_id", studyId).maybeSingle(),
+        supabase.from("tone_variants").select("*").eq("study_id", studyId).order("display_order")
       ]);
 
       if (!active) return;
@@ -102,6 +195,25 @@ export default function ToneBuilderPage({ profile, studyId }) {
         setSettings(created);
       }
 
+      if (variantError) {
+        setLoadError(variantError.message);
+        setLoading(false);
+        return;
+      }
+
+      const loadedVariants = (variantRows || []).map((row) => ({ ...row, key: row.id }));
+      // A brand new Tone Test starts with two empty variants, since the test
+      // needs at least two to ever be publishable and an empty builder gives
+      // no cue that variants are required at all.
+      setVariants(
+        loadedVariants.length > 0
+          ? loadedVariants
+          : [
+              { key: makeTempKey(), id: null, label: "", variant_text: "", internal_note: "", display_order: 0 },
+              { key: makeTempKey(), id: null, label: "", variant_text: "", internal_note: "", display_order: 1 }
+            ]
+      );
+
       setLoading(false);
     }
 
@@ -115,6 +227,43 @@ export default function ToneBuilderPage({ profile, studyId }) {
 
   function updateSettingsField(field, value) {
     setSettings((current) => ({ ...current, [field]: value }));
+  }
+
+  function addVariant() {
+    setVariants((current) => {
+      if (current.length >= MAX_VARIANTS) return current;
+      return [
+        ...current,
+        { key: makeTempKey(), id: null, label: "", variant_text: "", internal_note: "", display_order: current.length }
+      ];
+    });
+  }
+
+  function updateVariant(key, field, value) {
+    setVariants((current) => current.map((variant) => (variant.key === key ? { ...variant, [field]: value } : variant)));
+  }
+
+  function removeVariant(key) {
+    setVariants((current) => {
+      if (current.length <= MIN_VARIANTS) return current;
+      const target = current.find((variant) => variant.key === key);
+      if (target?.id) setRemovedVariantIds((ids) => [...ids, target.id]);
+      return current
+        .filter((variant) => variant.key !== key)
+        .map((variant, index) => ({ ...variant, display_order: index }));
+    });
+  }
+
+  function moveVariant(key, direction) {
+    setVariants((current) => {
+      const index = current.findIndex((variant) => variant.key === key);
+      const targetIndex = index + direction;
+      if (index === -1 || targetIndex < 0 || targetIndex >= current.length) return current;
+
+      const next = [...current];
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next.map((variant, position) => ({ ...variant, display_order: position }));
+    });
   }
 
   async function saveAll() {
@@ -149,13 +298,83 @@ export default function ToneBuilderPage({ profile, studyId }) {
       })
       .eq("study_id", studyId);
 
-    setSaving(false);
-
     if (settingsError) {
+      setSaving(false);
       setMessage(settingsError.message);
       return;
     }
 
+    if (removedVariantIds.length > 0) {
+      const { error: deleteError } = await supabase.from("tone_variants").delete().in("id", removedVariantIds);
+      if (deleteError) {
+        setSaving(false);
+        setMessage(deleteError.message);
+        return;
+      }
+    }
+
+    const toUpdate = variants.filter((variant) => variant.id);
+    const toInsert = variants.filter((variant) => !variant.id);
+
+    if (toUpdate.length > 0) {
+      const results = await Promise.all(
+        toUpdate.map((variant) =>
+          supabase
+            .from("tone_variants")
+            .update({
+              label: variant.label,
+              variant_text: variant.variant_text,
+              internal_note: variant.internal_note || null,
+              display_order: variant.display_order,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", variant.id)
+        )
+      );
+      const updateError = results.find((result) => result.error)?.error;
+      if (updateError) {
+        setSaving(false);
+        setMessage(updateError.message);
+        return;
+      }
+    }
+
+    if (toInsert.length > 0) {
+      const { data: insertedRows, error: insertError } = await supabase
+        .from("tone_variants")
+        .insert(
+          toInsert.map((variant) => ({
+            study_id: studyId,
+            label: variant.label,
+            variant_text: variant.variant_text,
+            internal_note: variant.internal_note || null,
+            display_order: variant.display_order
+          }))
+        )
+        .select();
+
+      if (insertError) {
+        setSaving(false);
+        setMessage(insertError.message);
+        return;
+      }
+
+      // Match inserted rows back to their local entries by position, since
+      // both arrays were built in the same order, then adopt the real id so
+      // a second save updates rather than inserts again.
+      setVariants((current) => {
+        let insertedIndex = 0;
+        return current.map((variant) => {
+          if (variant.id) return variant;
+          const inserted = insertedRows[insertedIndex];
+          insertedIndex += 1;
+          return inserted ? { ...variant, id: inserted.id } : variant;
+        });
+      });
+    }
+
+    setRemovedVariantIds([]);
+    setSaving(false);
     setMessage("Saved.");
   }
 
@@ -276,7 +495,14 @@ export default function ToneBuilderPage({ profile, studyId }) {
 
       <section className="card">
         <h2>Wording variants</h2>
-        <p className="muted-text">Add two to four versions of the wording to test. Coming next.</p>
+        <p className="muted-text">Add two to four versions of the wording to test.</p>
+        <VariantEditor
+          variants={variants}
+          onUpdate={updateVariant}
+          onRemove={removeVariant}
+          onMove={moveVariant}
+          onAdd={addVariant}
+        />
       </section>
 
       <section className="card">

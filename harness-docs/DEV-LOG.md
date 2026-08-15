@@ -128,6 +128,26 @@ The first time a Tone Test is opened in the builder, its `tone_test_settings` ro
 
 **Operator checks.** From the test collection, open a Tone Test's Edit link and confirm it lands on the Tone Test setup screen from Step 4, not the Tree Test builder. Open a Tree Test's Edit link and confirm nothing changed there.
 
-### Step 5. Wording variants — NOT STARTED
+### Step 5. Wording variants — DONE, 15 August 2026
 
-### Step 6. Study list shows both types — NOT STARTED
+**Model used:** Sonnet. Interface work, rules already defined (two to four variants, label, wording, optional note, order).
+
+**What happened.** The wording variants section is now a real editor: add, edit, delete, move up and down. A brand new Tone Test starts with two empty variants already present, since the test needs at least two to ever be publishable and an empty section gave no cue that variants are required. Add is disabled at four. Delete is disabled at two, with a message explaining why. Each variant has a label (for the creator's own reference, not shown to participants), the wording itself, and an optional internal note.
+
+**How variants save.** Unlike the single settings row, variants are a list, so saving them is not a single update. On Save: any variant removed from the list is deleted from the database, any variant that already exists there is updated, and any new variant is inserted and then adopts its real database id in the interface, so a second Save updates it rather than creating a duplicate. All variant changes happen together with the rest of the page's Save button; there is no separate save action per variant.
+
+**Files touched.** `src/pages/tonetest/ToneBuilderPage.jsx` only.
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks.** Add a third variant. Reorder them with move up and down. Delete one down to two. Save, leave the page, come back, and confirm the order and content survived exactly. Try to add a fifth and confirm the button is disabled. Try to delete down to one and confirm the button is disabled at two.
+
+### Step 6. Study list shows both types — DONE early, alongside the Step 4 fix above.
+
+The test collection already shows which type each study is (a coloured badge next to the status badge) and Edit already opens the correct builder for each. See the "Fix, found during Step 4 verification" entry. Nothing further needed here.
+
+---
+
+## Milestone 1 complete
+
+The operator can create a Tone Test, fill in its content, add wording variants, and find it all again later. It cannot be published or answered yet, which matches the end state Milestone 1 was scoped to reach.
