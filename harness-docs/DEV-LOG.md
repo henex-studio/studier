@@ -165,3 +165,53 @@ The test collection already shows which type each study is (a coloured badge nex
 ## Milestone 1 complete
 
 The operator can create a Tone Test, fill in its content, add wording variants, and find it all again later. It cannot be published or answered yet, which matches the end state Milestone 1 was scoped to reach.
+
+---
+
+## Milestone 2, configure and publish a Tone Test
+
+### Step 1. Database, role questions and risk gates — DONE, 18 August 2026
+
+**Model used:** Opus. Table design and the gate assignment decision.
+
+**What happened.** Created one new table, `tone_questions`, holding every question a Tone Test asks. Three kinds of question live in it: rating questions (the 1 to 5 agreement statements that feed the Content Score), open questions (free text, never scored), and gate questions (the six risk gates, answered Pass, Concern or Fail).
+
+**Why there is no separate risk gate table.** The plan named `tone_risk_gates` as a second table. Building it that way would have meant one row per study per gate, holding a gate's name and whether it is critical. But under the settled product definition neither of those varies by study. It is a fixed platform fact. A per-study table would have carried six identical rows for every Tone Test ever created, and invited someone later to edit one copy and not the others. The gate's identity now sits on the gate question itself, as two fields, which is also where a participant's answer points. One table instead of two, and no way for copies to drift apart.
+
+**The document conflict this resolved.** The original specification assigns gates to roles under the old role names, giving the Editor three gates including Privacy and consent and Harm blame and stigma. `HANDOVER.md` section 2.5 settled a different assignment later, and states that where the two disagree the handover is current. This build follows the settled version: the Agency answers five gates including all four critical ones, and the Editor answers one non-critical gate. The Audience answers none, because a gate is a judgement and the Audience supplies evidence. Nothing new was decided here.
+
+**Default questions.** A new file, `src/lib/tonetest/defaultQuestions.js`, holds the template every new Tone Test starts from: 32 questions in total, being 10 for the Audience, 13 for the Agency and 9 for the Editor. Wording comes from the specification's section 14. Gate question wording was written fresh, since the specification only named the gates rather than phrasing them as questions. All of it is editable by the creator in Step 3; none of it is locked.
+
+The Accessibility and readability gate's wording says explicitly that it reviews the copy and is not a compliance assessment against the accessibility standard. Leaving that unsaid would have implied a judgement the gate does not make, which the settled definition specifically warns against.
+
+**Seeding.** The first time a Tone Test is opened in the builder, its questions are created from that template, in the same place the settings row is already created. The table has a uniqueness rule covering study, role, type and order, so if seeding ever ran twice the second attempt fails rather than silently doubling every question.
+
+**Verified by:** reading back the table's actual structure and every constraint after applying it, and running the seed template through a script that checks it against the same rules the database enforces, plus the counts and gate assignment in `HANDOVER.md` section 2.5. All checks passed: 32 rows, correct distribution per role, six gates seeded exactly once each, four critical gates all assigned to the Agency, no gates assigned to the Audience. `npm run build` also completes without errors.
+
+**Operator checks.** Nothing visible yet, as planned. The interface for this arrives in Steps 2 and 3.
+
+### Step 2. Role enable and disable — DONE, 18 August 2026
+
+**Model used:** Sonnet. Interface work, using the `active_roles_json` field and gate assignment already settled in Step 1.
+
+**What happened.** The setup screen gained a Roles section: one card per role, showing its description, a toggle, and which gates it answers (or, for the Audience, a note that it answers none). Turning a role off asks for confirmation first, and the confirmation names exactly which gates that role currently answers, flagging when one of them is critical, since a critical gate normally blocks a recommendation on its own if it fails, and switching the role off means that check will not run at all. Turning a role back on needs no confirmation.
+
+If no role is active at all, a message says so, matching the pattern already used for too few variants.
+
+**Files touched.** `src/pages/tonetest/ToneBuilderPage.jsx` (the new section and the confirm-before-disable logic), `src/lib/tonetest/defaultQuestions.js` (exported the role labels and descriptions already defined there in Step 1, so this step did not redefine them).
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks.** Turn the Agency off and confirm the warning names all five of its gates and flags the four critical ones. Turn the Editor off and confirm the warning names its one gate, not flagged critical. Turn the Audience off and confirm the warning says it answers no gates. Cancel a disable and confirm nothing changed. Confirm a disable, save, reload, and confirm it stayed off. Turn all three roles off and confirm the "at least one role" message appears.
+
+### Step 3. Question templates, editable — NOT STARTED
+
+### Step 3. Question templates, editable — NOT STARTED
+
+### Step 4. Content Score weight setup — NOT STARTED
+
+### Step 5. Risk gate configuration display — NOT STARTED
+
+### Step 6. Preview by role — NOT STARTED
+
+### Step 7. Publishing checks — NOT STARTED

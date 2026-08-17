@@ -132,9 +132,93 @@ The operator can create a Tone Test, fill in its content, add wording variants, 
 
 ---
 
-## Milestones 2 to 5, outline only
+## Milestone 2, in detail
 
-**Milestone 2, the rest of the builder.** Role configuration with enable and disable, default question templates per role that the creator can edit, Content Score weight setup with a live total that blocks publishing unless it reaches 100, the six risk gates, preview by role, and publishing checks. This is the largest milestone.
+**Written:** 18 August 2026. **Approve before work starts, same as Milestone 1.**
+
+Seven steps. Each ends with something the operator checks, same pattern as Milestone 1.
+
+### A document conflict this milestone resolves
+
+The original specification (`docs/tone-test/Studier_Tone_Test_PRD_v2_ScoringAligned.md`) assigns risk gates to roles under their old names, from before the Audience, Agency, Editor rename. Under that older assignment, the Plain Language and Accessibility Reviewer (now Editor) answers three gates: Accessibility and readability, Harm blame and stigma, and Privacy and consent.
+
+`HANDOVER.md` section 2.5 settled a different assignment later, and states plainly that where the two disagree, the decision log and handover are current. Under the settled version, Agency answers five of the six gates, including all four critical ones (Policy accuracy, Safety risk, Privacy and consent, Harm blame and stigma), plus the non-critical Operational promise. Editor answers exactly one gate, Accessibility and readability, which is not critical.
+
+This milestone builds to the settled version, not the PRD's older one. This is not a new decision, it is an old document catching up to one already made. It is recorded here rather than asked again.
+
+### Step 1. Database, role questions and risk gates
+
+**What happens.** Two new tables.
+
+`tone_questions` holds one row per question: which study, which role, the question text, the question type (rating, open text, or gate), and its display order. Rating and open questions are per role. Gate questions carry which of the six fixed gates they represent and whether that gate is critical, using the settled assignment above.
+
+`tone_risk_gates` is not a separate table after all. On reflection, a gate's criticality is a fixed platform fact, not a per-study setting, so it does not need its own table with per-study rows. It is stored as two columns directly on gate-type rows in `tone_questions`: `gate_key` and `gate_critical`. This avoids a redundant table and keeps gate identity attached to the question that asks it, which is where the response ties back to it anyway.
+
+When a Tone Test is first opened in the builder, its `tone_questions` rows are seeded from the default templates in PRD section 14, adapted to the settled gate assignment: six Audience rating questions, four Audience open questions, five Agency rating questions, five Agency gate questions (four critical), three Agency open questions, five Editor rating questions, one Editor gate question (not critical), three Editor open questions. Creators can edit question wording after seeding; the platform does not lock it.
+
+**What could go wrong.** Almost nothing, this only adds a table. Access rules copied from the same pattern as `tone_variants`.
+
+**Operator checks.** Nothing visible yet.
+
+---
+
+### Step 2. Role enable and disable
+
+**What happens.** The Tone Test setup screen gains a section with a toggle for each of the three roles, backed by the `active_roles_json` field already in `tone_test_settings` from Step 2 of Milestone 1. Disabling a role shows a warning naming which gates will then have no respondent, and marking which of those are critical. The creator confirms before it takes effect.
+
+**Operator checks.** Turn a role off, see the warning naming its gates, confirm, and see the role marked off. Turn it back on.
+
+---
+
+### Step 3. Question templates, editable
+
+**What happens.** For each active role, the setup screen shows its seeded rating, gate, and open questions, editable in place. Creators can change wording. Adding or removing individual questions is not in this step, only editing the wording of what was seeded, which matches what the specification asks for.
+
+**Operator checks.** Edit a question's wording for each role, save, reload, confirm it stuck.
+
+---
+
+### Step 4. Content Score weight setup
+
+**What happens.** A section showing the three weight fields (Audience Evidence, Agency Assurance, Content Quality) already stored in `content_score_weights_json`, with a live total. Publishing is blocked unless active weights total exactly 100; this step builds the input and the running total, not the publish block itself, which belongs to Step 7.
+
+**Operator checks.** Change a weight, see the total update live. Set weights that do not total 100 and see that reflected, without yet being blocked from anything (the block arrives in Step 7).
+
+---
+
+### Step 5. Risk gate configuration display
+
+**What happens.** A read-only view of the six gates, which role answers each, and which are critical, drawing from the seeded `tone_questions` gate rows. This step does not let creators change gate criticality, since that is a platform-level fact under the settled decision, not a per-study choice.
+
+**Operator checks.** See all six gates listed with their role and critical marking matching the table in `HANDOVER.md` section 2.5.
+
+---
+
+### Step 6. Preview by role
+
+**What happens.** A preview mode, reachable from the setup screen, that shows what a participant would see after choosing a given active role: the assigned or all variants depending on variant mode, and that role's questions in order. Read-only, submits nothing.
+
+**Operator checks.** Preview as each active role, confirm the right questions and variants appear.
+
+---
+
+### Step 7. Publishing checks
+
+**What happens.** The publish action (added to the test collection alongside the existing Tree Test publish flow) is blocked unless: welcome and privacy content are present, scenario and content goal are present, there are two to four variants, at least one role is active, required role questions exist for every active role, active Content Score weights total exactly 100, and the closing time is not in the past. This mirrors the existing Tree Test publish-check pattern already in `StudyListPage.jsx`.
+
+**Operator checks.** Try to publish an incomplete Tone Test, see the specific reasons listed. Fix them one at a time, watch the list shrink. Publish once every check passes.
+
+---
+
+### End of Milestone 2
+
+The operator can fully configure a Tone Test, including roles, questions, weights and gates, preview it from each role's perspective, and publish it. Nobody can answer it yet, since the public participant flow is Milestone 3.
+
+**Realistic elapsed time.** This is the largest milestone. Four to six hours including operator checks, spread across sessions. Steps 1 and 3 carry the most design judgement; the rest are largely mechanical once those are right.
+
+---
+
+## Milestones 3 to 5, outline only
 
 **Milestone 3, the participant flow.** The public link detects the study type, shows welcome and privacy content, offers only the active roles, locks the role once answering starts, assigns or displays variants according to the mode, shows the right questions, and saves responses.
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AdminShell from "../../components/AdminShell";
 import { supabase } from "../../lib/supabase";
+import { buildDefaultQuestions, ROLE_KEYS, ROLE_LABELS, ROLE_DESCRIPTIONS, GATES } from "../../lib/tonetest/defaultQuestions";
 
 function navigateTo(path) {
   window.history.pushState({}, "", path);
@@ -41,6 +42,56 @@ function TextListEditor({ label, helpText, values, onChange }) {
       {helpText ? <span className="muted-text">{helpText}</span> : null}
       <textarea className="textarea" value={text} onChange={(event) => onChange(event.target.value.split("\n").filter(Boolean))} />
     </label>
+  );
+}
+
+function defaultActiveRoles() {
+  return { audience: true, agency: true, editor: true };
+}
+
+function activeRoleCount(activeRoles) {
+  return ROLE_KEYS.filter((roleKey) => activeRoles?.[roleKey]).length;
+}
+
+function RoleToggles({ activeRoles, onRequestToggle }) {
+  return (
+    <div>
+      {activeRoleCount(activeRoles) === 0 ? (
+        <p className="error-box">At least one role must be active before this test can be published.</p>
+      ) : null}
+
+      {ROLE_KEYS.map((roleKey) => {
+        const isActive = activeRoles?.[roleKey] !== false;
+        const gatesForRole = GATES.filter((gate) => gate.role === roleKey);
+
+        return (
+          <div className="question-card" key={roleKey}>
+            <div className="button-row" style={{ justifyContent: "space-between" }}>
+              <div>
+                <p className="form-label">{ROLE_LABELS[roleKey]}</p>
+                <p className="muted-text">{ROLE_DESCRIPTIONS[roleKey]}</p>
+              </div>
+              <label className="button-row" style={{ gap: "8px" }}>
+                <input
+                  type="checkbox"
+                  checked={isActive}
+                  onChange={() => onRequestToggle(roleKey, gatesForRole)}
+                />
+                <span>{isActive ? "Active" : "Disabled"}</span>
+              </label>
+            </div>
+
+            {gatesForRole.length > 0 ? (
+              <p className="muted-text">
+                Answers {gatesForRole.length === 1 ? "this gate" : "these gates"}: {gatesForRole.map((gate) => `${gate.label}${gate.critical ? " (critical)" : ""}`).join(", ")}
+              </p>
+            ) : (
+              <p className="muted-text">Answers no risk gates. Supplies evidence, not judgement.</p>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -149,11 +200,13 @@ export default function ToneBuilderPage({ profile, studyId }) {
       const [
         { data: studyData, error: studyError },
         { data: settingsData, error: settingsError },
-        { data: variantRows, error: variantError }
+        { data: variantRows, error: variantError },
+        { count: questionCount, error: questionCountError }
       ] = await Promise.all([
         supabase.from("studies").select("*").eq("id", studyId).single(),
         supabase.from("tone_test_settings").select("*").eq("study_id", studyId).maybeSingle(),
-        supabase.from("tone_variants").select("*").eq("study_id", studyId).order("display_order")
+        supabase.from("tone_variants").select("*").eq("study_id", studyId).order("display_order"),
+        supabase.from("tone_questions").select("id", { count: "exact", head: true }).eq("study_id", studyId)
       ]);
 
       if (!active) return;
@@ -201,6 +254,30 @@ export default function ToneBuilderPage({ profile, studyId }) {
         return;
       }
 
+      if (questionCountError) {
+        setLoadError(questionCountError.message);
+        setLoading(false);
+        return;
+      }
+
+      // Seed this study's role questions the first time it is opened. The
+      // table has a uniqueness rule covering study, role, type and order, so
+      // if this somehow runs twice the second attempt fails rather than
+      // silently doubling every question.
+      if (!questionCount) {
+        const { error: seedError } = await supabase
+          .from("tone_questions")
+          .insert(buildDefaultQuestions(studyId));
+
+        if (!active) return;
+
+        if (seedError) {
+          setLoadError(seedError.message);
+          setLoading(false);
+          return;
+        }
+      }
+
       const loadedVariants = (variantRows || []).map((row) => ({ ...row, key: row.id }));
       // A brand new Tone Test starts with two empty variants, since the test
       // needs at least two to ever be publishable and an empty builder gives
@@ -227,6 +304,25 @@ export default function ToneBuilderPage({ profile, studyId }) {
 
   function updateSettingsField(field, value) {
     setSettings((current) => ({ ...current, [field]: value }));
+  }
+
+  function requestRoleToggle(roleKey, gatesForRole) {
+    const activeRoles = settings.active_roles_json || defaultActiveRoles();
+    const isCurrentlyActive = activeRoles[roleKey] !== false;
+
+    if (isCurrentlyActive) {
+      const criticalGates = gatesForRole.filter((gate) => gate.critical);
+      const gateNote = gatesForRole.length > 0
+        ? `\n\nThis role currently answers ${gatesForRole.length === 1 ? "this gate" : "these gates"}: ${gatesForRole.map((gate) => `${gate.label}${gate.critical ? " (critical)" : ""}`).join(", ")}.${criticalGates.length > 0 ? " This includes a critical gate, which normally blocks a recommendation on its own if it fails. With this role off, that check will not run at all." : ""}`
+        : "\n\nThis role answers no risk gates, so turning it off does not remove any gate coverage.";
+
+      const confirmed = window.confirm(
+        `Turn off ${ROLE_LABELS[roleKey]}?${gateNote}`
+      );
+      if (!confirmed) return;
+    }
+
+    updateSettingsField("active_roles_json", { ...activeRoles, [roleKey]: !isCurrentlyActive });
   }
 
   function addVariant() {
@@ -294,6 +390,7 @@ export default function ToneBuilderPage({ profile, studyId }) {
         scenario: settings.scenario,
         content_goal: settings.content_goal,
         sensitivity_level: settings.sensitivity_level,
+        active_roles_json: settings.active_roles_json,
         updated_at: new Date().toISOString()
       })
       .eq("study_id", studyId);
@@ -491,6 +588,18 @@ export default function ToneBuilderPage({ profile, studyId }) {
             onChange={(event) => updateStudyField("expires_at", dateTimeLocalToIso(event.target.value))}
           />
         </label>
+      </section>
+
+      <section className="card">
+        <h2>Roles</h2>
+        <p className="muted-text">
+          Turn a role off if nobody suitable is available for this test. The dashboard will mark
+          any gate that role would have answered as not covered, never as passed.
+        </p>
+        <RoleToggles
+          activeRoles={settings.active_roles_json || defaultActiveRoles()}
+          onRequestToggle={requestRoleToggle}
+        />
       </section>
 
       <section className="card">
