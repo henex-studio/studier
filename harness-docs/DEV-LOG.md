@@ -232,7 +232,19 @@ If no role is active at all, a message says so, matching the pattern already use
 
 **Operator checks.** Change each weight and confirm the total updates live. Set weights that do not total 100 and confirm the total shows in red with the reason. Set them to total exactly 100 and confirm it shows in green. Turn a role off in the Roles section while its weight is still above 0, and confirm the note about it appears.
 
-### Step 5. Risk gate configuration display — NOT STARTED
+### Fix, found during Step 4 verification — DONE, 18 August 2026
+
+**What the operator saw.** Two problems. First, a weight field showing 0 could not be cleared to type a new number; it snapped back to 0 immediately. Second, turning a role off left its weight field sitting there, still counted toward the total, with only a note suggesting the operator deal with it manually.
+
+**Fix 1, the input.** The field was forcing every edit through `Number(...)`, so an empty field became 0 the instant it was cleared, before a new digit could be typed. The field now allows a genuinely empty value while being edited, and only becomes a real number when it is saved.
+
+**Fix 2, the weight for a disabled role.** On review, this was a real design mistake, not a matter of taste, caught because the operator asked. The plan for this step said "active weights must total 100," and the first build silently reinterpreted that as "these three weights must always total 100," which is not the same rule and was never approved. A role that is off answers nothing, so a weight assigned to it cannot mean anything. The weight field for an inactive role's group is no longer shown at all, and the total now only sums the active groups. The inactive weight is not cleared, only hidden, so turning the role back on restores it exactly as it was.
+
+**Files touched.** `src/pages/tonetest/ToneBuilderPage.jsx` only.
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks.** Clear a weight field to empty and type a new value without it fighting back. Turn a role off and confirm its weight field disappears and the total recalculates over the remaining roles only. Turn it back on and confirm its weight is exactly what it was before.
 
 ### Step 5. Risk gate configuration display — NOT STARTED
 

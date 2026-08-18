@@ -105,23 +105,44 @@ function defaultWeights() {
   return { audience_evidence: 40, agency_assurance: 35, content_quality: 25 };
 }
 
-function weightTotal(weights) {
-  return WEIGHT_GROUPS.reduce((sum, group) => sum + (Number(weights?.[group.key]) || 0), 0);
+// Only the weights belonging to currently active roles count toward the
+// total. A role that is off contributes nothing, so its stored weight (kept,
+// not cleared, so it comes back if the role is turned on again) is excluded
+// here rather than forced to zero.
+function weightTotal(weights, activeRoles) {
+  return WEIGHT_GROUPS
+    .filter((group) => activeRoles?.[group.role] !== false)
+    .reduce((sum, group) => sum + (Number(weights?.[group.key]) || 0), 0);
+}
+
+// Coerces every weight to a real number before it is written to the
+// database. The builder allows a field to sit empty while the operator is
+// typing a new value; nothing empty should ever reach the database.
+function normalizeWeights(weights) {
+  return WEIGHT_GROUPS.reduce((normalized, group) => {
+    normalized[group.key] = Number(weights?.[group.key]) || 0;
+    return normalized;
+  }, {});
 }
 
 function WeightEditor({ weights, activeRoles, onUpdate }) {
-  const total = weightTotal(weights);
-  const isValid = total === 100;
-  const offRoleGroups = WEIGHT_GROUPS.filter((group) => activeRoles?.[group.role] === false);
+  const activeGroups = WEIGHT_GROUPS.filter((group) => activeRoles?.[group.role] !== false);
+  const total = weightTotal(weights, activeRoles);
+  const isValid = activeGroups.length > 0 && total === 100;
+
+  if (activeGroups.length === 0) {
+    return <p className="muted-text">No active roles to weight. Turn on at least one role above.</p>;
+  }
 
   return (
     <div>
       <p className="muted-text">
-        How much each group of ratings counts toward the Content Score. These three weights must
-        total exactly 100 before this test can be published.
+        How much each active role's ratings count toward the Content Score. These weights must
+        total exactly 100 before this test can be published. A role that is off does not appear
+        here and does not need a weight; turning it back on brings its weight back too.
       </p>
 
-      {WEIGHT_GROUPS.map((group) => (
+      {activeGroups.map((group) => (
         <label className="form-block" key={group.key}>
           <span className="form-label">{group.label}</span>
           <input
@@ -129,8 +150,8 @@ function WeightEditor({ weights, activeRoles, onUpdate }) {
             type="number"
             min="0"
             max="100"
-            value={weights?.[group.key] ?? 0}
-            onChange={(event) => onUpdate(group.key, Number(event.target.value))}
+            value={weights?.[group.key] ?? ""}
+            onChange={(event) => onUpdate(group.key, event.target.value)}
           />
         </label>
       ))}
@@ -138,14 +159,6 @@ function WeightEditor({ weights, activeRoles, onUpdate }) {
       <p className={isValid ? "success-box" : "error-box"}>
         Total: {total}{isValid ? "" : " (must total exactly 100)"}
       </p>
-
-      {offRoleGroups.length > 0 ? (
-        <p className="muted-text">
-          {offRoleGroups.map((group) => group.label).join(" and ")} {offRoleGroups.length === 1 ? "is" : "are"} weighted
-          above but its role is currently off, so it will contribute nothing. Consider setting its
-          weight to 0 and giving that share to an active role, or turning the role back on.
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -530,7 +543,7 @@ export default function ToneBuilderPage({ profile, studyId }) {
         content_goal: settings.content_goal,
         sensitivity_level: settings.sensitivity_level,
         active_roles_json: settings.active_roles_json,
-        content_score_weights_json: settings.content_score_weights_json,
+        content_score_weights_json: normalizeWeights(settings.content_score_weights_json || defaultWeights()),
         updated_at: new Date().toISOString()
       })
       .eq("study_id", studyId);
