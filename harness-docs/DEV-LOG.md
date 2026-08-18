@@ -204,11 +204,35 @@ If no role is active at all, a message says so, matching the pattern already use
 
 **Operator checks.** Turn the Agency off and confirm the warning names all five of its gates and flags the four critical ones. Turn the Editor off and confirm the warning names its one gate, not flagged critical. Turn the Audience off and confirm the warning says it answers no gates. Cancel a disable and confirm nothing changed. Confirm a disable, save, reload, and confirm it stayed off. Turn all three roles off and confirm the "at least one role" message appears.
 
-### Step 3. Question templates, editable — NOT STARTED
+### Step 3. Question templates, editable — DONE, 18 August 2026
 
-### Step 3. Question templates, editable — NOT STARTED
+**Model used:** Sonnet. Interface work over the questions seeded in Step 1.
 
-### Step 4. Content Score weight setup — NOT STARTED
+**What happened.** The setup screen gained a Questions section, showing every active role's rating, gate and open questions, grouped by role and then by type, with wording editable in a text box per question. Gate questions show which fixed gate they represent and whether it is critical, read-only, next to the editable wording. Only roles currently turned on in the Roles section appear here, so turning a role off in Step 2 also hides its questions from this section without deleting them.
+
+**What this step does not do.** Adding or removing individual questions, and changing a question's type or which gate it represents. The plan scoped this step to wording edits only, since that is what the specification asks for; anything beyond that is a larger change to a fixed, seeded structure and was not part of this step.
+
+**Files touched.** `src/pages/tonetest/ToneBuilderPage.jsx` only.
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks.** Edit a rating question's wording for each active role, save, reload, confirm it stuck. Turn a role off in the Roles section and confirm its questions disappear from this section; turn it back on and confirm they return with any edits intact. Confirm gate questions show their gate name and critical marking correctly, matching Step 2's warning text for that role.
+
+### Step 4. Content Score weight setup — DONE, 18 August 2026
+
+**Model used:** Sonnet. Interface work over the `content_score_weights_json` field already defined in Step 2 of Milestone 1, using the group names and defaults settled in `HANDOVER.md` section 2.5 (Audience Evidence 40, Agency Assurance 35, Content Quality 25).
+
+**What happened.** A weights section with three number inputs and a live running total. The total is shown in the same green-or-red pattern already used for the variant and role warnings, so it reads as consistent with the rest of the page. This step builds the input and the total only; the publish block for a total that is not exactly 100 is Step 7's job, as planned.
+
+**One thing corrected during the build, not in the plan.** The first version disabled a weight's input field when its role was turned off in Step 2, on the idea that the weight would "redistribute automatically." That reasoning does not hold. Automatic redistribution is a scoring-time rule from `HANDOVER.md` section 2.5, for when a specific variant happens to receive no responses from a role, and it has not been built yet, it belongs to Milestone 4. It is not a builder-time rule about a role being switched off, and nothing in the plan or the product definition says disabling a role should also silently change the study's configured weights. Building it that way would have made the field lie about what it does. The field now stays editable regardless of role state, and if a weight is left pointed at a role that is off, a plain note says so and suggests reassigning it, rather than the interface pretending to handle it.
+
+**Files touched.** `src/pages/tonetest/ToneBuilderPage.jsx` only.
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks.** Change each weight and confirm the total updates live. Set weights that do not total 100 and confirm the total shows in red with the reason. Set them to total exactly 100 and confirm it shows in green. Turn a role off in the Roles section while its weight is still above 0, and confirm the note about it appears.
+
+### Step 5. Risk gate configuration display — NOT STARTED
 
 ### Step 5. Risk gate configuration display — NOT STARTED
 

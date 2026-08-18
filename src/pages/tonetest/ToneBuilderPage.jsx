@@ -95,6 +95,115 @@ function RoleToggles({ activeRoles, onRequestToggle }) {
   );
 }
 
+const WEIGHT_GROUPS = [
+  { key: "audience_evidence", label: "Audience Evidence", role: "audience" },
+  { key: "agency_assurance", label: "Agency Assurance", role: "agency" },
+  { key: "content_quality", label: "Content Quality", role: "editor" }
+];
+
+function defaultWeights() {
+  return { audience_evidence: 40, agency_assurance: 35, content_quality: 25 };
+}
+
+function weightTotal(weights) {
+  return WEIGHT_GROUPS.reduce((sum, group) => sum + (Number(weights?.[group.key]) || 0), 0);
+}
+
+function WeightEditor({ weights, activeRoles, onUpdate }) {
+  const total = weightTotal(weights);
+  const isValid = total === 100;
+  const offRoleGroups = WEIGHT_GROUPS.filter((group) => activeRoles?.[group.role] === false);
+
+  return (
+    <div>
+      <p className="muted-text">
+        How much each group of ratings counts toward the Content Score. These three weights must
+        total exactly 100 before this test can be published.
+      </p>
+
+      {WEIGHT_GROUPS.map((group) => (
+        <label className="form-block" key={group.key}>
+          <span className="form-label">{group.label}</span>
+          <input
+            className="text-input"
+            type="number"
+            min="0"
+            max="100"
+            value={weights?.[group.key] ?? 0}
+            onChange={(event) => onUpdate(group.key, Number(event.target.value))}
+          />
+        </label>
+      ))}
+
+      <p className={isValid ? "success-box" : "error-box"}>
+        Total: {total}{isValid ? "" : " (must total exactly 100)"}
+      </p>
+
+      {offRoleGroups.length > 0 ? (
+        <p className="muted-text">
+          {offRoleGroups.map((group) => group.label).join(" and ")} {offRoleGroups.length === 1 ? "is" : "are"} weighted
+          above but its role is currently off, so it will contribute nothing. Consider setting its
+          weight to 0 and giving that share to an active role, or turning the role back on.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+const QUESTION_TYPE_LABELS = {
+  rating: "Rating questions",
+  gate: "Risk gate questions",
+  open: "Open questions"
+};
+
+function QuestionTemplateEditor({ questions, activeRoles, onUpdate }) {
+  const activeRoleKeys = ROLE_KEYS.filter((roleKey) => activeRoles?.[roleKey] !== false);
+
+  if (activeRoleKeys.length === 0) {
+    return <p className="muted-text">No roles are active. Turn on at least one role above to see its questions.</p>;
+  }
+
+  return (
+    <div>
+      {activeRoleKeys.map((roleKey) => {
+        const roleQuestions = questions.filter((question) => question.role_key === roleKey);
+
+        return (
+          <div key={roleKey}>
+            <h3>{ROLE_LABELS[roleKey]}</h3>
+
+            {["rating", "gate", "open"].map((questionType) => {
+              const rows = roleQuestions.filter((question) => question.question_type === questionType);
+              if (rows.length === 0) return null;
+
+              return (
+                <div className="form-block" key={questionType}>
+                  <span className="form-label">{QUESTION_TYPE_LABELS[questionType]}</span>
+                  {rows.map((question) => (
+                    <div key={question.id} style={{ marginBottom: "8px" }}>
+                      {question.question_type === "gate" ? (
+                        <span className="muted-text">
+                          {GATES.find((gate) => gate.key === question.gate_key)?.label}
+                          {question.gate_critical ? " (critical)" : ""}
+                        </span>
+                      ) : null}
+                      <textarea
+                        className="textarea"
+                        value={question.question_text}
+                        onChange={(event) => onUpdate(question.id, event.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const MIN_VARIANTS = 2;
 const MAX_VARIANTS = 4;
 
@@ -186,6 +295,7 @@ export default function ToneBuilderPage({ profile, studyId }) {
   const [settings, setSettings] = useState(null);
   const [variants, setVariants] = useState([]);
   const [removedVariantIds, setRemovedVariantIds] = useState([]);
+  const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
@@ -278,6 +388,26 @@ export default function ToneBuilderPage({ profile, studyId }) {
         }
       }
 
+      // Fetched after seeding, rather than in the earlier Promise.all, since
+      // a brand new study has no rows until the seed insert above completes.
+      const { data: questionRows, error: questionError } = await supabase
+        .from("tone_questions")
+        .select("*")
+        .eq("study_id", studyId)
+        .order("role_key")
+        .order("question_type")
+        .order("display_order");
+
+      if (!active) return;
+
+      if (questionError) {
+        setLoadError(questionError.message);
+        setLoading(false);
+        return;
+      }
+
+      setQuestions(questionRows || []);
+
       const loadedVariants = (variantRows || []).map((row) => ({ ...row, key: row.id }));
       // A brand new Tone Test starts with two empty variants, since the test
       // needs at least two to ever be publishable and an empty builder gives
@@ -304,6 +434,15 @@ export default function ToneBuilderPage({ profile, studyId }) {
 
   function updateSettingsField(field, value) {
     setSettings((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateWeight(groupKey, value) {
+    const weights = settings.content_score_weights_json || defaultWeights();
+    updateSettingsField("content_score_weights_json", { ...weights, [groupKey]: value });
+  }
+
+  function updateQuestionText(questionId, value) {
+    setQuestions((current) => current.map((question) => (question.id === questionId ? { ...question, question_text: value } : question)));
   }
 
   function requestRoleToggle(roleKey, gatesForRole) {
@@ -391,6 +530,7 @@ export default function ToneBuilderPage({ profile, studyId }) {
         content_goal: settings.content_goal,
         sensitivity_level: settings.sensitivity_level,
         active_roles_json: settings.active_roles_json,
+        content_score_weights_json: settings.content_score_weights_json,
         updated_at: new Date().toISOString()
       })
       .eq("study_id", studyId);
@@ -399,6 +539,23 @@ export default function ToneBuilderPage({ profile, studyId }) {
       setSaving(false);
       setMessage(settingsError.message);
       return;
+    }
+
+    if (questions.length > 0) {
+      const results = await Promise.all(
+        questions.map((question) =>
+          supabase
+            .from("tone_questions")
+            .update({ question_text: question.question_text, updated_at: new Date().toISOString() })
+            .eq("id", question.id)
+        )
+      );
+      const questionUpdateError = results.find((result) => result.error)?.error;
+      if (questionUpdateError) {
+        setSaving(false);
+        setMessage(questionUpdateError.message);
+        return;
+      }
     }
 
     if (removedVariantIds.length > 0) {
@@ -599,6 +756,28 @@ export default function ToneBuilderPage({ profile, studyId }) {
         <RoleToggles
           activeRoles={settings.active_roles_json || defaultActiveRoles()}
           onRequestToggle={requestRoleToggle}
+        />
+      </section>
+
+      <section className="card">
+        <h2>Content Score weights</h2>
+        <WeightEditor
+          weights={settings.content_score_weights_json || defaultWeights()}
+          activeRoles={settings.active_roles_json || defaultActiveRoles()}
+          onUpdate={updateWeight}
+        />
+      </section>
+
+      <section className="card">
+        <h2>Questions</h2>
+        <p className="muted-text">
+          Each active role's questions, seeded from the platform default. Edit wording here; adding
+          or removing individual questions is not yet supported.
+        </p>
+        <QuestionTemplateEditor
+          questions={questions}
+          activeRoles={settings.active_roles_json || defaultActiveRoles()}
+          onUpdate={updateQuestionText}
         />
       </section>
 
