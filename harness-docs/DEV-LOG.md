@@ -246,7 +246,33 @@ If no role is active at all, a message says so, matching the pattern already use
 
 **Operator checks.** Clear a weight field to empty and type a new value without it fighting back. Turn a role off and confirm its weight field disappears and the total recalculates over the remaining roles only. Turn it back on and confirm its weight is exactly what it was before.
 
-### Step 5. Risk gate configuration display — NOT STARTED
+### Layout change, raised by the operator after Step 4 — DONE, 18 August 2026
+
+**What the operator raised.** Roles and their Content Score weights were shown as two separate sections, with no visual link between a role and the weight it carries. The operator asked to put them together instead.
+
+**Why this was worth doing now.** The pairing is fixed, not incidental: Audience carries the Audience Evidence weight, Agency carries Agency Assurance, Editor carries Content Quality. Two sections asked the operator to hold that mapping in their head; one list removes the need.
+
+**What changed.** The Roles section and the Content Score weights section are now one section, "Roles and Content Score weights." Each role's card shows its toggle, its gates, and, only while that role is active, its weight field directly beneath. The running total sits at the bottom of the combined list. No data model or save logic changed, this is layout only.
+
+**Files touched.** `src/pages/tonetest/ToneBuilderPage.jsx` only.
+
+**Model used:** Sonnet.
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks.** Confirm each role's card now shows its own weight field directly beneath it, that turning a role off removes its weight field from view, and that the total at the bottom still updates the same way as before.
+
+### Step 5. Risk gate configuration display — DONE, 18 August 2026
+
+**Model used:** Sonnet. Read-only display over data already settled, no new design judgement involved.
+
+**What happened.** A new "Risk gates" section lists all six gates with the role that answers each, whether it is critical, and whether that role is currently active for this study. This comes straight from the fixed `GATES` list in `defaultQuestions.js`, the same source used to seed the questions in Step 1, so there is only one place this fact is defined. Criticality and role assignment are not editable here, since the plan and `HANDOVER.md` section 2.5 both treat those as platform-level facts, not per-study settings. A gate whose role is currently off shows as "Not covered" so the operator can see the gap before it shows up as a surprise in results later.
+
+**Files touched.** `src/pages/tonetest/ToneBuilderPage.jsx` only.
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks.** All six gates appear with the role and critical marking matching `HANDOVER.md` section 2.5 (Agency answers Policy accuracy, Safety risk, Privacy and consent, Harm blame and stigma, all critical, plus Operational promise, not critical; Editor answers Accessibility and readability, not critical). Turn a role off and confirm its gates switch to "Not covered."
 
 ### Step 6. Preview by role — NOT STARTED
 

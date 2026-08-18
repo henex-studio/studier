@@ -53,48 +53,6 @@ function activeRoleCount(activeRoles) {
   return ROLE_KEYS.filter((roleKey) => activeRoles?.[roleKey]).length;
 }
 
-function RoleToggles({ activeRoles, onRequestToggle }) {
-  return (
-    <div>
-      {activeRoleCount(activeRoles) === 0 ? (
-        <p className="error-box">At least one role must be active before this test can be published.</p>
-      ) : null}
-
-      {ROLE_KEYS.map((roleKey) => {
-        const isActive = activeRoles?.[roleKey] !== false;
-        const gatesForRole = GATES.filter((gate) => gate.role === roleKey);
-
-        return (
-          <div className="question-card" key={roleKey}>
-            <div className="button-row" style={{ justifyContent: "space-between" }}>
-              <div>
-                <p className="form-label">{ROLE_LABELS[roleKey]}</p>
-                <p className="muted-text">{ROLE_DESCRIPTIONS[roleKey]}</p>
-              </div>
-              <label className="button-row" style={{ gap: "8px" }}>
-                <input
-                  type="checkbox"
-                  checked={isActive}
-                  onChange={() => onRequestToggle(roleKey, gatesForRole)}
-                />
-                <span>{isActive ? "Active" : "Disabled"}</span>
-              </label>
-            </div>
-
-            {gatesForRole.length > 0 ? (
-              <p className="muted-text">
-                Answers {gatesForRole.length === 1 ? "this gate" : "these gates"}: {gatesForRole.map((gate) => `${gate.label}${gate.critical ? " (critical)" : ""}`).join(", ")}
-              </p>
-            ) : (
-              <p className="muted-text">Answers no risk gates. Supplies evidence, not judgement.</p>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 const WEIGHT_GROUPS = [
   { key: "audience_evidence", label: "Audience Evidence", role: "audience" },
   { key: "agency_assurance", label: "Agency Assurance", role: "agency" },
@@ -125,40 +83,116 @@ function normalizeWeights(weights) {
   }, {});
 }
 
-function WeightEditor({ weights, activeRoles, onUpdate }) {
-  const activeGroups = WEIGHT_GROUPS.filter((group) => activeRoles?.[group.role] !== false);
+// Roles and their Content Score weight sit in one list, one role per card,
+// because the two are a fixed one-to-one pairing (Audience carries Audience
+// Evidence, Agency carries Agency Assurance, Editor carries Content
+// Quality). Showing them apart, as two separate sections, made it easy to
+// lose track of which weight belonged to which role. A role's weight field
+// only appears while that role is active, matching the rule that an
+// inactive role's weight does not count toward the total.
+function RoleAndWeightPanel({ activeRoles, weights, onRequestToggle, onUpdateWeight }) {
   const total = weightTotal(weights, activeRoles);
-  const isValid = activeGroups.length > 0 && total === 100;
-
-  if (activeGroups.length === 0) {
-    return <p className="muted-text">No active roles to weight. Turn on at least one role above.</p>;
-  }
+  const activeCount = activeRoleCount(activeRoles);
 
   return (
     <div>
-      <p className="muted-text">
-        How much each active role's ratings count toward the Content Score. These weights must
-        total exactly 100 before this test can be published. A role that is off does not appear
-        here and does not need a weight; turning it back on brings its weight back too.
-      </p>
+      {activeCount === 0 ? (
+        <p className="error-box">At least one role must be active before this test can be published.</p>
+      ) : null}
 
-      {activeGroups.map((group) => (
-        <label className="form-block" key={group.key}>
-          <span className="form-label">{group.label}</span>
-          <input
-            className="text-input"
-            type="number"
-            min="0"
-            max="100"
-            value={weights?.[group.key] ?? ""}
-            onChange={(event) => onUpdate(group.key, event.target.value)}
-          />
-        </label>
-      ))}
+      {ROLE_KEYS.map((roleKey) => {
+        const isActive = activeRoles?.[roleKey] !== false;
+        const gatesForRole = GATES.filter((gate) => gate.role === roleKey);
+        const weightGroup = WEIGHT_GROUPS.find((group) => group.role === roleKey);
 
-      <p className={isValid ? "success-box" : "error-box"}>
-        Total: {total}{isValid ? "" : " (must total exactly 100)"}
-      </p>
+        return (
+          <div className="question-card" key={roleKey}>
+            <div className="button-row" style={{ justifyContent: "space-between" }}>
+              <div>
+                <p className="form-label">{ROLE_LABELS[roleKey]}</p>
+                <p className="muted-text">{ROLE_DESCRIPTIONS[roleKey]}</p>
+              </div>
+              <label className="button-row" style={{ gap: "8px" }}>
+                <input
+                  type="checkbox"
+                  checked={isActive}
+                  onChange={() => onRequestToggle(roleKey, gatesForRole)}
+                />
+                <span>{isActive ? "Active" : "Disabled"}</span>
+              </label>
+            </div>
+
+            {gatesForRole.length > 0 ? (
+              <p className="muted-text">
+                Answers {gatesForRole.length === 1 ? "this gate" : "these gates"}: {gatesForRole.map((gate) => `${gate.label}${gate.critical ? " (critical)" : ""}`).join(", ")}
+              </p>
+            ) : (
+              <p className="muted-text">Answers no risk gates. Supplies evidence, not judgement.</p>
+            )}
+
+            {isActive && weightGroup ? (
+              <label className="form-block">
+                <span className="form-label">{weightGroup.label} weight</span>
+                <span className="muted-text">How much this role's ratings count toward the Content Score.</span>
+                <input
+                  className="text-input"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={weights?.[weightGroup.key] ?? ""}
+                  onChange={(event) => onUpdateWeight(weightGroup.key, event.target.value)}
+                />
+              </label>
+            ) : (
+              <p className="muted-text">Disabled roles carry no weight. Turn this role on to set its weight.</p>
+            )}
+          </div>
+        );
+      })}
+
+      {activeCount > 0 ? (
+        <p className={total === 100 ? "success-box" : "error-box"}>
+          Content Score weight total: {total}{total === 100 ? "" : " (must total exactly 100)"}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+// Read-only. Which of the six gates exist, which role answers each, and
+// whether that is critical are fixed platform facts (HANDOVER.md section
+// 2.5), not settings a creator can change here. "Covered" only reflects
+// whether the role currently assigned to a gate is active for this study,
+// so a critical gate with no respondent is visible before it becomes a
+// surprise at scoring time.
+function GateOverview({ activeRoles }) {
+  return (
+    <div className="desktop-table test-list-table-wrap">
+      <table className="test-list-table">
+        <thead>
+          <tr>
+            <th>Gate</th>
+            <th>Role</th>
+            <th>Critical</th>
+            <th>Coverage</th>
+          </tr>
+        </thead>
+        <tbody>
+          {GATES.map((gate) => {
+            const roleActive = activeRoles?.[gate.role] !== false;
+            return (
+              <tr key={gate.key}>
+                <td>{gate.label}</td>
+                <td>{ROLE_LABELS[gate.role]}</td>
+                <td>{gate.critical ? "Critical" : "Not critical"}</td>
+                <td className={roleActive ? "success-box" : "error-box"}>
+                  {roleActive ? "Covered" : "Not covered"}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -761,24 +795,30 @@ export default function ToneBuilderPage({ profile, studyId }) {
       </section>
 
       <section className="card">
-        <h2>Roles</h2>
+        <h2>Roles and Content Score weights</h2>
         <p className="muted-text">
           Turn a role off if nobody suitable is available for this test. The dashboard will mark
-          any gate that role would have answered as not covered, never as passed.
+          any gate that role would have answered as not covered, never as passed. Each active
+          role's weight decides how much its ratings count toward the Content Score; active
+          weights must total exactly 100 before this test can be published.
         </p>
-        <RoleToggles
+        <RoleAndWeightPanel
           activeRoles={settings.active_roles_json || defaultActiveRoles()}
+          weights={settings.content_score_weights_json || defaultWeights()}
           onRequestToggle={requestRoleToggle}
+          onUpdateWeight={updateWeight}
         />
       </section>
 
       <section className="card">
-        <h2>Content Score weights</h2>
-        <WeightEditor
-          weights={settings.content_score_weights_json || defaultWeights()}
-          activeRoles={settings.active_roles_json || defaultActiveRoles()}
-          onUpdate={updateWeight}
-        />
+        <h2>Risk gates</h2>
+        <p className="muted-text">
+          The six risk gates are fixed by the platform and cannot be changed here. This shows which
+          role answers each, which are critical, and whether that role is currently active for this
+          test. A gate marked "Not covered" will show as not covered on the results dashboard,
+          never as passed.
+        </p>
+        <GateOverview activeRoles={settings.active_roles_json || defaultActiveRoles()} />
       </section>
 
       <section className="card">
