@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import AdminShell from "../../components/AdminShell";
 import { supabase } from "../../lib/supabase";
 import { buildDefaultQuestions, ROLE_KEYS, ROLE_LABELS, ROLE_DESCRIPTIONS, GATES } from "../../lib/tonetest/defaultQuestions";
+import { WEIGHT_GROUPS, defaultWeights, weightTotal, normalizeWeights } from "../../lib/tonetest/weights";
 
 function navigateTo(path) {
   window.history.pushState({}, "", path);
@@ -51,36 +52,6 @@ function defaultActiveRoles() {
 
 function activeRoleCount(activeRoles) {
   return ROLE_KEYS.filter((roleKey) => activeRoles?.[roleKey]).length;
-}
-
-const WEIGHT_GROUPS = [
-  { key: "audience_evidence", label: "Audience Evidence", role: "audience" },
-  { key: "agency_assurance", label: "Agency Assurance", role: "agency" },
-  { key: "content_quality", label: "Content Quality", role: "editor" }
-];
-
-function defaultWeights() {
-  return { audience_evidence: 40, agency_assurance: 35, content_quality: 25 };
-}
-
-// Only the weights belonging to currently active roles count toward the
-// total. A role that is off contributes nothing, so its stored weight (kept,
-// not cleared, so it comes back if the role is turned on again) is excluded
-// here rather than forced to zero.
-function weightTotal(weights, activeRoles) {
-  return WEIGHT_GROUPS
-    .filter((group) => activeRoles?.[group.role] !== false)
-    .reduce((sum, group) => sum + (Number(weights?.[group.key]) || 0), 0);
-}
-
-// Coerces every weight to a real number before it is written to the
-// database. The builder allows a field to sit empty while the operator is
-// typing a new value; nothing empty should ever reach the database.
-function normalizeWeights(weights) {
-  return WEIGHT_GROUPS.reduce((normalized, group) => {
-    normalized[group.key] = Number(weights?.[group.key]) || 0;
-    return normalized;
-  }, {});
 }
 
 // Roles and their Content Score weight sit in one list, one role per card,
@@ -251,6 +222,11 @@ function QuestionTemplateEditor({ questions, activeRoles, onUpdate }) {
   );
 }
 
+const VARIANT_MODES = [
+  { key: "single_random", label: "Single variant, randomly assigned", helpText: "Each participant sees only one variant, assigned at random." },
+  { key: "compare_all", label: "Compare all variants", helpText: "Each participant sees every variant, in a randomised order, and answers a final preference question." }
+];
+
 const MIN_VARIANTS = 2;
 const MAX_VARIANTS = 4;
 
@@ -333,6 +309,87 @@ function VariantEditor({ variants, onUpdate, onRemove, onMove, onAdd }) {
         Add variant
       </button>
       {variants.length >= MAX_VARIANTS ? <p className="muted-text">Maximum of {MAX_VARIANTS} variants.</p> : null}
+    </div>
+  );
+}
+
+// Shows what a participant would see after picking a given active role.
+// Read-only, submits nothing. Which variants appear follows the variant
+// mode exactly as section 13.3 of the PRD defines it: one assigned variant
+// in single_random mode, every variant in compare_all mode. Preview always
+// shows variants in their stored order; the live participant flow
+// randomises order in compare_all mode and assignment in single_random
+// mode, which a static preview cannot usefully reproduce, so the note below
+// the variant list says as much rather than pretending to.
+function RolePreview({ activeRoles, variantMode, variants, questions }) {
+  const activeRoleKeys = ROLE_KEYS.filter((roleKey) => activeRoles?.[roleKey] !== false);
+  const [previewRole, setPreviewRole] = useState(activeRoleKeys[0] || null);
+  const currentRole = activeRoleKeys.includes(previewRole) ? previewRole : activeRoleKeys[0];
+
+  if (activeRoleKeys.length === 0) {
+    return <p className="muted-text">No roles are active. Turn on at least one role above to preview.</p>;
+  }
+
+  const modeInfo = VARIANT_MODES.find((mode) => mode.key === variantMode) || VARIANT_MODES[0];
+  const shownVariants = variantMode === "compare_all" ? variants : variants.slice(0, 1);
+  const roleQuestions = questions.filter((question) => question.role_key === currentRole);
+
+  return (
+    <div>
+      <div className="button-row" style={{ flexWrap: "wrap" }}>
+        {activeRoleKeys.map((roleKey) => (
+          <button
+            key={roleKey}
+            type="button"
+            className={roleKey === currentRole ? "primary-button" : "secondary-button"}
+            onClick={() => setPreviewRole(roleKey)}
+          >
+            {ROLE_LABELS[roleKey]}
+          </button>
+        ))}
+      </div>
+
+      <p className="muted-text">
+        Mode: {modeInfo.label}. {modeInfo.helpText} This preview shows variants in the order they
+        are stored; the live test randomises {variantMode === "compare_all" ? "their display order" : "which one is assigned"} per participant.
+      </p>
+
+      <div className="question-card">
+        <p className="form-label">Wording shown to {ROLE_LABELS[currentRole]}</p>
+        {shownVariants.length === 0 ? (
+          <p className="muted-text">No variants yet.</p>
+        ) : (
+          shownVariants.map((variant, index) => (
+            <div key={variant.key} style={{ marginBottom: "8px" }}>
+              {variantMode === "compare_all" ? <p className="muted-text">Variant {index + 1}{variant.label ? `: ${variant.label}` : ""}</p> : null}
+              <p>{variant.variant_text || "(no wording entered yet)"}</p>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="question-card">
+        <p className="form-label">Questions for {ROLE_LABELS[currentRole]}</p>
+        {roleQuestions.length === 0 ? (
+          <p className="muted-text">No questions found for this role.</p>
+        ) : (
+          ["rating", "gate", "open"].map((questionType) => {
+            const rows = roleQuestions.filter((question) => question.question_type === questionType);
+            if (rows.length === 0) return null;
+            return (
+              <div key={questionType} style={{ marginBottom: "8px" }}>
+                <span className="form-label">{QUESTION_TYPE_LABELS[questionType]}</span>
+                {rows.map((question) => (
+                  <p key={question.id} className="muted-text">{question.question_text}</p>
+                ))}
+              </div>
+            );
+          })
+        )}
+        {variantMode === "compare_all" ? (
+          <p className="muted-text">Plus a final preference question, asking the participant which variant they preferred.</p>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -576,6 +633,7 @@ export default function ToneBuilderPage({ profile, studyId }) {
         scenario: settings.scenario,
         content_goal: settings.content_goal,
         sensitivity_level: settings.sensitivity_level,
+        variant_mode: settings.variant_mode || "single_random",
         active_roles_json: settings.active_roles_json,
         content_score_weights_json: normalizeWeights(settings.content_score_weights_json || defaultWeights()),
         updated_at: new Date().toISOString()
@@ -837,12 +895,46 @@ export default function ToneBuilderPage({ profile, studyId }) {
       <section className="card">
         <h2>Wording variants</h2>
         <p className="muted-text">Add two to four versions of the wording to test.</p>
+
+        <label className="form-block">
+          <span className="form-label">Variant mode</span>
+          {VARIANT_MODES.map((mode) => (
+            <label key={mode.key} className="button-row" style={{ gap: "8px", alignItems: "flex-start" }}>
+              <input
+                type="radio"
+                name="variant_mode"
+                checked={(settings.variant_mode || "single_random") === mode.key}
+                onChange={() => updateSettingsField("variant_mode", mode.key)}
+              />
+              <span>
+                <span className="form-label">{mode.label}</span>
+                <br />
+                <span className="muted-text">{mode.helpText}</span>
+              </span>
+            </label>
+          ))}
+        </label>
+
         <VariantEditor
           variants={variants}
           onUpdate={updateVariant}
           onRemove={removeVariant}
           onMove={moveVariant}
           onAdd={addVariant}
+        />
+      </section>
+
+      <section className="card">
+        <h2>Preview by role</h2>
+        <p className="muted-text">
+          Read-only. Shows what a participant would see after choosing each active role. Nothing
+          here submits a response.
+        </p>
+        <RolePreview
+          activeRoles={settings.active_roles_json || defaultActiveRoles()}
+          variantMode={settings.variant_mode || "single_random"}
+          variants={variants}
+          questions={questions}
         />
       </section>
 

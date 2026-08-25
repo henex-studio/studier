@@ -20,9 +20,6 @@
     "src/lib/matching.js",
     "src/lib/treeParser.js",
     "src/lib/participantId.js",
-    "src/pages/ConsentPage.jsx",
-    "src/pages/RegisterPage.jsx",
-    "src/pages/LoginPage.jsx",
     "src/pages/TreeView.jsx",
     "supabase/schema.sql",
     "supabase/clear_test_data_delete_policies.sql",
@@ -40,9 +37,12 @@
     "scripts/guard-paths.sh"
   ],
 
-  "_review_paths_comment": "Halt and ask, rather than refuse. Two groups. The first nine are shared platform files that Tone Test must change, so a blanket deny would block the feature at build plan Task 1; edits here should be study-type dispatch only, routing to a new module, and anything larger means logic is leaking into shared code (H-6.10 control two). The last entry covers the source specification documents, which may need correcting under D-1 and D-2 but should never be rewritten without the operator seeing it.",
+  "_review_paths_comment": "Halt and ask, rather than refuse. Three groups. The first nine are shared platform files that Tone Test must change, so a blanket deny would block the feature at build plan Task 1; edits here should be study-type dispatch only, routing to a new module, and anything larger means logic is leaking into shared code (H-6.10 control two). The docs/tone-test/ entry covers the source specification documents, which may need correcting under D-1 and D-2 but should never be rewritten without the operator seeing it. The three authentication pages were moved here from protected_paths on 24 August 2026 by the operator's decision. They were denied outright to stop Tone Test work wandering into authentication code, which remains the right default; but the operator has separately commissioned platform work on registration, email verification, password reset and the privacy policy, planned in harness-docs/PLAN-registration.md and harness-docs/PLAN-privacy-policy.md, and that work cannot proceed with them denied. Review rather than deletion, so every edit still stops for approval. If those two plans finish and no further authentication work is expected, moving them back is the safer resting state.",
   "review_paths": [
     "src/App.jsx",
+    "src/pages/ConsentPage.jsx",
+    "src/pages/RegisterPage.jsx",
+    "src/pages/LoginPage.jsx",
     "src/pages/StudyListPage.jsx",
     "src/pages/StudyBuilderPage.jsx",
     "src/pages/TestRunnerPage.jsx",

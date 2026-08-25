@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AdminShell from "../components/AdminShell";
 import { supabase } from "../lib/supabase";
+import { getTonePublishIssues } from "../lib/tonetest/publishChecks";
 
 
 const NZ_TIME_ZONE = "Pacific/Auckland";
@@ -278,6 +279,18 @@ export default function StudyListPage({ profile }) {
   }
 
   async function validateBeforePublish(study) {
+    // Study-type dispatch only. Each type's own checklist lives with that
+    // type's code: Tree Test's stays below, Tone Test's is in
+    // src/lib/tonetest/publishChecks.js.
+    if (study.study_type === "tone_test") {
+      const [{ data: settings }, { data: variantRows }, { data: questionRows }] = await Promise.all([
+        supabase.from("tone_test_settings").select("*").eq("study_id", study.id).maybeSingle(),
+        supabase.from("tone_variants").select("variant_text").eq("study_id", study.id),
+        supabase.from("tone_questions").select("role_key,required,question_text").eq("study_id", study.id)
+      ]);
+      return getTonePublishIssues(study, settings, variantRows || [], questionRows || []);
+    }
+
     const [{ data: treeRecord }, { data: taskRows }, { data: finalRows }] = await Promise.all([
       supabase.from("study_trees").select("tree_json").eq("study_id", study.id).maybeSingle(),
       supabase.from("study_tasks").select("task_text,target_paths").eq("study_id", study.id).order("task_order"),

@@ -274,6 +274,82 @@ If no role is active at all, a message says so, matching the pattern already use
 
 **Operator checks.** All six gates appear with the role and critical marking matching `HANDOVER.md` section 2.5 (Agency answers Policy accuracy, Safety risk, Privacy and consent, Harm blame and stigma, all critical, plus Operational promise, not critical; Editor answers Accessibility and readability, not critical). Turn a role off and confirm its gates switch to "Not covered."
 
-### Step 6. Preview by role — NOT STARTED
+### Step 6. Preview by role — DONE, 24 August 2026
 
-### Step 7. Publishing checks — NOT STARTED
+**Model used:** Sonnet.
+
+**What happened.** A "Preview by role" section, read-only, submits nothing. The operator picks an active role and sees the wording it would be shown and its questions in order. Which variants appear follows the variant mode exactly as PRD section 13.3 defines it: one variant in single_random mode, all variants in compare_all mode.
+
+**A gap found while building this.** `variant_mode` has existed as a database column since Milestone 1 Step 2, with the two values the PRD always specified, but no control for it was ever added to the builder. It was defaulting silently and the operator could not change it. This is not a new product question, PRD section 7 of the setup flow already says the creator chooses the variant mode; it was simply missed in Milestone 1 Step 4. Added the missing control (a two-option choice, in the Wording variants section) as part of this step, since Step 6's preview cannot mean anything without it.
+
+**Files touched.** `src/pages/tonetest/ToneBuilderPage.jsx` only.
+
+**Verified by:** `npm run build` completes without errors. Not yet verified by the operator in the browser.
+
+**Operator checks.** Set the variant mode, save, reload, confirm it stuck. Preview as each active role and confirm the right variant(s) and questions appear, matching the mode selected.
+
+### Step 7. Publishing checks — DONE, 24 August 2026
+
+**Model used:** Sonnet.
+
+**What happened.** The Tone Test checklist now blocks Publish the same way Tree Test's already does: title, welcome message, privacy message, closing time not in the past, scenario, content goal, two to four variants each with wording, at least one active role, every active role's required questions carrying wording, and active Content Score weights totalling exactly 100. All reasons are listed together, not one at a time.
+
+The check logic lives in a new file, `src/lib/tonetest/publishChecks.js`, not inside `StudyListPage.jsx`. `StudyListPage.jsx` is a shared, review-gated file; the only change there is an 11-line dispatch inside `validateBeforePublish` that calls the Tone Test checklist for a Tone Test and leaves the Tree Test path untouched. This follows the project rule that shared-file edits should route to a new module rather than carry real logic themselves.
+
+The Content Score weight arithmetic (`WEIGHT_GROUPS`, `weightTotal`, `normalizeWeights`) moved out of `ToneBuilderPage.jsx` into `src/lib/tonetest/weights.js` at the same time, so the publish check and the builder page use the exact same rule for what counts as "active weights total 100" rather than two copies that could drift apart.
+
+**What is deliberately not covered.** "Clear data and publish" (the button that wipes response data before republishing) still only clears Tree Test tables. For a Tone Test this means it publishes without actually clearing anything, since there is nothing yet to clear, participant responses are Milestone 3 work and do not exist yet. Not a defect at this point, but worth knowing before Milestone 3 response data exists.
+
+**Files touched.** `src/lib/tonetest/publishChecks.js` (new), `src/lib/tonetest/weights.js` (new), `src/pages/tonetest/ToneBuilderPage.jsx` (updated to import weight helpers instead of defining them), `src/pages/StudyListPage.jsx` (11-line dispatch, review path).
+
+**Verified by:** `npm run build` completes without errors. Not yet verified by the operator in the browser.
+
+**Operator checks.** Try to publish an incomplete Tone Test and see the specific reasons listed. Fix them one at a time and watch the list shrink. Publish once every check passes.
+
+### End of Milestone 2 (see below for the registration work that follows)
+
+Building is complete through Step 7. Steps 6 and 7 have not yet been verified by the operator in the browser; the operator has chosen to defer that verification rather than check after each step, so this milestone is closing on the strength of the build check alone until that verification happens.
+
+---
+
+## Registration and privacy work
+
+Taken out of order at the operator's direction, ahead of Milestone 3. Planned in `PLAN-registration.md` and `PLAN-privacy-policy.md`.
+
+### Planning and decisions — DONE, 24 August 2026
+
+**Model used:** Opus with extended thinking.
+
+**What happened.** Both plans written against fevnote's actual implementation, which the operator connected as a reference. Five things were found that changed the shape of the work.
+
+1. Studier has no privacy policy. The page at `/` is an acceptable use agreement, which is a different document with a different purpose. This is writing something new, not aligning something existing.
+2. Three claims in fevnote's privacy policy would be false if copied into Studier's: that the operator cannot read a user's records, that data comes only from the person typing it, and the provider list. Structure and tone transfer, specific claims do not.
+3. A security defect in the current registration path. `complete_invite_registration` runs with owner privileges, is callable by anyone signed out, and takes the user id as a parameter, so a caller holding a valid code and a known user id could overwrite that user's profile row including the role field. Two versions of the function were exposed.
+4. The current flow would break the moment email confirmation was switched on, because it writes the profile row from the browser immediately after sign-up, when no session exists yet.
+5. fevnote's decision to enforce its invite code only in the form does not transfer. Its reasoning is that a stray account sees nothing but its own empty data. A stray Studier account can create studies and publish public links, so the consequence is a live public artefact rather than an empty screen.
+
+**Operator decisions.** Invite code stays alongside email verification. The code is enforced in the database, with a narrow exception for dashboard-created accounts. Account deletion follows fevnote, by email to `privacy@henex.uk` within 20 working days. Data location confirmed as Sydney; verified independently, the Supabase project reports region `ap-southeast-2`. The three authentication files moved from `protected_paths` to `review_paths`.
+
+**Files touched.** `harness-docs/PLAN-registration.md`, `harness-docs/PLAN-privacy-policy.md`, `harness-docs/DEV-PLAN.md`, `project-config.json`.
+
+### Registration Step 1. Profile trigger and invite code enforcement — DONE, 24 August 2026
+
+**Model used:** Opus with extended thinking.
+
+**What happened.** Profile creation moved from the browser into a trigger on `auth.users`. Three columns added to `profiles`: `privacy_version`, `privacy_accepted_at` and `invite_code_used`. The invite code is now consumed inside the trigger in a single atomic statement, so two simultaneous sign-ups cannot both take the last use of a limited code.
+
+**One design decision worth recording.** The trigger treats its two halves differently on purpose. The invite code check raises and stops the account being created, because that is the point of it. The profile insert swallows its own failures, because `App.jsx` already falls back to defaults when a profile row is missing and a missing row can be repaired by hand, whereas a registration path broken by a bug in the trigger cannot be repaired after the fact. Copying fevnote's blanket exception handler would have quietly disabled the invite code enforcement the operator just asked for.
+
+**A limitation to know before Step 5.** When the trigger rejects a code, Supabase returns a generic database error rather than the message written here, so the registration form cannot show the real reason. This is why the form-level check stays: it gives the readable message, and the trigger is the enforcement backstop behind it. The two are not duplicates.
+
+**Files touched.** `supabase/migrations/20260824_004_add_new_user_trigger.sql`. Applied to the database directly, as agreed for changes that only add.
+
+**Verified by:** four behaviour tests run against the live database inside a transaction that was deliberately failed at the end, so nothing was left behind. An account with no invite code metadata, standing in for a dashboard account, was created with role `user` and no code recorded. An account with a valid code had its display name trimmed, its lowercase code stored uppercase, its role taken from the code, both consent timestamps stamped, and the code's use count moved from 0 to 1. An invalid code was refused. A whitespace-only code was refused rather than treated as absent. Rollback then confirmed: six accounts, six profile rows, no test users left, use count back to 0.
+
+**Backwards compatibility.** The existing registration page passes no metadata, so it takes the dashboard path: the trigger writes a bare profile row, then the page's own call to `complete_invite_registration` fills in the rest exactly as before. Registration keeps working unchanged until Step 5 rewrites the page. The code is still consumed once, by the old function, not twice.
+
+**Operator checks.** Nothing visible changed. Worth confirming that signing in still works and that the study list loads. Registering a genuinely new account would also still work, but leaves a real account behind, so it is better left until Step 5.
+
+### Registration Step 2. Close the security hole — NOT STARTED
+
+Blocked on nothing. Drops both versions of `complete_invite_registration` and restricts `accept_platform_consent` to signed-in callers. Must not run until the registration page no longer calls the dropped function, so it belongs after Step 5 rather than immediately, despite its number. The plan's ordering is wrong on this point and the plan should be corrected.
