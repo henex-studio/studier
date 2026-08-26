@@ -350,6 +350,56 @@ Taken out of order at the operator's direction, ahead of Milestone 3. Planned in
 
 **Operator checks.** Nothing visible changed. Worth confirming that signing in still works and that the study list loads. Registering a genuinely new account would also still work, but leaves a real account behind, so it is better left until Step 5.
 
-### Registration Step 2. Close the security hole — NOT STARTED
+### Registration Step 4. Forgot password and reset password pages — DONE, 24 August 2026
 
-Blocked on nothing. Drops both versions of `complete_invite_registration` and restricts `accept_platform_consent` to signed-in callers. Must not run until the registration page no longer calls the dropped function, so it belongs after Step 5 rather than immediately, despite its number. The plan's ordering is wrong on this point and the plan should be corrected.
+**Model used:** Sonnet.
+
+**What happened.** Two new pages, `ForgotPasswordPage.jsx` and `ResetPasswordPage.jsx`, following fevnote's `ForgotPassword.jsx` and `ResetPassword` logic but rebuilt in Studier's own markup and CSS classes rather than fevnote's, since the two products do not share a component library. Requesting a reset shows the same "check your email" message whether or not the address has an account, matching fevnote's reasoning that confirming or denying an email's existence is itself a leak. Two lines in `src/App.jsx` route `/forgot-password` and `/reset-password`, reachable without the consent check, since someone locked out of their account already has one and already consented when they registered it.
+
+**A gap this step knowingly leaves open.** Clicking a real reset link signs the browser in with a recovery session, and `App.jsx` does not yet tell that apart from an ordinary sign-in; it would currently route straight to `/admin` with the old password still active rather than to `/reset-password`. Registration Step 7 closes this by handling Supabase's `PASSWORD_RECOVERY` event specifically, on fevnote's pattern. Until then, `/reset-password` is reachable directly for testing but not yet reached automatically.
+
+**Files touched.** `src/pages/ForgotPasswordPage.jsx` (new), `src/pages/ResetPasswordPage.jsx` (new), `src/App.jsx` (two imports, two route lines, review path).
+
+**Verified by:** `npm run build` completes without errors.
+
+**Operator checks.** Open `/forgot-password`, submit an email, confirm the same "check your email" message appears whether or not the address has an account. Open `/reset-password` directly and confirm the form renders; a real password change through it cannot be fully tested until Step 3 (email sending) and Step 7 (recovery routing) are both in place, so this check is about the form working, not the full email round trip yet.
+
+### Registration Step 5. Registration page rewrite — DONE, 24 August 2026
+
+**Model used:** Sonnet.
+
+**What happened.** The invite code field stays, per the operator's decision. Registration now happens through `supabase.auth.signUp` alone: invite code, display name and consent version travel as sign-up metadata, and the Step 1 trigger reads them, enforces the code, and writes the profile row. The page's own `validate_invite_code` check before sign-up stays as a friendly pre-check, matching fevnote's `Register.jsx` comment on the same pattern: it gives a clear message before an account is even attempted, while the trigger is the real enforcement point behind it. The direct call to `complete_invite_registration` and the forced immediate sign-out are both gone.
+
+Two outcomes are handled after sign-up. An empty `identities` array means Supabase silently no-opped because the email already has an account, shown as its own message rather than a false success. A response with no session means confirmation is required, shown as a "check your email" screen; a response with a session, which is what happens today since email confirmation is not yet switched on, goes straight to `/admin`.
+
+**Not yet stamped.** No `privacy_version` is written yet, because no privacy policy exists to agree to. That is the last piece of `PLAN-privacy-policy.md` Step 4, added here once the policy itself is written.
+
+**Files touched.** `src/pages/RegisterPage.jsx`, review path.
+
+**Verified by:** `npm run build` completes without errors. Not yet verified in the browser; the operator has deferred that.
+
+### Registration Step 6. Sign-in page — DONE, 24 August 2026
+
+**Model used:** Sonnet.
+
+**What happened.** A "Forgot your password?" link to `/forgot-password` added below the password field. Supabase's "Email not confirmed" error, easy to misread as a typo complaint, now shows as its own plain message pointing at the inbox, on the same pattern as fevnote's `describeAuthError`.
+
+**Files touched.** `src/pages/LoginPage.jsx`, review path.
+
+**Verified by:** `npm run build` completes without errors. Not yet verified in the browser.
+
+### Registration Step 7. Recovery session routing — DONE, 24 August 2026
+
+**Model used:** Sonnet.
+
+**What happened.** `App.jsx`'s auth listener now reads the event name, not only the session. A `PASSWORD_RECOVERY` event sets a flag that overrides every other route and forces `ResetPasswordPage`, checked before the test runner, before consent, before everything. A `SIGNED_OUT` event clears the flag, which is what lets `ResetPasswordPage`'s own sign-out-then-redirect after a successful change fall straight through to the sign-in page rather than needing a callback wired through props. Closes the gap left open in Step 4: a real reset link's recovery session no longer lands in `/admin` with the old password still active.
+
+**Files touched.** `src/App.jsx`, review path.
+
+**Verified by:** `npm run build` completes without errors. This step cannot be meaningfully verified without a real reset email, which needs Step 3 (operator's Supabase settings) done first, so it stays unverified until Step 8.
+
+### Registration Step 7a. Close the security hole — NOT STARTED
+
+### Registration Step 7a. Close the security hole — NOT STARTED
+
+Renumbered from the plan's original Step 2. Drops both versions of `complete_invite_registration` and restricts `accept_platform_consent` to signed-in callers. Both are now safe to drop on the code side, since Step 5 removed the registration page's only caller, but this is left until after Step 7 and Step 8's verification, so the fallback path still exists while the rewritten flow gets its first real test.

@@ -12,6 +12,23 @@ function navigateTo(path) {
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
+// Registration Step 5. The invite code stays, but the account is now
+// created by supabase.auth.signUp alone, with the invite code, display
+// name and consent version carried in as sign-up metadata rather than
+// written by a second call afterwards. The public.handle_new_user
+// trigger (Registration Step 1) reads that metadata, enforces the
+// invite code at the database itself, and writes the profile row. This
+// page's own validate_invite_code check before signUp stays in place
+// as a friendly pre-check, on fevnote's Register.jsx pattern: it gives
+// a clear "invite code is not valid" message before the account is
+// even attempted, while the trigger remains the real enforcement point
+// behind it.
+//
+// A privacy policy version is not stamped here yet. Studier does not
+// have a published privacy policy to record agreement to; see
+// harness-docs/PLAN-privacy-policy.md. Adding privacy_version to the
+// metadata below is the last part of that plan's Step 4, once the
+// policy itself exists.
 export default function RegisterPage() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -19,6 +36,7 @@ export default function RegisterPage() {
   const [inviteCode, setInviteCode] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkEmailFor, setCheckEmailFor] = useState("");
 
   async function register(event) {
     event.preventDefault();
@@ -55,6 +73,9 @@ export default function RegisterPage() {
 
     setLoading(true);
 
+    // Friendly pre-check only. The database trigger enforces this for
+    // real; this call exists so an expired or already-used code fails
+    // with a clear message here rather than a generic one from signUp.
     const { data: inviteOk } = await supabase.rpc("validate_invite_code", {
       p_code: cleanInviteCode
     });
@@ -67,37 +88,61 @@ export default function RegisterPage() {
 
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: cleanEmail,
-      password
+      password,
+      options: {
+        data: {
+          invite_code: cleanInviteCode,
+          display_name: cleanDisplayName,
+          consent_version: CONSENT_VERSION
+        }
+      }
     });
 
+    setLoading(false);
+
     if (signUpError) {
-      setLoading(false);
       setMessage(signUpError.message);
       return;
     }
 
-    const userId = signUpData?.user?.id;
-
-    const { error: profileError } = await supabase.rpc(
-      "complete_invite_registration",
-      {
-        p_user_id: userId,
-        p_email: cleanEmail,
-        p_display_name: cleanDisplayName,
-        p_code: cleanInviteCode,
-        p_consent_version: CONSENT_VERSION
-      }
-    );
-
-    if (profileError) {
-      setLoading(false);
-      setMessage(profileError.message);
+    // Supabase silently no-ops instead of erroring when the email already
+    // has an account, so it does not reveal which emails are registered.
+    // An empty identities array is how that shows up.
+    if (signUpData?.user?.identities && signUpData.user.identities.length === 0) {
+      setMessage("An account with this email already exists. Try signing in instead.");
       return;
     }
 
-    await supabase.auth.signOut();
-    setLoading(false);
-    navigateTo("/login?registered=1");
+    // With email confirmation switched on, signUp returns a user but no
+    // session, and the account cannot sign in until the link is
+    // followed. Without confirmation switched on, a session comes back
+    // immediately and there is nothing to wait for.
+    if (!signUpData?.session) {
+      setCheckEmailFor(cleanEmail);
+      return;
+    }
+
+    navigateTo("/admin");
+  }
+
+  if (checkEmailFor) {
+    return (
+      <div className="page-shell">
+        <main className="container narrow">
+          <section className="card hero-card">
+            <Hero />
+            <h1>Check your email</h1>
+            <p>
+              We sent a confirmation link to {checkEmailFor}. Open it to finish creating your
+              account, then come back here to sign in.
+            </p>
+            <p className="auth-switch-text">
+              <a href="/login">Back to sign in</a>
+            </p>
+          </section>
+        </main>
+      </div>
+    );
   }
 
   return (

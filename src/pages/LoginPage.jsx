@@ -42,7 +42,14 @@ export default function LoginPage() {
     setLoading(false);
 
     if (error) {
-      setMessage(error.message);
+      // Supabase's own wording ("Email not confirmed") is accurate but easy
+      // to misread as a typo error. Naming the actual cause, and where to
+      // go to resolve it, matches fevnote's describeAuthError.
+      if (error.message?.toLowerCase().includes("email not confirmed")) {
+        setMessage("This account has not been confirmed yet. Check your email for the confirmation link.");
+      } else {
+        setMessage(error.message);
+      }
       return;
     }
 
@@ -85,6 +92,10 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </label>
+
+            <p className="auth-switch-text">
+              <a href="/forgot-password">Forgot your password?</a>
+            </p>
 
             {message ? <p className="error-box">{message}</p> : null}
 

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { supabase, supabaseReady } from "./lib/supabase";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StudyListPage from "./pages/StudyListPage";
 import StudyBuilderPage from "./pages/StudyBuilderPage";
 import TestRunnerPage from "./pages/TestRunnerPage";
@@ -35,6 +37,7 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [authChecked, setAuthChecked] = useState(!supabaseReady);
   const [profileChecked, setProfileChecked] = useState(false);
+  const [isRecoverySession, setIsRecoverySession] = useState(false);
 
   useEffect(() => {
     const onPop = () => setRoute(parsePath());
@@ -77,6 +80,15 @@ export default function App() {
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setAuthChecked(true);
+
+      // A recovery link signs the browser in with a short-lived session for
+      // the sole purpose of setting a new password. Marking that state here,
+      // separately from an ordinary sign-in, is what stops that session
+      // landing in the signed-in app with the old password still active
+      // before a new one is chosen. See Registration Step 7.
+      if (event === "PASSWORD_RECOVERY") setIsRecoverySession(true);
+      if (event === "SIGNED_OUT") setIsRecoverySession(false);
+
       setSession((previousSession) => {
         if (event === "SIGNED_OUT" || !nextSession) {
           setProfile(null);
@@ -148,6 +160,12 @@ export default function App() {
     );
   }
 
+  // Overrides every other route. A recovery session must set a new
+  // password before anything else happens; there is no link out of this
+  // screen back into the app, because the whole point of a recovery link
+  // is that the account holder does not currently have a working password.
+  if (isRecoverySession) return <ResetPasswordPage />;
+
   if (first === "test" && parts[1]) return <TestRunnerPage slug={parts[1]} />;
 
   if (first === "" || first === "consent") {
@@ -158,6 +176,11 @@ export default function App() {
     if (!hasLocalConsent()) return <ConsentPage />;
     return <RegisterPage />;
   }
+
+  // Reachable without a consent check: someone locked out of their account
+  // already has one, and already consented when they registered it.
+  if (first === "forgot-password") return <ForgotPasswordPage />;
+  if (first === "reset-password") return <ResetPasswordPage />;
 
   const firstAppLoad = !authChecked || (session?.user && !profileChecked && !profile);
 
