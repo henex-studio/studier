@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { supabase, supabaseReady } from "../lib/supabase";
 import { CONSENT_VERSION, hasLocalConsent } from "./ConsentPage";
+import { PRIVACY_POLICY_VERSION } from "./PrivacyPolicyPage";
 import Hero from "../components/Hero";
 
 function normalizeInviteCode(value) {
@@ -93,7 +94,8 @@ export default function RegisterPage() {
         data: {
           invite_code: cleanInviteCode,
           display_name: cleanDisplayName,
-          consent_version: CONSENT_VERSION
+          consent_version: CONSENT_VERSION,
+          privacy_version: PRIVACY_POLICY_VERSION
         }
       }
     });
@@ -184,6 +186,12 @@ export default function RegisterPage() {
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value)}
             />
+
+            <p className="muted-text">
+              By creating an account you agree to our{" "}
+              <a href="/privacy">privacy policy</a>, which explains what Studier collects about
+              you and about the people who answer your tests.
+            </p>
 
             {message ? <p className="error-box">{message}</p> : null}
 

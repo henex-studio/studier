@@ -434,6 +434,68 @@ Submission therefore moved behind three security definer functions, the same pat
 
 **Operator checks.** This one genuinely needs testing on the preview before it goes further: open a published Tree Test as a participant, answer a task, press Back, change the answer, go forward, finish the test, and confirm the responses arrive on the dashboard correctly.
 
+### Privacy policy, Steps 1 to 5 — DONE, 26 August 2026
+
+**Model used:** Opus with extended thinking for the policy text, since it is a set of factual claims about the system that have to be true rather than a piece of writing.
+
+**What happened.** Studier now has a privacy policy, which it did not before. The page at `/` was an acceptable use agreement telling account holders what they must not do; it said nothing about what Studier collects. Both now exist and link to each other.
+
+**Structure taken from fevnote, claims not.** fevnote's policy is a good model and its section order carries over. Three of its statements would have been false here and were rewritten rather than copied: fevnote says the operator cannot read a user's records, that data comes only from the person typing it, and lists its own providers. In Studier the operator can read tests and responses, participants supply data without ever having an account, and the provider list differs. The policy says the administrator capability exists plainly, because writing around it would have been easy and dishonest.
+
+**A correction that also affects fevnote.** Resend's documentation states that region selection controls only where mail is sent from, and that account data, email metadata and delivery logs are stored in the United States regardless. fevnote's published policy says email is "processed in Tokyo, Japan" without mentioning the United States, which is incomplete on a Privacy Act principle 12 point. Studier's wording covers both. Raised with the operator; fevnote's own policy is theirs to correct.
+
+**Every factual claim was checked against the system, not assumed.** Database region confirmed as `ap-southeast-2`, Sydney, by querying the project rather than trusting the earlier conversation. CSV export, clearing responses and deleting a study confirmed to exist in the code before the policy claimed a person could do them. The "no unsigned-in visitor can read any response" sentence is only true because of the fix applied earlier the same day; before that it would have been a lie, which is what makes the ordering of this work matter.
+
+**Version stamping.** `PRIVACY_POLICY_VERSION` lives in `PrivacyPolicyPage.jsx`, matching the version line in `docs/privacy-policy.md`, with a note in both saying to change them together. `RegisterPage` passes it into the sign-up metadata and the existing `handle_new_user` trigger writes it to `profiles.privacy_version`, using the columns added back in Registration Step 1 for exactly this.
+
+**Files touched.** `docs/privacy-policy.md` (new, the version of record), `src/pages/PrivacyPolicyPage.jsx` (new), `src/App.jsx` (route, review path), `src/pages/RegisterPage.jsx` (version stamp and a link, review path), `src/pages/ConsentPage.jsx` (a link and a sentence separating the two documents, review path).
+
+**Verified by:** `npm run build` passes. Version strings in the document and the component confirmed identical. Policy claims cross-checked against the code and the database as described above.
+
+**Step 6 not done, and it is a decision rather than work.** Whether the use conditions and the privacy policy stay separate. They are separate now, each linking to the other, which was the recommendation. Nothing more is needed unless the operator wants them merged.
+
+**Operator checks.** Open `/privacy` while signed out and confirm it reads correctly. Check the link from the consent screen and from the registration form. Register a test account and confirm `profiles.privacy_version` reads `2026-08-26`.
+
+**Sending region, confirmed by the operator.** `mail.henex.uk` is set to Tokyo, the same as fevnote's. The policy does not name a sending region, so it stays accurate; the point that matters for principle 12 is that Resend's account data and delivery logs sit in the United States regardless, which the policy does say.
+
+---
+
+## Milestone 3, the participant flow
+
+### Step 1. Database, sessions and responses — DONE, 26 August 2026
+
+**Model used:** Opus with extended thinking. This step decides what an anonymous stranger can reach, and the cost of getting that wrong was demonstrated on live data earlier the same day.
+
+**What happened.** Three tables and six functions.
+
+`tone_sessions` holds one row per participant per test: the chosen role, the variant assigned or the order all variants are shown in, the preferred variant if the test compares them, and the start and finish times. `tone_responses` holds ratings and open answers. `tone_gate_responses` holds risk gate answers.
+
+**Departure from the plan, and the reason.** The plan said anonymous participants "may insert rows only for a study that is published, may read nothing back". That is not achievable with direct table access, as this morning proved: PostgreSQL needs a readable row before an upsert can revise an answer. So participants get no table privileges at all, and everything goes through entry points instead. That is the pattern the Tree Test fix arrived at, applied here from the start rather than retrofitted.
+
+**Design decisions worth recording.**
+
+Variant assignment and the compare-all shuffle happen inside `start_tone_session`, once, and are stored on the session. Computing either in the browser would mean a refresh changes the wording under the participant, which corrupts the data quietly rather than loudly.
+
+The preferred variant sits on the session rather than being modelled as another question, because it is not one of the seeded questions and inventing a pseudo-question to hold it would have made the question table lie about what a study asks.
+
+`gate_key` is copied onto each gate answer instead of only being reachable by joining back to the question. Milestone 4 reads gate status constantly, and an answer should still say which gate it belonged to even if the creator later edits the question wording.
+
+`variant_id` on a response is deliberately nullable. In single variant mode every answer is about the assigned variant. In compare all mode a rating clearly belongs to one variant, but whether an open question is asked once or once per variant is not settled by the specification. Nullable supports both and defers a product decision to Step 4 rather than baking a guess into the schema.
+
+**A mistake made and corrected during the work.** The three submit functions were written before the shared check they all call, so the first apply referenced a function that did not exist yet and it had to follow in a third migration. Harmless, since all three applied within the same few minutes and the database ends up correct either way, but the repository file for migration 010 puts the helper first so the sequence runs cleanly from scratch. Worth noting rather than quietly tidying, because the applied order and the recorded order differ.
+
+**Files touched.** `supabase/migrations/20260826_009_create_tone_participant_tables.sql`, `supabase/migrations/20260826_010_tone_participant_entry_points.sql`. Applied directly to the database.
+
+**Verified by:** sixteen checks run as the anonymous role against the live database, inside transactions failed at the end so nothing was left behind. Direct reads of sessions and responses blocked. Direct inserts blocked. Answering before choosing a role refused. A session starts and receives a variant. The role can still change while no answer exists, and locks once one does. The assignment does not move when the session is reopened. A role the creator switched off is refused. A draft study returns null on read and refuses to start. An answer can be revised. A rating question cannot be submitted as a gate answer, nor a gate question as a rating. A second participant gets a separate session. Answering after submitting is refused. Afterwards all three tables confirmed empty and no test studies left behind.
+
+**What is not done.** Nothing participant-facing exists yet. Steps 2 to 6 build the actual flow, and Step 6 repeats these access checks from a real signed-out browser rather than from inside the database, which is a different test and still worth running.
+
+**Operator checks.** Nothing visible yet, as the plan predicted.
+
+### Step 2. The public link recognises a Tone Test — NOT STARTED
+
+---
+
 ### End of the registration and privacy work, for now
 
 All eight steps of `PLAN-registration.md` are complete. The privacy policy itself, `PLAN-privacy-policy.md` Steps 1 through 6, has not been started; it was deliberately sequenced after registration, since the policy's "where information is sent" section depends on the sending service registration Step 3 just put in place. That is the natural next piece of platform work whenever the operator wants it. Milestone 3 of Tone Test is otherwise next in line per `DEV-PLAN.md`.

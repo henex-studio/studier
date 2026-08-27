@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import StudyListPage from "./pages/StudyListPage";
 import StudyBuilderPage from "./pages/StudyBuilderPage";
 import TestRunnerPage from "./pages/TestRunnerPage";
@@ -165,6 +166,12 @@ export default function App() {
   // screen back into the app, because the whole point of a recovery link
   // is that the account holder does not currently have a working password.
   if (isRecoverySession) return <ResetPasswordPage />;
+
+  // Readable by anyone, signed in or not, and before consent. Somebody
+  // deciding whether to register needs to read it before they have an
+  // account, and a participant deciding whether to answer has no account
+  // at all.
+  if (first === "privacy") return <PrivacyPolicyPage />;
 
   if (first === "test" && parts[1]) return <TestRunnerPage slug={parts[1]} />;
 
