@@ -257,9 +257,11 @@ export default function TestRunnerPage({ slug }) {
       updated_at: new Date().toISOString()
     };
 
-    const { error } = await supabase
-      .from("task_responses")
-      .upsert(row, { onConflict: "study_id,participant_id,task_id" });
+    // Submitted through a database entry point rather than written to the
+    // table directly. Anonymous participants hold no privileges on the
+    // response tables at all, so nobody can read or alter anyone else's
+    // answers. See supabase/migrations/20260826_008_participant_submission_functions.sql.
+    const { error } = await supabase.rpc("submit_task_response", { p_response: row });
     if (error) setMessage(error.message);
   }
 
@@ -323,21 +325,18 @@ export default function TestRunnerPage({ slug }) {
       updated_at: new Date().toISOString()
     };
 
-    const { error } = await supabase
-      .from("final_responses")
-      .upsert(row, { onConflict: "study_id,participant_id" });
+    const { error } = await supabase.rpc("submit_final_response", { p_response: row });
 
     if (error) {
       setMessage(error.message);
       return;
     }
 
-    await supabase
-      .from("participant_sessions")
-      .upsert(
-        { study_id: study.id, participant_id: participantId, completed_at: new Date().toISOString() },
-        { onConflict: "study_id,participant_id" }
-      );
+    await supabase.rpc("upsert_participant_session", {
+      p_study_id: study.id,
+      p_participant_id: participantId,
+      p_completed: true
+    });
 
     setScreen("done");
   }

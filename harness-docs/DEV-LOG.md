@@ -398,8 +398,42 @@ Two outcomes are handled after sign-up. An empty `identities` array means Supaba
 
 **Verified by:** `npm run build` completes without errors. This step cannot be meaningfully verified without a real reset email, which needs Step 3 (operator's Supabase settings) done first, so it stays unverified until Step 8.
 
-### Registration Step 7a. Close the security hole — NOT STARTED
+### Registration Step 7a. Close the security hole — DONE, 26 August 2026
 
-### Registration Step 7a. Close the security hole — NOT STARTED
+**Model used:** Opus with extended thinking.
 
-Renumbered from the plan's original Step 2. Drops both versions of `complete_invite_registration` and restricts `accept_platform_consent` to signed-in callers. Both are now safe to drop on the code side, since Step 5 removed the registration page's only caller, but this is left until after Step 7 and Step 8's verification, so the fallback path still exists while the rewritten flow gets its first real test.
+**What happened.** The operator tested the full rewritten flow on the deployed preview end to end, including confirmation email delivery from `no-reply@mail.henex.uk`, an invalid invite code, forgot password, and setting a new password, with no issues. With that confirmed, both versions of `complete_invite_registration` were dropped and `accept_platform_consent` was restricted to signed-in callers. Nothing calls the dropped function; Step 5 already moved profile creation into the trigger.
+
+**A mistake caught immediately rather than assumed away.** The first attempt revoked execute on `accept_platform_consent` from `anon` and stopped there. Checking `information_schema.routine_privileges` straight afterwards showed `anon` could still call it. The reason: Postgres grants execute on a newly created function to the `PUBLIC` pseudo-role by default, and this function was never revoked from `PUBLIC` when it was first written, back in `consent_v2_registration_update.sql`. Every role, including `anon`, inherits whatever `PUBLIC` can do, so revoking from `anon` alone changed nothing. A second statement revoking from `PUBLIC` directly fixed it, verified the same way. `validate_invite_code` has the same standing `PUBLIC` grant and keeps it deliberately, since the registration form must reach it before an account exists.
+
+**Files touched.** `supabase/migrations/20260826_005_drop_invite_registration_function.sql`, `supabase/migrations/20260826_006_fix_accept_consent_public_grant.sql`. Applied directly to the database.
+
+**Verified by:** both functions confirmed absent, `accept_platform_consent` confirmed uncallable by `anon` and callable by `authenticated`, account count unchanged at 8 profiles and 8 auth users before and after.
+
+### Unplanned. Participant response data was readable by anyone — FIXED, 26 August 2026
+
+**Model used:** Opus with extended thinking.
+
+**How it was found.** Not by a security review. The privacy policy needs a section saying who can see a participant's answers, and the plan for it says explicitly that fevnote's claims must not be copied without checking they are true of Studier. Checking meant reading the actual access rules rather than the documentation, and the rules did not say what everyone assumed.
+
+**What was wrong.** Anyone at all, with no account, could read every response to any published study. Confirmed by querying the live database as the anonymous role: 256 task responses, 29 final responses, 29 participant sessions. Overwriting another participant's submitted answers was also possible, demonstrated inside a transaction that was then rolled back with nothing damaged.
+
+**Cause.** Two generations of access policies sat on the three response tables. The newer ones were correct and limited reads to the study owner and administrators. The older ones, left behind rather than replaced, allowed any anonymous caller to read and update every row belonging to a published study. Policies combine with OR, so the permissive older rule silently overrode the stricter newer one. Nothing in the newer work looked wrong on its own, which is why reading the newer migration would never have found this.
+
+**The fix, and a wrong turn on the way to it.** Dropping the old policies closed the leak, and a check confirmed anonymous reads returned zero rows while the content participants legitimately need stayed readable. But the next check, whether participants could still submit, failed. PostgreSQL needs the conflicting row to be visible through a read policy before `INSERT ... ON CONFLICT DO UPDATE` can take the update path, and the test runner submits every answer that way. Anyone pressing the Back button to revise an answer would have hit it, so this was ordinary use breaking rather than an edge case. Column level grants were tried as a narrower alternative and do not satisfy the check either.
+
+Submission therefore moved behind three security definer functions, the same pattern already used for `handle_new_user`. Anonymous participants now hold no privilege of any kind on the response tables and reach them only through entry points that decide what may be written. That also closes the overwrite problem properly rather than making it merely difficult.
+
+**Files touched.** `supabase/migrations/20260826_007_fix_participant_response_read_leak.sql`, `supabase/migrations/20260826_008_participant_submission_functions.sql`, `src/pages/TestRunnerPage.jsx` (review path, three submission calls changed to RPCs).
+
+**Verified by:** eight checks run as the anonymous role against the live database, in a transaction rolled back at the end. Direct read blocked, direct insert blocked, session start works, first answer works, the same answer revised works, final answers submitted twice works, session completion works, and a draft study still refuses everything. Response counts confirmed unchanged at 256, 29 and 29 afterwards, with no test rows left behind. `npm run build` passes.
+
+**What this changes for Milestone 3.** Tone Test must use the same pattern from the start: participants get no direct table access, only entry points. The Milestone 3 plan already said its access rules should be tested by attempting the attack rather than by reading the policy; this is that principle paying for itself a milestone early, on live data.
+
+**Still to do, not urgent.** The three older `supabase/*.sql` files record the superseded policies and are protected historical files, so they still describe the old arrangement. Anyone reading them for current behaviour would be misled. Worth a note at the top of each, which needs the operator since they are protected.
+
+**Operator checks.** This one genuinely needs testing on the preview before it goes further: open a published Tree Test as a participant, answer a task, press Back, change the answer, go forward, finish the test, and confirm the responses arrive on the dashboard correctly.
+
+### End of the registration and privacy work, for now
+
+All eight steps of `PLAN-registration.md` are complete. The privacy policy itself, `PLAN-privacy-policy.md` Steps 1 through 6, has not been started; it was deliberately sequenced after registration, since the policy's "where information is sent" section depends on the sending service registration Step 3 just put in place. That is the natural next piece of platform work whenever the operator wants it. Milestone 3 of Tone Test is otherwise next in line per `DEV-PLAN.md`.

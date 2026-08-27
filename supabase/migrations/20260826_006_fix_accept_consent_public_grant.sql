@@ -1,0 +1,15 @@
+-- Correction to 20260826_005, applied the same day, minutes later.
+--
+-- Revoking execute from anon on accept_platform_consent did not actually
+-- restrict access. Postgres grants execute on a newly created function to
+-- the PUBLIC pseudo-role by default, and this function, along with
+-- complete_invite_registration and validate_invite_code, never revoked
+-- that when first created. The anon role inherits PUBLIC's privileges
+-- regardless of what is revoked from anon specifically, so the previous
+-- migration's revoke was a no-op in practice.
+--
+-- Caught immediately, by checking information_schema.routine_privileges
+-- straight after applying 005 rather than assuming the revoke worked.
+-- validate_invite_code keeps its PUBLIC grant deliberately, since the
+-- registration form must be able to call it before an account exists.
+revoke execute on function public.accept_platform_consent(text) from public;
