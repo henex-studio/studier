@@ -7,11 +7,11 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import StudyListPage from "./pages/StudyListPage";
 import StudyBuilderPage from "./pages/StudyBuilderPage";
-import TestRunnerPage from "./pages/TestRunnerPage";
 import DashboardPage from "./pages/DashboardPage";
 import GuidePage from "./pages/GuidePage";
 import PreviewRunnerPage from "./pages/PreviewRunnerPage";
 import ToneBuilderPage from "./pages/tonetest/ToneBuilderPage";
+import PublicTestRouter from "./pages/tonetest/PublicTestRouter";
 import ConsentPage, { hasLocalConsent, hasProfileConsent } from "./pages/ConsentPage";
 
 function parsePath() {
@@ -173,7 +173,7 @@ export default function App() {
   // at all.
   if (first === "privacy") return <PrivacyPolicyPage />;
 
-  if (first === "test" && parts[1]) return <TestRunnerPage slug={parts[1]} />;
+  if (first === "test" && parts[1]) return <PublicTestRouter slug={parts[1]} />;
 
   if (first === "" || first === "consent") {
     return <ConsentPage profile={profile} onAccepted={setProfile} />;

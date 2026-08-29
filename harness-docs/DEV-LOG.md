@@ -492,7 +492,21 @@ The preferred variant sits on the session rather than being modelled as another 
 
 **Operator checks.** Nothing visible yet, as the plan predicted.
 
-### Step 2. The public link recognises a Tone Test — NOT STARTED
+### Step 2. The public link recognises a Tone Test — DONE, 26 August 2026
+
+**Model used:** Sonnet.
+
+**What happened.** `/test/<slug>` now checks the study's type before deciding which runner to show. `PublicTestRouter.jsx` does one small fetch for `study_type` only, then hands off to the existing `TestRunnerPage` for a Tree Test or a new `ToneTestRunnerPage` for a Tone Test, which does its own full fetch afterwards. `TestRunnerPage.jsx` was not touched at all, so there is no way this step could have disturbed Tree Test.
+
+`ToneTestRunnerPage.jsx` is deliberately close to empty, on the same pattern as Milestone 1 Step 3's builder placeholder: it proves the routing lands in the right place and nothing more. Welcome and privacy content, role selection, wording, questions, submitting and closed-test handling are Steps 3 to 6.
+
+**The router lives in the tonetest folder**, per the plan's own note that the writable folders are all named for Tone Test even though this component serves both types. Accepted as a limit of the current configuration rather than reworked.
+
+**Files touched.** `src/pages/tonetest/PublicTestRouter.jsx` (new), `src/pages/tonetest/ToneTestRunnerPage.jsx` (new), `src/App.jsx` (one import swapped for another, one line changed, review path).
+
+**Verified by:** `npm run build` completes without errors. Not yet verified in the browser.
+
+**Operator checks.** Open an existing published Tree Test link and confirm it looks and behaves exactly as before. Open a published Tone Test link and confirm it reaches the new placeholder screen instead.
 
 ---
 
