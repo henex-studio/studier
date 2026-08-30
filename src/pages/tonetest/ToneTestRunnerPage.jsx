@@ -514,17 +514,23 @@ export default function ToneTestRunnerPage({ slug }) {
                         ) : null}
 
                         {question.question_type === "rating" ? (
-                          <div className="button-row">
-                            {[1, 2, 3, 4, 5].map((value) => (
-                              <button
-                                key={value}
-                                type="button"
-                                className={ratingAnswers[question.id]?.[variant.id] === value ? "primary-button" : "secondary-button"}
-                                onClick={() => setRating(question.id, variant.id, value)}
-                              >
-                                {value}
-                              </button>
-                            ))}
+                          <div>
+                            <div className="button-row">
+                              {[1, 2, 3, 4, 5].map((value) => (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  className={ratingAnswers[question.id]?.[variant.id] === value ? "primary-button" : "secondary-button"}
+                                  onClick={() => setRating(question.id, variant.id, value)}
+                                >
+                                  {value}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="rating-scale-labels">
+                              <span>1 = Strongly disagree</span>
+                              <span>5 = Strongly agree</span>
+                            </div>
                           </div>
                         ) : (
                           <div>

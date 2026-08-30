@@ -123,6 +123,22 @@ ul {
   font-size: 14px;
 }
 
+/* .muted-text is grey by default, meant for grey-on-white. Nested inside a
+   selected .primary-button (solid blue background), that same grey reads
+   as low-contrast grey-on-blue. This keeps it legible without touching the
+   many other places .muted-text is used on a plain white card. */
+.primary-button .muted-text {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.rating-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 12px;
+}
+
 .success-box {
   border: 1px solid #bbf7d0;
   border-radius: 16px;

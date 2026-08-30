@@ -560,6 +560,60 @@ A session that already finished shows the end message immediately on load, befor
 
 **This is the third step in a row that cannot be checked in the browser**, because no Tone Test has ever been published. Recommending strongly, before Step 6, that a rough Tone Test gets published purely to unblock verifying Steps 3 through 5 together in one pass, rather than continuing to build on an unverified foundation. Offered to the operator to do directly.
 
+### Test publish, to unblock verification — DONE, 30 August 2026
+
+A draft Tone Test titled "police" already existed in the database with real placeholder content: two active roles (editor, audience), three wording variants, and thirty-two questions with wording already filled in. Rather than inventing new content, this one was published directly at the database level, since it already had everything Steps 2 through 5 need to be exercised.
+
+Two things needed correcting before publishing, both because this draft was built by clicking through the builder UI to test it rather than to make a real study, so it never had to pass the publish checklist:
+
+The Content Score weights for the two active roles totalled 65, not the required 100. Set to Audience Evidence 60, Content Quality 40 (Agency Assurance left at 35, unused while agency is inactive).
+
+No closing time was set. Left unset would have been fine, but a closing time thirty days out was set anyway so Step 6 (closed-test handling) has something to test against later without a second edit.
+
+The title was changed to "TEST — Tone Test participant flow check (not real content)" so it is not mistaken for a real study in the list. Status set to `published`, confirmed independently that an anonymous, unauthenticated query can see it, matching how a real participant's browser will reach it.
+
+**Files touched:** none. Database only, via direct SQL, mirroring exactly what the builder's own Publish button would have written.
+
+**Link for the operator to test:** `https://studier-git-dev-cafes-projects-5a353a12.vercel.app/test/police-4zbsk`
+
+**What to try:** open the link signed out, pick a role, answer the questions, leave a required question blank once to confirm it is refused with the specific missing items named, submit for real, then reopen the same link and confirm it shows the end message rather than the form again. Also worth trying the Back-button-and-revise pattern partway through, the same way Tree Test was checked in Step 7.
+
+### Two usability fixes found during operator testing — DONE, 30 August 2026
+
+Found by the operator while trying the test link above, not by anyone auditing the UI. Both are small enough to fix directly rather than record as open questions.
+
+**Rating scale had no anchors.** The 1 to 5 buttons showed only numbers, with nothing saying which end meant agreement. Every rating question is phrased as a statement to react to ("This message is clear.", "This message is respectful."), so 1 and 5 were labelled "Strongly disagree" and "Strongly agree" underneath the button row, the standard reading of that phrasing. This did not need a product decision: the wording of the questions already implies an agreement scale, this only made it visible.
+
+**Selected role button was hard to read.** Once a role is chosen, its button turns solid blue, but the description line under the role name kept the grey colour meant for grey-on-white use elsewhere, so it read as grey-on-blue. Fixed with one CSS rule scoped to that exact combination, so every other place the same grey text style is used elsewhere in the app is untouched.
+
+**Files touched.** `src/pages/tonetest/ToneTestRunnerPage.jsx` (rating scale labels). `src/style.css`, a review path (14 lines added, under the 30-line budget): the contrast fix and the small style for the new scale labels.
+
+**Verified by:** build passes. Visual correctness (are the labels readable, does the blue button text now read clearly) still needs the operator's eyes on the same test link, since this is exactly the kind of thing that does not show up in a build log.
+
+---
+
+### Step 6. Closed tests, and checking the access rules properly — DONE, 30 August 2026
+
+**Model used:** Sonnet.
+
+**What happened.** The closed-test and draft-link messages were already built during earlier steps, so this step was mainly the part the plan calls out by name: not assuming the access rules work, actually attacking them from an unauthenticated connection and watching each attempt fail. Six attempts, each run live against the real database as the `anon` role, inside a transaction that was rolled back afterwards so nothing was left behind:
+
+Reading `tone_sessions`, `tone_responses` or `tone_gate_responses` directly, bypassing every function, refused at the grant level before row security is even consulted, for all three tables. Inserting into `tone_sessions` directly, same result. Calling `start_tone_session` against a throwaway draft study, refused with "This test is not accepting responses." Calling `start_tone_session` against the real published test after temporarily marking it closed inside the same rolled-back transaction, same refusal. Inserting directly into `tone_sessions` for that closed test, refused at the grant level again. Calling `get_tone_session` with a guessed participant identifier that does not belong to anyone, returned nothing rather than another participant's session.
+
+Nothing needed fixing. This confirms the design from Step 1, SECURITY DEFINER functions as the only door in, no table grants to `anon` at all, checked live rather than assumed.
+
+**A real bug was found along the way, not by this step's own checklist but by the operator clicking the Preview link during today's testing:** for a Tone Test, "Preview" on the study list went to `/preview/<id>`, which is `PreviewRunnerPage.jsx`, a screen that only ever renders the Tree Test flow. It has no idea a Tone Test exists, so it showed a "Tree test" badge and a Tree Test "Start preview" button on a Tone Test study. The Tone Test's actual preview, the "Preview by role" section, was built inside `ToneBuilderPage.jsx` in Milestone 2 Step 6, as its own section of the builder, not as a separate page. Fixed by pointing a Tone Test's Preview link at the Tone Builder page instead, the same place Edit already goes. This means Preview and Edit now land on the same page for a Tone Test, which is a minor redundancy, not a new problem, since the builder is where "Preview by role" already lives.
+
+**Files touched.** `src/pages/StudyListPage.jsx`, a review path (added a six-line `previewPath` helper and swapped two hardcoded links to use it).
+
+**Verified by:** the six attack attempts above, run live, each one reported with its actual database error rather than assumed from reading the code. Build passes for the Preview-link fix.
+
+**Operator checks.** Close the published test and confirm the link shows the closed message rather than the form; this wasn't touched today; it was built earlier and is expected to already work, so this is a confirmation, not a new thing to test. Try a draft Tone Test's link directly and confirm it shows nothing revealing. Click Preview on the Tone Test from the study list and confirm it now opens the Tone Builder rather than a Tree Test screen.
+
+### End of Milestone 3
+
+A Tone Test can be published, answered by real participants in each active role, and the answers are stored correctly, verified both at the database level and in the browser. Nobody can see the results yet; that is Milestone 4.
+
 ---
 
 ### End of the registration and privacy work, for now
