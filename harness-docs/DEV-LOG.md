@@ -508,6 +508,58 @@ The preferred variant sits on the session rather than being modelled as another 
 
 **Operator checks.** Open an existing published Tree Test link and confirm it looks and behaves exactly as before. Open a published Tone Test link and confirm it reaches the new placeholder screen instead.
 
+### Step 3. Welcome, privacy, and choosing a role — DONE, 26 August 2026
+
+**Model used:** Sonnet.
+
+**What happened.** The placeholder now shows the welcome and privacy content, then the active roles with their descriptions, each reachable through `get_tone_session` and `start_tone_session`, the entry points built in Step 1. Nothing on this page reads or writes `tone_sessions` directly.
+
+Reopening the link returns to the same session rather than starting a second one, using the participant identifier the existing browser code already generates. Once an answer exists, `start_tone_session` itself refuses to move the role; the page reflects that by disabling the other role buttons, but the lock is enforced by the database regardless of what the interface shows.
+
+**A gap recorded rather than fixed here, per the plan.** Nothing stops one browser answering as three different roles by choosing a role, finishing, then somehow starting again, nor stops clearing local storage and beginning fresh. The plan flags this as unresolved by the specification and defers it to how Milestone 4 presents results, not to this step.
+
+**Files touched.** `src/pages/tonetest/ToneTestRunnerPage.jsx` only.
+
+**Verified by:** `npm run build` completes without errors.
+
+**Nothing to verify against yet.** The only Tone Test in the database, `police`, is still a draft. This step cannot be checked in the browser until a Tone Test is published; Milestone 2 built the publish checklist, but no Tone Test has been taken through it yet. Worth publishing one, even a rough one, before checking this step or continuing to Step 4.
+
+**Operator checks.** Publish a Tone Test with at least one active role. Open its public link as a signed-out participant. Confirm only active roles appear, pick one, confirm, and reload the page to confirm the same role is still selected.
+
+### Step 4. Showing the wording and the questions — DONE, 26 August 2026
+
+**Model used:** Sonnet.
+
+**What happened.** Once a session exists, the page shows the wording the participant is meant to see and their role's questions in order: ratings, then gates, then open text, matching the order already used in the builder's `QuestionTemplateEditor`. Which wording appears follows what `start_tone_session` decided and stored back in Step 1, read here rather than recomputed, so a reload cannot change the wording under a participant partway through. In single variant mode that is one piece of wording; in compare-all mode it is every variant, in the order fixed for that participant.
+
+**A design decision the schema deliberately left open, settled here.** Migration 009's comment says whether an open question is asked once or once per variant in compare-all mode was not decided at the schema level, because it did not need to be to build the tables. Building the actual screen does need an answer. Ratings and gate judgements are asked once per shown variant, since a statement like "this message is clear" or a gate judgement is inherently about one specific piece of wording. Open questions are asked once, not once per variant, because they read as reflective ("What words felt unclear?") rather than wording-specific, and asking someone to write the same reflection three times over is poor participant experience for no obvious benefit. In single variant mode this collapses to one instance of everything regardless, so the distinction is invisible there.
+
+Reading and writing to `tone_questions` and `tone_variants` here uses the existing `select` policies from Milestone 2, unchanged, since this is read-only content already open to a published study's participants. Nothing new was needed for it.
+
+**Answers are held in local state only, not yet submitted.** Rating, gate, and open answers, and the preference pick in compare-all mode, all update component state as the participant works through the screen. The database calls that save any of it are Step 5.
+
+**Files touched.** `src/pages/tonetest/ToneTestRunnerPage.jsx` only.
+
+**Verified by:** `npm run build` completes without errors. No published Tone Test exists yet, so this cannot be checked in the browser until one is.
+
+**Operator checks.** Once a Tone Test is published: in single variant mode, confirm one wording appears and stays the same across reloads. In compare-all mode, confirm all wordings appear and their order stays the same across reloads for the same participant. Confirm the questions shown match the chosen role, and confirm a rating or gate question appears once per wording shown while an open question appears only once.
+
+### Step 5. Submitting — DONE, 26 August 2026
+
+**Model used:** Sonnet.
+
+**What happened.** A required question left blank now blocks submission and names every specific thing still missing, rather than one generic message, so a participant does not have to guess which of several questions is the problem. Which questions are required is read per question rather than assumed from its type, because the required flag is data set at seeding time (Milestone 2 Step 1: gate and rating questions required, open questions optional so nobody is forced to invent a reflection they do not have), not a rule fixed to the type.
+
+Submitting loops through the role's questions, calling `submit_tone_response` for each rating and each open answer and `submit_tone_gate_response` for each gate answer, skipping anything genuinely optional and left blank, then calls `complete_tone_session` with the preferred wording if the test compares all variants. All four are the entry points built in Step 1; nothing here writes to `tone_responses`, `tone_gate_responses` or `tone_sessions` directly.
+
+A session that already finished shows the end message immediately on load, before any question ever renders, rather than a blank form or a second chance to answer. `study.end_text` is reused, falling back to the same default text `ToneBuilderPage.jsx`'s save function already falls back to, so both places agree on what "no end message written" means.
+
+**Files touched.** `src/pages/tonetest/ToneTestRunnerPage.jsx` only.
+
+**Verified by:** `npm run build` completes without errors. The four entry points this step calls were already verified directly against the database in Step 1's sixteen checks; what this step adds is the validation and the sequencing of those calls, which needs a real browser to see fail or succeed, and none has been possible yet.
+
+**This is the third step in a row that cannot be checked in the browser**, because no Tone Test has ever been published. Recommending strongly, before Step 6, that a rough Tone Test gets published purely to unblock verifying Steps 3 through 5 together in one pass, rather than continuing to build on an unverified foundation. Offered to the operator to do directly.
+
 ---
 
 ### End of the registration and privacy work, for now
