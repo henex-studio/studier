@@ -317,13 +317,141 @@ Three earlier open questions still sit unanswered and still do not block this mi
 
 ---
 
-## Milestones 4 to 5, outline only
+## Milestone 4, in detail
 
-**Milestone 4, results.** Response counts, Content Score by variant, breakdown by role, Evidence Confidence, gate status, the recommendation label, open comments grouped by role and variant, and the automatic flag from the Audience blame rating to the Agency.
+**Written:** 30 August 2026. **Approve before work starts, same as the earlier milestones.**
+
+This milestone turns stored answers into the three numbers the tool exists to produce. Everything it computes is already specified in `HANDOVER.md` section 2.5, which settles the calculation, the thresholds, which gates are critical, and the numeric bands for every recommendation status. Nothing here is invented.
+
+**One correction before starting.** `open-questions.md` still describes Q-1 through Q-7 as blockers on this milestone. It is out of date. Those questions were answered when `HANDOVER.md` section 2.5 was written and the file was never updated. It has been given a status header saying so. Read section 2.5 as the authority on scoring, not the questions file.
+
+### What the operator settled before this plan was written
+
+**The blame flag threshold.** An Audience mean below 3.5 on "This message does not make me feel blamed" flags the Harm, blame and stigma gate for Agency attention. Adjustable per study, defaulting to 3.5.
+
+The reasoning for 3.5 rather than 3.0 is that a mean of 3.5 normalises to 62.5, inside the "mixed" band rather than the failing one, so the flag fires while the wording still looks acceptable overall. Harm is the one thing this tool treats as irreversible, so it prompts early and lets the Agency decide rather than waiting for the average to turn clearly negative.
+
+Making it adjustable is a deliberate departure from the principle in section 2.5 that scoring thresholds are fixed constants invisible to the creator. It is defensible here because this threshold produces a prompt for a human to look at something, not a score or a status. The cost is that the flag is no longer comparable between two studies that set it differently, which matters if these are ever compared side by side. Worth revisiting after the first real study.
+
+**The "Not applicable" option.** Built as step 0 of this milestone, before anything is calculated.
+
+### The gap this milestone has to close first
+
+Section 2.5 settles a five-point scale with a midpoint at 3 and a "Not applicable" option excluded from all calculations. The scale and midpoint were built. **"Not applicable" never was.** Rating questions are seeded as required, so a participant facing a question that does not apply to them has no choice but to pick a number, and that number is counted.
+
+This was missed in Milestone 3 and found while planning this one. It matters here specifically: the Content Score is defined as the mean of all *non-null* ratings, and the system currently cannot produce a null. Every score calculated before this is fixed carries a bias in an unknown direction, because a forced answer is not a neutral one.
+
+---
+
+### Step 0. The "Not applicable" option
+
+**What happens.** A "Not applicable" choice appears alongside 1 to 5 on every rating question. Choosing it records that the participant saw the question and had no applicable view, which is different both from an unanswered question and from a rating of 3. It satisfies the required check, and it is excluded from every calculation in this milestone.
+
+The database currently refuses to store it. `tone_responses` carries a check constraint requiring either a rating or some text, so a row with neither is rejected. A `not_applicable` flag column is added and the constraint is widened to accept a row that is explicitly marked not applicable. Storing an explicit row rather than storing nothing keeps the distinction between "did not apply to me" and "never answered", which Evidence Confidence needs, since only the second should count as missing evidence.
+
+The per-study blame flag threshold column is added in the same migration, defaulting to 3.5, because batching two small schema changes into one reviewed migration is better than two.
+
+**Files touched.** A new migration in `supabase/migrations/`. `src/pages/tonetest/ToneTestRunnerPage.jsx`. The two entry points that write ratings, `submit_tone_response` and the validation inside it.
+
+**Operator checks.** Answer a rating question "Not applicable" and submit. Confirm submission is allowed, and that the answer is not silently treated as a 3.
+
+---
+
+### Step 1. The scoring library
+
+**What happens.** One module of pure calculation, no screen and no database access, so it can be reasoned about and checked on its own. It computes, for a given variant: each role group's score, the weighted Content Score, Evidence Confidence, gate status per gate, and the recommendation label.
+
+Every rule comes from section 2.5. Group score is the mean of non-null ratings normalised with `(mean − 1) ÷ 4 × 100`. A group with no responses has its weight removed and the rest scaled up proportionally, never treated as zero. Evidence Confidence is High at five or more responses per active role group per variant with an imbalance ratio of 0.5 or better, Medium at three or more in at least one active group, Low otherwise, with the documented downgrades. Recommendation rules are evaluated in priority order, first match wins.
+
+Thresholds are named constants in one place, as section 2.5 asks, so they can be made configurable later without touching the calculation.
+
+**How it is checked.** Section 2.5 contains a worked example: 34 Audience ratings summing to 131 and 10 Agency ratings summing to 37, with Content Quality absent, producing group scores of 71.3 and 67.5 and a Content Score of 69.5. The arithmetic was verified independently while writing this plan and it is correct. That example becomes the test fixture. If the library does not reproduce 69.5 from those inputs, it is wrong.
+
+**Files touched.** New: `src/lib/tonetest/scoring.js`.
+
+**Operator checks.** None. This step produces no visible change. It is reported when the worked example passes.
+
+---
+
+### Step 2. The dashboard shell and the read path
+
+**What happens.** A Tone Test opened from the study list reaches a Tone Test dashboard rather than the Tree Test one. `DashboardPage.jsx` is a Tree Test screen throughout, so it gets a study-type branch that routes into a new `ToneDashboardPage`, the same dispatch pattern used for the builder and the participant runner.
+
+The read path is confirmed rather than assumed. The owner and admin select policies on the three participant tables were written in Milestone 3 Step 1 but have only ever been exercised by the database owner, which bypasses row security entirely. This step checks that a signed-in owner can read their own study's responses and, more importantly, that a signed-in user who owns a different study cannot.
+
+**Files touched.** `src/pages/DashboardPage.jsx`, a review path, dispatch only. New: `src/pages/tonetest/ToneDashboardPage.jsx`.
+
+**Operator checks.** Open the Dashboard link on the Tone Test and confirm it is a Tone Test screen, not a Tree Test one showing empty tables.
+
+---
+
+### Step 3. Content Score and Evidence Confidence
+
+**What happens.** For each wording variant: the Content Score, the contribution of each active role group, the number of responses behind it, and the Evidence Confidence label with the reason it landed there. A variant with too little evidence says so plainly instead of showing a confident-looking number.
+
+The warning from section 2.5 appears when any active role group has fewer than three responses for a variant. It blocks nothing.
+
+Presentation follows the existing dashboard's cards and tables. No charts. Section 2.9 puts advanced charts out of scope.
+
+**Files touched.** `src/pages/tonetest/ToneDashboardPage.jsx`. Possibly `src/style.css`, a review path, only if existing classes genuinely do not stretch.
+
+**Operator checks.** Compare the score shown against the same calculation done by hand for one variant. This is the check that matters most in the whole milestone.
+
+---
+
+### Step 4. Risk gates, recommendation status, and the blame flag
+
+**What happens.** Each of the six gates shows Pass, Concern, Fail, or "Not covered" when its answering role was inactive, never Pass by default. Critical gates are marked as such. The recommendation label appears per variant with the rule that produced it stated in plain words, so the label is explainable rather than oracular.
+
+The blame flag is calculated here: when the Audience mean on "This message does not make me feel blamed" falls below the study's threshold, the Harm, blame and stigma gate is marked as flagged for Agency attention. The flag is a prompt, not a judgement, and the wording must say so. The threshold gets an input in the Tone Builder, defaulting to 3.5.
+
+**Files touched.** `src/pages/tonetest/ToneDashboardPage.jsx`, `src/pages/tonetest/ToneBuilderPage.jsx`.
+
+**Operator checks.** Confirm a disabled role's gates read "Not covered". Confirm the recommendation label matches the rule it claims to have applied. Set the blame threshold high enough to force the flag on and confirm it appears.
+
+---
+
+### Step 5. Comments, preferred wording, and counts
+
+**What happens.** Open text answers grouped by role and by variant, so a comment can be read next to the wording it was about. Gate comments shown with their gate. In compare-all studies, a count of which wording participants preferred, kept separate from the Content Score, since a preference is not a score.
+
+Participation counts: sessions started, sessions completed, and responses per role per variant.
+
+**Files touched.** `src/pages/tonetest/ToneDashboardPage.jsx`.
+
+**Operator checks.** Confirm comments appear under the right wording and the right role.
+
+---
+
+### Step 6. Checking the numbers
+
+**What happens.** The milestone is checked rather than assumed, on the same reasoning as Milestone 3 Step 6 and for the same reason recorded in `CLAUDE.md`.
+
+Three checks. The worked example from section 2.5 reproduces exactly. A variant's score is recalculated by hand from the stored responses and matches what the screen shows. A second account cannot read the first account's results, attempted for real rather than reasoned about.
+
+**Operator checks.** Reported rather than performed, except the hand recalculation, which is worth doing together.
+
+---
+
+### What Milestone 4 needs decided
+
+One question, and it should be answered before Step 4 rather than during it.
+
+**Should a critical gate that is "Not covered" withhold the top recommendation status?** Rule 3 grants "Recommended for review" when the score is 70 or above, evidence is Medium or High, and no gate is Fail. "Not covered" is not Fail. So a study with the Agency role turned off, where all four critical gates have no respondent, can reach the highest status with no risk review having happened at all. Evidence Confidence does not catch this, because it only counts responses from roles that are active.
+
+This contradicts section 2.5's own statement that the Agency is the role the process can least afford to lose. It is a product and safety decision, not an implementation detail, so it is recorded rather than answered here. Three obvious options: treat an uncovered critical gate as blocking the top two statuses; cap such a study at "Insufficient evidence"; or accept it as intended, on the grounds that the creator consciously turned the role off and was warned at the time.
+
+The three older open questions still sit unanswered and still do not block: what sensitivity level does, whether a variant can be deleted once responses exist, and whether Evidence Confidence should include researcher judgement.
+
+**Realistic elapsed time.** Four to six hours including the operator's checks. Step 1 carries the most design risk despite being invisible, and step 6 is where its correctness is actually established.
+
+---
+
+## Milestone 5, outline only
 
 **Milestone 5, finishing.** CSV export, close, clear data, reuse, and the in-app guide.
 
-Each is planned in detail when we reach it, using what the previous milestone taught us.
+Planned in detail when we reach it, using what Milestone 4 teaches us.
 
 ---
 

@@ -1,5 +1,19 @@
 # Studier Tone Test, Open Questions and Document Conflicts
 
+> **OUT OF DATE. Read this header before trusting anything below it.**
+>
+> **Reviewed 30 August 2026.** Most of Part 1 was answered when `HANDOVER.md` section 2.5 was written, and this file was never updated. Anyone reading it cold will believe scoring is blocked when it is not. `CLAUDE.md` sends every new session here, which is what makes the staleness dangerous rather than untidy.
+>
+> **Answered in `HANDOVER.md` section 2.5, which is authoritative on scoring:** Q-1 which gates are critical (four of six, named). Q-2 the rating scale (five points, "Strongly disagree" to "Strongly agree", midpoint at 3, plus a "Not applicable" option excluded from calculations). Q-3 the Content Score calculation, including a verified worked example. Q-4 the Evidence Confidence thresholds, as numbers. Q-6 what happens to a gate whose role is disabled ("Not covered", never Pass, with a warning at the time of disabling). Q-7 what counts as a strong score (70 and above, mixed 50 to 69.9, weak below 50). Q-14 and Q-15 the gate to role mapping, and that the Audience answers no gates.
+>
+> **Answered 30 August 2026 by the operator:** the blame flag threshold, previously written in section 2.5 only as "a threshold". An Audience mean below 3.5, adjustable per study.
+>
+> **Genuinely still open:** Q-5, Q-8, Q-9, and one new question raised while planning Milestone 4, recorded there rather than here: whether a critical gate that is "Not covered" should withhold the top recommendation status. As written, a study with the Agency role turned off can reach "Recommended for review" with no risk review at all.
+>
+> **Document conflicts:** D-1, D-2 and D-6 were resolved by retiring the two offending documents to `docs/tone-test/archive/`. See `HANDOVER.md` section 3.
+>
+> Rather than deleting the answered entries, they are left in place with this header, because the reasoning in them is what makes the answers in section 2.5 understandable.
+
 **Date:** 2 August 2026
 **Purpose:** Record every decision that is referred to but never made, and every place where two source documents disagree. Under H-5.5 the Planner records these and stops rather than inventing an answer. This file is what it reads.
 **Companion:** `decision-log.md` holds what was actually decided. `codebase-survey.md` holds what the repository actually contains.

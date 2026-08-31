@@ -636,6 +636,7 @@ export default function ToneBuilderPage({ profile, studyId }) {
         variant_mode: settings.variant_mode || "single_random",
         active_roles_json: settings.active_roles_json,
         content_score_weights_json: normalizeWeights(settings.content_score_weights_json || defaultWeights()),
+        blame_flag_threshold: Number(settings.blame_flag_threshold) || 3.5,
         updated_at: new Date().toISOString()
       })
       .eq("study_id", studyId);
@@ -808,6 +809,24 @@ export default function ToneBuilderPage({ profile, studyId }) {
             className="text-input"
             value={settings.sensitivity_level || ""}
             onChange={(event) => updateSettingsField("sensitivity_level", event.target.value)}
+          />
+        </label>
+
+        <label className="form-block">
+          <span className="form-label">Blame flag threshold</span>
+          <span className="muted-text">
+            When the Audience's average rating on "This message does not make me feel blamed" falls below this
+            number, the results dashboard flags the Harm, blame and stigma gate for Agency attention. It is a
+            prompt to look, not a judgement. Default 3.5, on the five-point scale.
+          </span>
+          <input
+            className="text-input"
+            type="number"
+            min="1"
+            max="5"
+            step="0.1"
+            value={settings.blame_flag_threshold ?? 3.5}
+            onChange={(event) => updateSettingsField("blame_flag_threshold", event.target.value)}
           />
         </label>
       </section>

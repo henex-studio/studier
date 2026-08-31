@@ -266,13 +266,15 @@ export default function ToneTestRunnerPage({ slug }) {
         if (question.question_type === "rating") {
           const value = ratingAnswers[question.id]?.[variant.id];
           if (!value) continue;
+          const isNotApplicable = value === "na";
           const { error } = await supabase.rpc("submit_tone_response", {
             p_study_id: study.id,
             p_participant_id: participantId,
             p_question_id: question.id,
             p_variant_id: variant.id,
-            p_rating_value: value,
-            p_text_value: null
+            p_rating_value: isNotApplicable ? null : value,
+            p_text_value: null,
+            p_not_applicable: isNotApplicable
           });
           if (error) {
             setSubmitting(false);
@@ -526,6 +528,13 @@ export default function ToneTestRunnerPage({ slug }) {
                                   {value}
                                 </button>
                               ))}
+                              <button
+                                type="button"
+                                className={ratingAnswers[question.id]?.[variant.id] === "na" ? "primary-button" : "secondary-button"}
+                                onClick={() => setRating(question.id, variant.id, "na")}
+                              >
+                                Not applicable
+                              </button>
                             </div>
                             <div className="rating-scale-labels">
                               <span>1 = Strongly disagree</span>

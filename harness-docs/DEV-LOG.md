@@ -582,7 +582,11 @@ The title was changed to "TEST — Tone Test participant flow check (not real co
 
 Found by the operator while trying the test link above, not by anyone auditing the UI. Both are small enough to fix directly rather than record as open questions.
 
-**Rating scale had no anchors.** The 1 to 5 buttons showed only numbers, with nothing saying which end meant agreement. Every rating question is phrased as a statement to react to ("This message is clear.", "This message is respectful."), so 1 and 5 were labelled "Strongly disagree" and "Strongly agree" underneath the button row, the standard reading of that phrasing. This did not need a product decision: the wording of the questions already implies an agreement scale, this only made it visible.
+**Rating scale had no anchors.** The 1 to 5 buttons showed only numbers, with nothing saying which end meant agreement. Labelled "Strongly disagree" at 1 and "Strongly agree" at 5 underneath the button row.
+
+**Corrected 30 August 2026.** This entry originally said the labels "did not need a product decision" because the question wording implies an agreement scale. That reasoning was wrong, even though the answer happened to be right. `HANDOVER.md` section 2.5 had already settled the scale in full: five points, "Strongly disagree" at 1 through "Strongly agree" at 5, a midpoint at 3, and a "Not applicable" option excluded from all calculations. The labels should have been looked up, not inferred. Inferring a settled decision and inferring an unsettled one look identical from the outside, which is the behaviour `CLAUDE.md` rules out.
+
+The same section also revealed that the "Not applicable" option has never been built, which is a real gap rather than a documentation slip. Recorded and planned as Milestone 4 Step 0.
 
 **Selected role button was hard to read.** Once a role is chosen, its button turns solid blue, but the description line under the role name kept the grey colour meant for grey-on-white use elsewhere, so it read as grey-on-blue. Fixed with one CSS rule scoped to that exact combination, so every other place the same grey text style is used elsewhere in the app is untouched.
 
@@ -613,6 +617,26 @@ Nothing needed fixing. This confirms the design from Step 1, SECURITY DEFINER fu
 ### End of Milestone 3
 
 A Tone Test can be published, answered by real participants in each active role, and the answers are stored correctly, verified both at the database level and in the browser. Nobody can see the results yet; that is Milestone 4.
+
+---
+
+## Milestone 4, results
+
+### Step 0. The "Not applicable" option — DONE, 30 August 2026
+
+**Model used:** Sonnet.
+
+**What happened.** A "Not applicable" button now sits alongside 1 to 5 on every rating question. Choosing it satisfies the required check but stores no rating, so it does not count toward any score in Milestone 4, and it stays distinguishable from a question nobody answered.
+
+Two migrations. `20260830_011` adds `not_applicable` to `tone_responses` with two check constraints, one widening the old "must have a value" rule to also accept an explicit not-applicable row, one refusing a row that tries to be both not-applicable and carry an answer; and adds `blame_flag_threshold` to `tone_test_settings`, defaulting to 3.5, the number the operator settled on 30 August 2026. `20260830_012` replaces `submit_tone_response` with a seven-argument version carrying the new flag, and drops the old six-argument version in the same migration. Leaving both would have made every existing call ambiguous, since Postgres cannot choose between two overloads that differ only by a defaulted trailing parameter; this was caught immediately after applying the new version, before anything else touched it, and fixed within the same working session.
+
+The Tone Builder gained a "Blame flag threshold" field next to Sensitivity level, saved with the rest of the settings.
+
+**Files touched.** New: `supabase/migrations/20260830_011_tone_not_applicable_and_blame_threshold.sql`, `supabase/migrations/20260830_012_submit_tone_response_accepts_not_applicable.sql`. Edited: `src/pages/tonetest/ToneTestRunnerPage.jsx`, `src/pages/tonetest/ToneBuilderPage.jsx`.
+
+**Verified by:** build passes. The full path was exercised live: a throwaway session started as `anon` through the real `start_tone_session` RPC, a "not applicable" answer submitted through the real `submit_tone_response` RPC, and the stored row confirmed as `rating_value null, text_value null, not_applicable true`, the exact shape the scoring library in Step 1 needs. Run inside a transaction that was rolled back, so nothing was left in the database and the operator's own in-progress test data was untouched.
+
+**Operator checks.** Open a rating question in the published test and confirm "Not applicable" appears and can be selected instead of a number. Set a Tone Test's blame flag threshold in the builder and confirm it saves.
 
 ---
 
