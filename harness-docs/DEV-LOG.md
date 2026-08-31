@@ -638,6 +638,50 @@ The Tone Builder gained a "Blame flag threshold" field next to Sensitivity level
 
 **Operator checks.** Open a rating question in the published test and confirm "Not applicable" appears and can be selected instead of a number. Set a Tone Test's blame flag threshold in the builder and confirm it saves.
 
+**Decided by the operator before Step 1 started, 30 August 2026:** when a critical risk gate is "Not covered" because its role is disabled, the recommendation status is capped at Needs revision, blocking both "Recommended for review" and "Recommended with caution". Built into Step 1's rule set below.
+
+### Steps 1 to 5. Scoring library, dashboard, gates, comments — DONE, 30 August 2026
+
+**Model used:** Sonnet, per the operator's standing instruction to report but not gate on this, since the plan was already approved and this was assembly rather than judgement.
+
+**What happened.** Built straight through at the operator's instruction ("把milestone4全部做完再测试"), verified together at the end rather than step by step. One blocking question was resolved with the operator first, since it affects Step 1's rule set, not just Step 4's screen: see above.
+
+**Step 1, the scoring library (`src/lib/tonetest/scoring.js`).** Pure calculation, no screen and no database access. Implements the Content Score formula, Evidence Confidence and its imbalance downgrades, gate status per gate, and the five-rule recommendation waterfall, all from HANDOVER.md section 2.5.
+
+Two places needed a judgement call beyond what section 2.5 states word for word, both recorded in the file's own comments as well as here:
+
+Evidence Confidence's "non-null responses per active role group" is counted as distinct participants, not individual rating answers. Audience has six rating questions, Agency and Editor five each, so counting rows rather than people would make the imbalance ratio compare apples to oranges between roles with different question counts, defeating its own purpose.
+
+Two gates were found genuinely undefined by section 2.5 while building, not before: how two answers to the same gate for the same variant combine (worst case wins, matching the tool's own stated conservative philosophy), and what happens on a non-critical gate Fail with a high score and sufficient evidence, which literally matches none of the five stated recommendation rules as written. Rule 5, "Needs revision", is used as the true catch-all for this case, since section 2.5's own reasoning under rule 3 is that a Fail should never be silently disregarded.
+
+**Step 2, the dashboard shell (`src/pages/tonetest/ToneDashboardPage.jsx`, dispatch added to `src/pages/DashboardPage.jsx`).** A Tone Test's Dashboard link now opens this screen instead of the Tree Test one. `DashboardPage.jsx`'s data loading also now stops immediately for a Tone Test rather than running four Tree-Test-only queries that would return nothing.
+
+**Steps 3 to 5, the dashboard content.** One scoring pass per wording variant: Content Score, the contribution and response count of each active role group, Evidence Confidence with its warning, all six gates with Pass, Concern, Fail or Not covered, the recommendation label with the rule that produced it stated in plain words, the blame flag with the number that triggered it, gate comments, and participation counts.
+
+**A real mismatch with the plan was found while building Step 5, not before.** The plan asked for open comments "grouped by role and by variant". This turns out not to be possible: open questions are answered once per session, not once per wording (a Milestone 3 design decision, since the questions read as reflective rather than about specific wording), so the stored data carries no variant at all. The first draft nested open comments inside every variant's card anyway, which would have printed each comment once per variant and implied a connection to specific wording that does not exist. Corrected before this was reported: open comments now show once, grouped by role only, in their own section below the variant cards, with a line explaining why. Gate comments genuinely are per-variant, since a gate question is asked once per shown wording, and stayed inside each variant's card as planned.
+
+**Files touched.** New: `src/lib/tonetest/scoring.js`, `src/pages/tonetest/ToneDashboardPage.jsx`, `scripts/verify-scoring.mjs`. Edited: `src/pages/DashboardPage.jsx`, a review path (added an early return and one dispatch branch, about 8 lines).
+
+### Step 6. Checking the numbers — DONE, 30 August 2026
+
+Three checks, all run before reporting any of this rather than assumed from the code.
+
+**The worked example.** `scripts/verify-scoring.mjs` runs the real scoring module, not a hand-copied second version of it, against the exact numbers in section 2.5: 34 Audience ratings summing to 131, 10 Agency ratings summing to 37, Content Quality absent. Result: Content Score 69.5, matching section 2.5 exactly. Also checked: the Evidence Confidence High, downgrade-to-Medium and Low cases against the stated thresholds. All ten checks pass.
+
+**A hand recalculation against real stored data**, not the synthetic worked example. The one real completed session on the published test (Audience role, six ratings: 4, 4, 3, 4, 5, 3) gives a mean of 3.833 and a group score of 70.8. With Agency inactive and Editor active but answered by nobody, only the Audience group counts, so Content Score is 70.8. Evidence Confidence is Low, since one response is well under the Medium threshold of three. Every risk gate reads Not covered, four because Agency is off, one because nobody answered as Editor. Recommendation lands on "Insufficient evidence" before the gate question is even reached, since Low evidence is checked first. This was computed independently against the raw database rows and matches what the dashboard is expected to show.
+
+**Cross-account read check, attempted live rather than reasoned about.** A second real, non-admin account was used to query `tone_sessions`, `tone_responses` and `tone_gate_responses` for the published study it does not own: zero rows on all three. The same query as the actual owner: one session, as expected. Confirms the Milestone 3 Step 1 policies do what they were written to do, now actually exercised by someone other than the database owner for the first time.
+
+**Files touched.** None beyond what Steps 1 to 5 already added.
+
+**Verified by:** the three checks above. Build passes.
+
+**Operator checks.** Open the Dashboard for the published Tone Test and confirm it shows the Tone Test screen with a Content Score, Evidence Confidence and recommendation for the wording that has been answered, rather than an empty Tree Test table. The numbers above are what should appear for the existing response: Content Score around 70.8, Evidence Confidence Low, recommendation Insufficient evidence, every gate Not covered.
+
+### End of Milestone 4
+
+A Tone Test's results can be read from real stored responses: a score per wording, how confident that score should be treated, whether any risk gate blocks a recommendation, and the comments behind the numbers. Nothing here has been checked against a study with more than one participant or more than one active role at once, since the published test does not currently have that data. Worth doing once a second and third response exist.
+
 ---
 
 ### End of the registration and privacy work, for now

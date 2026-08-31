@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import AdminShell from "../components/AdminShell";
 import { supabase } from "../lib/supabase";
 import { buildFinalCsv, buildTaskCsv, downloadCsv } from "../lib/csvExport";
+import ToneDashboardPage from "./tonetest/ToneDashboardPage";
 
 function displayValue(value) {
   if (value === null || value === undefined || value === "") return "Not recorded";
@@ -35,6 +36,12 @@ export default function DashboardPage({ profile, studyId }) {
 
     setStudy(studyData);
 
+    // A Tone Test's dashboard is a different component (see the render
+    // branch below) and reads from entirely different tables, so nothing
+    // below this point applies to it. Stopping here avoids four queries
+    // against tables a Tone Test never writes to.
+    if (studyData.study_type === "tone_test") return;
+
     const { data: responseData } = await supabase
       .from("task_responses")
       .select("*")
@@ -63,6 +70,14 @@ export default function DashboardPage({ profile, studyId }) {
 
   if (!study) {
     return <AdminShell profile={profile}><section className="card">Loading... {message}</section></AdminShell>;
+  }
+
+  // Tree Test and Tone Test store completely different response shapes, so
+  // this dispatches to a dedicated dashboard rather than trying to make one
+  // screen understand both. Matches the pattern already used for the
+  // builder (App.jsx) and the public runner (PublicTestRouter.jsx).
+  if (study.study_type === "tone_test") {
+    return <ToneDashboardPage profile={profile} studyId={studyId} />;
   }
 
   const participants = new Set(taskRows.map((row) => row.participant_id)).size;

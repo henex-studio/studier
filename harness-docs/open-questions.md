@@ -8,7 +8,9 @@
 >
 > **Answered 30 August 2026 by the operator:** the blame flag threshold, previously written in section 2.5 only as "a threshold". An Audience mean below 3.5, adjustable per study.
 >
-> **Genuinely still open:** Q-5, Q-8, Q-9, and one new question raised while planning Milestone 4, recorded there rather than here: whether a critical gate that is "Not covered" should withhold the top recommendation status. As written, a study with the Agency role turned off can reach "Recommended for review" with no risk review at all.
+> **Genuinely still open:** Q-5, Q-8, Q-9.
+>
+> **Resolved by the operator, 30 August 2026:** whether a critical gate that is "Not covered" should withhold the top recommendation status, raised while planning Milestone 4. Answered: yes, capped at "Needs revision". Built into `src/lib/tonetest/scoring.js`, recorded in `DEV-PLAN.md` and `DEV-LOG.md` under Milestone 4.
 >
 > **Document conflicts:** D-1, D-2 and D-6 were resolved by retiring the two offending documents to `docs/tone-test/archive/`. See `HANDOVER.md` section 3.
 >
