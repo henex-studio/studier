@@ -447,11 +447,101 @@ The three older open questions still sit unanswered and still do not block: what
 
 ---
 
-## Milestone 5, outline only
+## Milestone 5, in detail
 
-**Milestone 5, finishing.** CSV export, close, clear data, reuse, and the in-app guide.
+**Written:** 30 August 2026. **Approve before work starts, same as the earlier milestones.**
 
-Planned in detail when we reach it, using what Milestone 4 teaches us.
+This milestone does not add new capability. It connects Tone Test to the lifecycle Tree Test already has: close, clear response data, clear and republish to reuse a test, delete, export, and a place in the in-app guide. Everything except export and the guide already exists as UI in `StudyListPage.jsx`; the question for each piece is whether it already works for a Tone Test or only looks like it does.
+
+### What already works, found while planning
+
+**Close and republish.** The Close and Publish buttons only ever write `studies.status`, a field every study type shares, and Milestone 3 Step 6 already confirmed a closed Tone Test's public link correctly refuses new answers. Nothing to build here, only to confirm in the browser.
+
+**Delete.** Every `tone_*` table has `ON DELETE CASCADE` back to `studies`, checked directly against the database schema while planning this. Deleting a Tone Test already removes every row that belongs to it. Nothing to build here either.
+
+### The real gap
+
+**"Clear test data" and "Clear data and publish" do the wrong thing on a Tone Test, silently.** `clearResponseData` in `StudyListPage.jsx` deletes from `task_responses`, `final_responses` and `participant_sessions`, the three Tree Test tables, regardless of which type of study it was called on. Clicking it on a Tone Test deletes nothing, because those tables hold no Tone Test rows, and then reports "Response data cleared" as if it had worked. A creator trying to reuse a Tone Test for a second round would keep every prior participant's answers mixed in with the new ones, without any error telling them so.
+
+---
+
+### Step 1. Fix response clearing for both study types
+
+**What happens.** `clearResponseData` branches on `study.study_type`. For a Tone Test it deletes from `tone_responses`, `tone_gate_responses` and `tone_sessions`, leaving `tone_test_settings`, `tone_variants` and `tone_questions` untouched, matching HANDOVER.md section 2.6: "Clearing responses removes participant sessions and response data, and preserves setup, variants, questions, gates and weights."
+
+Deletion order does not matter. Every foreign key between these three tables is `ON DELETE CASCADE`, verified against the live schema and then tested directly by running the deletes in the order this plan originally claimed would fail. It did not fail. An earlier draft of this step asserted the opposite; that assertion was written from memory rather than checked, and is corrected here rather than quietly dropped. The explicit deletes are still written out in full so the code says what it removes instead of relying on cascade behaviour to do it invisibly.
+
+The confirmation prompt's wording changes to name the right tables for the type being cleared, since telling a Tone Test creator that "task responses" are about to be deleted is confusing and wrong.
+
+**Access was checked before planning this, not assumed.** Both halves have to be right for a delete to actually happen: `tone_sessions`, `tone_responses` and `tone_gate_responses` each carry an owner-or-admin DELETE policy for `authenticated`, and `authenticated` holds the table-level DELETE grant on all three. `anon` holds nothing. This mattered because a missing grant behind a correct policy produces exactly the failure this step exists to fix, a delete that removes nothing and reports success. That is not a hypothetical; it happened once already on 26 August 2026 with `accept_platform_consent`.
+
+**Files touched.** `src/pages/StudyListPage.jsx`, a review path.
+
+**Operator checks.** Note that "Clear test data" only appears on a test that is not currently published, so a published Tone Test must be closed first. Close the test, click "Clear test data", type CLEAR, then confirm on the Dashboard that the responses are gone and that roles, weights, questions and variants all survived.
+
+---
+
+### Step 2. CSV export
+
+**What happens.** Two downloads added to the Tone Test dashboard, next to Refresh, mirroring where Tree Test's exports already live (on its Dashboard, not the study list).
+
+A responses CSV: one row per stored answer, participant, session, role, variant, question, question type, rating value, not-applicable flag, gate status, comment, or open text, submitted time. This is the raw material, for anyone who wants to reanalyse outside the tool.
+
+A results CSV: one row per wording variant, Content Score, each active role's group score and response count, Evidence Confidence level and its warning, each gate's status, the recommendation label and its reason, the blame flag. This is exactly what the dashboard already computes and shows; the CSV is that same computation written out, not a second calculation of it.
+
+**Files touched.** `src/lib/csvExport.js`, a review path (two new build functions, following the existing `buildTaskCsv` and `buildFinalCsv` pattern; nothing existing is changed). `src/pages/tonetest/ToneDashboardPage.jsx`.
+
+**Operator checks.** Download both CSVs from the published Tone Test and open them. Confirm the results CSV's numbers match what the dashboard screen shows for the same variant.
+
+---
+
+### Step 3. Block deleting a wording variant that has responses
+
+**What happens.** A variant with any stored response cannot be deleted in the Tone Builder. Its remove control is disabled and says why, naming how many responses exist. To change wording after a round of testing, the creator clears the response data first, which is the reuse path Step 1 repairs.
+
+**Why this is here and not left open.** This is Q-9 in `open-questions.md`, open since 2 August 2026 and repeatedly judged not to block, correctly, because no real responses existed. They exist now. `tone_responses.variant_id` and `tone_gate_responses.variant_id` are both `ON DELETE CASCADE`, so deleting a variant today silently destroys every rating and gate judgement about that wording and changes the Content Score, with no warning and no way back. Milestone 5 is the reuse milestone, and editing wording between rounds is the most obvious thing a creator will try, so this stops being theoretical exactly here.
+
+**Settled by the operator, 30 August 2026:** deletion is blocked once responses exist, rather than permitted with a warning. A confirmation dialog is easy to click through and the loss is unrecoverable. Publishing status is not the test; a published test with no responses yet can still have a variant removed.
+
+**Files touched.** `src/pages/tonetest/ToneBuilderPage.jsx`, a writable path.
+
+**Operator checks.** On the published Tone Test, try to delete the wording that has been answered and confirm it is refused with the reason. Add a new variant and confirm that one can still be removed.
+
+---
+
+### Step 4. In-app guide
+
+**What happens.** The guide gains a Tone Test section: what a Tone Test is, what each of the three roles does, how to read the results screen (Content Score, Evidence Confidence, the six gates and what "Not covered" means, the recommendation label, the blame flag), and how to close, clear and reuse a test.
+
+**Where it lives, and why not in `GuidePage.jsx`.** Written as its own component under `src/pages/tonetest/`, with `GuidePage.jsx` gaining only an import, one render line and one table-of-contents entry. `project-config.json` sets a 30-line budget on review paths, and an honest Tone Test guide section is sixty to a hundred lines of prose. Rather than request an exception, the content goes where Tone Test content is supposed to go, and the shared file takes a three-line edit that is genuinely just dispatch. This is the same pattern already used for the builder, the participant runner and the dashboard, so it needs no new reasoning.
+
+**Files touched.** New: `src/pages/tonetest/ToneGuideSection.jsx`. Edited: `src/pages/GuidePage.jsx`, a review path, three lines.
+
+**Operator checks.** Open the guide and confirm the new section reads clearly and matches what the tool actually does.
+
+---
+
+### Step 5. Checking it
+
+**What happens.** Checked rather than assumed, same reasoning as every milestone before this one.
+
+Clear a Tone Test with real response data and confirm, directly in the database, that `tone_sessions`, `tone_responses` and `tone_gate_responses` are empty for that study while `tone_test_settings`, `tone_variants` and `tone_questions` are untouched. Publish the same test again and confirm a fresh participant can answer it. Confirm a variant with responses cannot be deleted and one without responses still can. Delete a throwaway Tone Test and confirm no `tone_*` row referencing it survives. Download both CSVs and confirm the numbers in the results CSV match the dashboard.
+
+**One thing that cannot be checked yet.** Every check available uses a single participant in a single role, because that is all the published test has. Nothing in Milestones 4 or 5 has ever been seen with two roles answering at once, which is where the Evidence Confidence imbalance ratio, the weight rescaling across groups and the gate coverage rules actually do their work. This is a known gap in the verification, not in the build, and the honest way to close it is a second and third response before this goes anywhere real.
+
+**Operator checks.** Reported rather than performed, except opening the CSVs, which is worth doing together since a spreadsheet either reads cleanly or it does not.
+
+### End of Milestone 5
+
+Tone Test has the same lifecycle Tree Test already has: publish, answer, read results, export, close, clear, and reuse, each one now actually doing what it claims to for this study type rather than silently doing the wrong thing. This is the last milestone in the current build plan.
+
+**Realistic elapsed time.** Three to four hours including the operator's checks. Steps 1 and 3 carry the real risk, one because it deletes data and one because it stops a creator doing something they may expect to be able to do; the rest is additive.
+
+### What this milestone closes, and what stays open
+
+**Closes Q-9**, whether a variant can be deleted after responses exist. Answered in Step 3.
+
+**Leaves open Q-5 and Q-8.** What sensitivity level does, which is currently a free-text note explicitly labelled as having no effect, and whether Evidence Confidence should include researcher judgement, which HANDOVER.md section 3 already says can wait until a real study has run. Neither blocks anything here.
 
 ---
 

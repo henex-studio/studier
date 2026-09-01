@@ -8,7 +8,9 @@
 >
 > **Answered 30 August 2026 by the operator:** the blame flag threshold, previously written in section 2.5 only as "a threshold". An Audience mean below 3.5, adjustable per study.
 >
-> **Genuinely still open:** Q-5, Q-8, Q-9.
+> **Genuinely still open:** Q-5 and Q-8.
+>
+> **Q-9 resolved by the operator, 30 August 2026:** a wording variant with any stored response cannot be deleted. To change wording after a round, clear the response data first. Answered when it stopped being theoretical: real responses now exist, and both `tone_responses.variant_id` and `tone_gate_responses.variant_id` are `ON DELETE CASCADE`, so deleting a variant would have silently destroyed every rating and gate judgement about that wording and moved the Content Score with no warning. Built in Milestone 5 Step 3.
 >
 > **Resolved by the operator, 30 August 2026:** whether a critical gate that is "Not covered" should withhold the top recommendation status, raised while planning Milestone 4. Answered: yes, capped at "Needs revision". Built into `src/lib/tonetest/scoring.js`, recorded in `DEV-PLAN.md` and `DEV-LOG.md` under Milestone 4.
 >
