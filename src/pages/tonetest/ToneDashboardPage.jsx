@@ -3,6 +3,7 @@ import AdminShell from "../../components/AdminShell";
 import { supabase } from "../../lib/supabase";
 import { ROLE_LABELS, GATES } from "../../lib/tonetest/defaultQuestions";
 import { WEIGHT_GROUPS } from "../../lib/tonetest/weights";
+import { buildToneResponsesCsv, buildToneResultsCsv, downloadCsv } from "../../lib/csvExport";
 import {
   computeVariantResult,
   computeBlameFlag,
@@ -148,6 +149,7 @@ export default function ToneDashboardPage({ profile, studyId }) {
   const blameThreshold = settings?.blame_flag_threshold ?? DEFAULT_BLAME_FLAG_THRESHOLD;
   const questionsById = new Map(questions.map((question) => [question.id, question]));
   const blameQuestion = findBlameQuestion(questions);
+  const activeRoleKeys = WEIGHT_GROUPS.filter((group) => activeRoles[group.role] !== false).map((group) => group.role);
 
   const startedCount = sessions.length;
   const completedCount = sessions.filter((session) => session.completed_at).length;
@@ -228,6 +230,24 @@ export default function ToneDashboardPage({ profile, studyId }) {
         </div>
         <div className="admin-actions">
           <button className="secondary-button" onClick={load}>Refresh</button>
+          <button
+            className="secondary-button"
+            onClick={() => downloadCsv("studier-tone-responses.csv", buildToneResponsesCsv({
+              responses,
+              gateResponses,
+              sessionsById: new Map(sessions.map((session) => [session.id, session])),
+              questionsById,
+              variantsById: new Map(variants.map((variant) => [variant.id, variant]))
+            }))}
+          >
+            Export responses CSV
+          </button>
+          <button
+            className="secondary-button"
+            onClick={() => downloadCsv("studier-tone-results.csv", buildToneResultsCsv(variantResults, activeRoleKeys))}
+          >
+            Export results CSV
+          </button>
         </div>
       </section>
 
@@ -285,7 +305,11 @@ export default function ToneDashboardPage({ profile, studyId }) {
                   <div className="setting-main-row">
                     <span className="setting-label">{ROLE_LABELS[group.role]}</span>
                     <span className="muted-text">
-                      {group.score === null ? "No responses yet" : `${Math.round(group.score * 10) / 10} (weight ${group.weight})`}
+                      {!group.active
+                        ? "Role turned off for this test"
+                        : group.score === null
+                          ? "No responses yet"
+                          : `${Math.round(group.score * 10) / 10} from ${group.responseCount} ${group.responseCount === 1 ? "person" : "people"} (weight ${group.weight})`}
                     </span>
                   </div>
                 </div>

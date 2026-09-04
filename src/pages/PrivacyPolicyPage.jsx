@@ -94,6 +94,12 @@ export default function PrivacyPolicyPage() {
             which of these are recorded.
           </p>
           <p>
+            In a tone test, what is recorded is the role you chose to answer as, which version
+            of the wording you were shown, your ratings, any risk gate judgements, and anything
+            you typed in your own words. No navigation behaviour is recorded, because a tone
+            test has none.
+          </p>
+          <p>
             <strong>
               The questions are written by the account holder running the test, not by Studier.
             </strong>{" "}

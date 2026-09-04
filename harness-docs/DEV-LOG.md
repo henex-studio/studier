@@ -680,7 +680,93 @@ Three checks, all run before reporting any of this rather than assumed from the 
 
 ### End of Milestone 4
 
-A Tone Test's results can be read from real stored responses: a score per wording, how confident that score should be treated, whether any risk gate blocks a recommendation, and the comments behind the numbers. Nothing here has been checked against a study with more than one participant or more than one active role at once, since the published test does not currently have that data. Worth doing once a second and third response exist.
+A Tone Test's results can be read from real stored responses: a score per wording, how confident that score should be treated, whether any risk gate blocks a recommendation, and the comments behind the numbers. Nothing here was checked against a study with more than one participant or more than one active role at once, since the published test does not have that data. Milestone 6 Step 6 builds demo content that finally exercises it.
+
+---
+
+## Milestone 5, lifecycle
+
+### Steps 1 to 4 — DONE, 30 August 2026
+
+**Model used:** Sonnet.
+
+**Step 1, response clearing.** `clearResponseData` deleted from the three Tree Test tables whatever the study type, so clearing a Tone Test removed nothing and still reported "Response data cleared". A creator reusing a Tone Test for a second round would have kept the first round's answers mixed into the second, with no error saying so. Now branches on `study_type` and names the right thing in the confirmation prompt. Setup, variants, questions, gates and weights are untouched either way, per HANDOVER.md 2.6.
+
+**Step 2, CSV export.** Two downloads on the Tone Test dashboard. A responses CSV, one row per stored answer with participant, role, variant, question, rating or gate status, the not-applicable flag, and any comment. A results CSV, one row per wording with the Content Score, each role's group score and response count, Evidence Confidence, all six gate statuses, the blame flag, and the recommendation with its reason. The results CSV is handed the numbers the dashboard already computed rather than recomputing them, so there is only one implementation of the scoring rules to keep correct.
+
+`responseCount` was added to the scoring library's group output while doing this, since the CSV reports it and the screen should not disagree with the file. The dashboard now shows it too, as "75 from 3 people".
+
+**Step 3, variant deletion.** A wording with any response can no longer be removed in the builder. The button is disabled with the reason shown, and `removeVariant` refuses independently of the button, because `tone_responses.variant_id` and `tone_gate_responses.variant_id` are both `ON DELETE CASCADE` and a disabled button is a UI state rather than a rule. This closes Q-9, open since 2 August 2026.
+
+**Step 4, checking it.** Four checks, all run live and rolled back, none against the operator's own data:
+
+Clearing a Tone Test leaves 0 sessions, 0 responses and 0 gate answers while keeping its settings row, 3 variants and 32 questions. Deleting a whole Tone Test leaves nothing behind in any of the six tables, confirmed on a throwaway study built and destroyed inside one transaction. The DELETE policies and the table-level DELETE grants were both checked before any of this was written, since the last time a policy was trusted without its grant the write silently did nothing.
+
+`scripts/verify-tone-csv.mjs` runs the real CSV builders over a fixture chosen for the things that break spreadsheets: eleven checks, all passing, including an open answer containing both a comma and a double quote staying inside one field, and an unscored variant leaving the score blank rather than writing a misleading 0.
+
+**A claim in the plan was wrong and is corrected.** The plan said deleting `tone_sessions` last would fail on foreign keys, so order mattered. It does not. Every foreign key between the three tables is `ON DELETE CASCADE`, so any order works; this was established by running the deletes in the order the plan said would fail. The assertion had been written from memory rather than checked. `DEV-PLAN.md` now says so rather than quietly dropping it.
+
+**Files touched.** `src/pages/StudyListPage.jsx` and `src/lib/csvExport.js`, both review paths. `src/pages/tonetest/ToneBuilderPage.jsx`, `src/pages/tonetest/ToneDashboardPage.jsx`, `src/lib/tonetest/scoring.js`. New: `scripts/verify-tone-csv.mjs`.
+
+**Verified by:** build passes, the four checks above.
+
+**Operator checks.** "Clear test data" only appears on a test that is not published, so close the Tone Test first, then clear it and confirm on the Dashboard that responses are gone and the setup survived. Download both CSVs and open them. In the builder, confirm the answered wording cannot be removed and says why, and that a newly added wording still can.
+
+### End of Milestone 5
+
+Tone Test now has the lifecycle Tree Test has, with each action doing what it says for this study type rather than silently doing the wrong thing. The in-app guide moved to Milestone 6, where the guide and wording work sits together.
+
+---
+
+## Milestone 6, the product reads as one platform
+
+### Steps 1 to 3 — DONE, 30 August 2026
+
+**Model used:** Sonnet.
+
+**Step 1, platform wording.** Sentences that claimed Studier only runs tree tests were rewritten on the sign-in page, the consent page, the study list header, and the guide's opening section, which now explains both test types before saying the rest of the page covers tree tests specifically. The privacy policy gained a paragraph on what a tone test records, since it previously only described tree test navigation data; `docs/privacy-policy.md` and `PrivacyPolicyPage.jsx` were kept identical, as the first is the version of record. Wording that is correctly specific, the Tree Test badge, "IA tree CSV", the tree-test-specific privacy paragraph, was left alone.
+
+**Step 2, the victim example.** `GuidePage.jsx`'s worked example test title, "Victims information navigation test", is now "Driver licence renewal navigation test", matching the demo scenario settled for Step 6.
+
+**Step 3, version history.** Moved out of `GuidePage.jsx` into its own page at `/version-history`, linked the same way it always was, from the version number in the top navigation and from a link in the guide. Tree Test's entries keep their original numbering through v3.07. Tone Test entries are added from v4.00, one per milestone actually built. `AppHeader.jsx`'s version constant moved from v3.07 to v4.04.
+
+**Files touched.** `src/pages/LoginPage.jsx`, `src/pages/ConsentPage.jsx`, `src/pages/StudyListPage.jsx`, `src/pages/GuidePage.jsx`, `src/pages/PrivacyPolicyPage.jsx`, `src/App.jsx`, `src/components/AppHeader.jsx`, all review paths, all small. `docs/privacy-policy.md`. New: `src/pages/VersionHistoryPage.jsx`.
+
+**Verified by:** build passes.
+
+### Step 5. An account page — DONE, 30 August 2026
+
+**What happened, and why it moved up.** Written before Step 4 rather than after, since demo content creation in Step 6 and the operator's own screenshot session both need somewhere to put a sensible display name first.
+
+**Checked before writing the page, not assumed, and it was a good thing.** `profiles` had no self-update policy at all, only an admin one, so a page written on the plan's original assumption would have saved nothing and reported nothing wrong. Separately, `anon` and `authenticated` held UPDATE on every column of `profiles` including `role`. Adding a self-update policy without also narrowing the grant would have let any signed-in user promote themselves to admin; the only reason this was not already exploitable is that no self-update policy existed yet.
+
+`20260830_013_profiles_self_update_display_name_only.sql` does both in one migration, since neither change is safe alone: narrows the grant to the `display_name` column only, then adds a policy scoped to the caller's own row. Verified live before the page was written: changing your own name succeeds, changing your own role is refused for lack of privilege, changing someone else's name is silently refused by the policy (confirmed by re-reading the target row as the database owner afterwards, since the attacking session's own SELECT is itself scoped to rows it owns and would show nothing regardless of whether the write had succeeded).
+
+Scope is display name only, settled by the operator on 30 August 2026. Password change already has a working path through "Forgot your password?". Email change was left out, since it would need re-verification and keeping `auth.users` in step with the copy of the address in `profiles`, the most breakable of the three, and was judged not worth opening for what started as a screenshot-driven convenience.
+
+**Files touched.** New: `src/pages/AccountPage.jsx`, `supabase/migrations/20260830_013_profiles_self_update_display_name_only.sql`. Edited: `src/App.jsx`, `src/components/AppHeader.jsx`, both review paths, small (the account name in the header is now a button linking to the new page).
+
+**Verified by:** the three live database checks above, run before any code was written. Build passes.
+
+**Operator checks.** Click your name in the top navigation, change it, save, reload, and confirm it stuck. Confirm email and role show but have no input to edit.
+
+### Step 4. Two onboarding guides — DONE, 30 August 2026
+
+**Model used:** Opus, at the operator's instruction, since this step is writing rather than assembly.
+
+**What happened.** `/guide` is now a home page offering one guide per test type. `/guide/tree` is the original tree test guide, its content unchanged apart from the heading and a link back. `/guide/tone` is new.
+
+The tone test guide is written for someone who has never run one: what a tone test is and when to use one instead of a tree test, how to frame the scenario and content goal, how to write the wordings, what each of the three roles is for, how the six risk gates work and why four are critical, how the weights and the score fit together, the two variant modes and the trade-off between them, what participants actually see, and how to read every part of the results screen.
+
+The results section is the part that needed the most care, since it is where the tool is least self-explanatory. It explains why Content Score and Evidence Confidence are deliberately separate numbers, why a role that answered nothing has its weight redistributed rather than being scored zero, why a gate reads "Not covered" rather than "Pass", the order the five recommendation rules are applied in, and that the blame flag is a prompt for the Agency to look rather than a judgement already made.
+
+**Structure, and why it is this shape.** The tone guide is its own component under `src/pages/tonetest/`, a writable path, because `project-config.json` puts a 30-line budget on review paths and an honest guide runs to several hundred lines of prose. `GuidePage.jsx` gained the home page and a section switch, which is a larger diff than 30 lines but is almost entirely the new home page markup; the tree test content itself was not rewritten, only re-headed. No shared-content module was built. The four sections that looked shared, closing time, publishing, clearing and reuse, and good practice, turned out to differ meaningfully between the two test types once written out, so extracting them would have produced a module full of conditionals rather than shared prose.
+
+**Files touched.** New: `src/pages/tonetest/ToneGuidePage.jsx`. Edited: `src/pages/GuidePage.jsx` and `src/App.jsx`, both review paths.
+
+**Verified by:** build passes. The writing itself needs the operator's eyes, which is the point of the check below.
+
+**Operator checks.** Read the tone test guide start to finish as if you had never seen the tool, and say where it stops making sense. That is the only test that matters for this step.
 
 ---
 

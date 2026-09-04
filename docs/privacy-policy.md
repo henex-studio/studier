@@ -70,6 +70,11 @@ navigation: which items you clicked, in what order, how many clicks you
 made, how long you took, and whether you went back on yourself. The
 account holder running the test chooses which of these are recorded.
 
+In a tone test, what is recorded is the role you chose to answer as,
+which version of the wording you were shown, your ratings, any risk gate
+judgements, and anything you typed in your own words. No navigation
+behaviour is recorded, because a tone test has none.
+
 **The questions are written by the account holder running the test, not
 by Studier.** They are asked not to request names, contact details, case
 details or anything else that could identify a person, and the use

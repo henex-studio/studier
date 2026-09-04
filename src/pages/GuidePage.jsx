@@ -1,18 +1,69 @@
 import React from "react";
 import AdminShell from "../components/AdminShell";
 
-export default function GuidePage({ profile }) {
+// Milestone 6 Step 4. /guide is now a home page offering one guide per
+// test type, and /guide/tree is this page's original tree test content,
+// unchanged. The tone test guide is a separate component under
+// src/pages/tonetest/.
+function GuideHome({ profile }) {
   return (
     <AdminShell profile={profile}>
       <section className="card guide-hero">
         <span className="badge">Guide</span>
         <h1>Studier user guide</h1>
         <p>
-          This guide explains how to create, preview, publish, close, reuse, and review a tree test in Studier.
+          Studier runs two kinds of test. They are set up differently and their results are read
+          differently, so each has its own guide.
         </p>
         <div className="button-row">
           <a className="primary-button" href="/admin">Back to test collection</a>
-          <a className="secondary-button" href="#version-history">Version history</a>
+          <a className="secondary-button" href="/version-history">Version history</a>
+        </div>
+      </section>
+
+      <section className="study-grid">
+        <article className="card">
+          <span className="type-badge type-badge-tree">Tree test</span>
+          <h2>Tree test guide</h2>
+          <p>
+            Check whether people can find information in a menu structure, before a site or service is
+            built. Covers the IA tree, tasks and correct paths, and reading the results.
+          </p>
+          <div className="button-row">
+            <a className="primary-button" href="/guide/tree">Open tree test guide</a>
+          </div>
+        </article>
+
+        <article className="card">
+          <span className="type-badge type-badge-tone">Tone test</span>
+          <h2>Tone test guide</h2>
+          <p>
+            Check how wording lands before it is published. Covers the three reviewer roles, risk gates,
+            scoring, and how to read a recommendation.
+          </p>
+          <div className="button-row">
+            <a className="primary-button" href="/guide/tone">Open tone test guide</a>
+          </div>
+        </article>
+      </section>
+    </AdminShell>
+  );
+}
+
+export default function GuidePage({ profile, section }) {
+  if (section !== "tree") return <GuideHome profile={profile} />;
+
+  return (
+    <AdminShell profile={profile}>
+      <section className="card guide-hero">
+        <span className="type-badge type-badge-tree">Tree test</span>
+        <h1>Tree test guide</h1>
+        <p>
+          This guide explains how to create, preview, publish, close, reuse, and review a tree test.
+        </p>
+        <div className="button-row">
+          <a className="primary-button" href="/admin">Back to test collection</a>
+          <a className="secondary-button" href="/guide">All guides</a>
         </div>
       </section>
 
@@ -34,23 +85,29 @@ export default function GuidePage({ profile }) {
           <a href="#results">View and export results</a>
           <a href="#close-reuse">Close, clear, and reuse a test</a>
           <a href="#good-practice">Good practice</a>
-          <a href="#version-history">Version history</a>
+          <a href="/version-history">Version history</a>
         </aside>
 
         <div className="card guide-content">
           <section id="what-studier-is">
             <h2>What Studier is</h2>
             <p>
-              Studier is an internal tool for running tree tests. A tree test helps check whether people can find information in a menu structure before a full website or service is built.
+              Studier is an internal tool for running small user tests. It supports two kinds of test, and you choose which one when you create it.
             </p>
             <p>
-              A participant sees one task at a time, opens the menu tree, and chooses where they would go. Studier records the selected path and shows the results in a dashboard.
+              A <strong>tree test</strong> checks whether people can find information in a menu structure, before a full website or service is built. A participant sees one task at a time, opens the menu tree, and chooses where they would go. Studier records the selected path.
+            </p>
+            <p>
+              A <strong>tone test</strong> checks how wording lands before it is published. Participants read one or more versions of the same message, rate it, and answer in their own words. Reviewers also judge it against a fixed set of risk gates. Studier scores each version and shows how much the result can be relied on.
+            </p>
+            <p>
+              Both kinds record results in a dashboard you can read on screen or export. The rest of this guide covers tree tests; the tone test guide is separate.
             </p>
           </section>
 
           <section id="key-terms">
             <h2>Key terms</h2>
-            <p><strong>Test</strong> means one tree test project.</p>
+            <p><strong>Test</strong> means one test project, of either kind.</p>
             <p><strong>Tree</strong> means the IA menu structure that participants use.</p>
             <p><strong>Task</strong> means the scenario or question shown to a participant.</p>
             <p><strong>Target path</strong> means the fully correct answer.</p>
@@ -70,7 +127,7 @@ export default function GuidePage({ profile }) {
               <li>The builder page opens automatically.</li>
             </ol>
             <p>Use a clear title, for example:</p>
-            <pre>Victims information navigation test</pre>
+            <pre>Driver licence renewal navigation test</pre>
           </section>
 
           <section id="welcome-privacy">
@@ -196,70 +253,6 @@ Support,,
               <li>Preview the test before publishing.</li>
               <li>Export results before clearing test data.</li>
               <li>Close the test when data collection is complete.</li>
-            </ol>
-          </section>
-
-          <section id="version-history">
-            <h2>Version history</h2>
-            <p>This section lists functional updates only. Small visual polish and development process details are not included.</p>
-
-            <h3>v3.07, Guide and version access</h3>
-            <ol>
-              <li>Added the current Studier version number to the top navigation.</li>
-              <li>Added a direct link from the version number to this version history.</li>
-              <li>Updated the guide to reflect current test setup, publishing, closing, review, export, and reuse features.</li>
-            </ol>
-
-            <h3>v3.06, Clear test data and republish</h3>
-            <ol>
-              <li>Added Clear test data for closed or draft tests.</li>
-              <li>Added Clear data and publish so the same test can be reused for a new round of responses.</li>
-              <li>Added owner and admin delete permissions for response data.</li>
-            </ol>
-
-            <h3>v3.05, Data cleaning support</h3>
-            <ol>
-              <li>Added support for cleaning task response and final question exports.</li>
-              <li>Added checks to compare response paths with the IA tree CSV version.</li>
-            </ol>
-
-            <h3>v3.04, Analytics support</h3>
-            <ol>
-              <li>Added Vercel Analytics setup support for the deployed Studier app.</li>
-            </ol>
-
-            <h3>v3.03, Test review improvements</h3>
-            <ol>
-              <li>Added task progress navigation for participants.</li>
-              <li>Added locked review mode for submitted tasks.</li>
-              <li>Added automatic tree expansion to the submitted answer path during review.</li>
-            </ol>
-
-            <h3>v3.02, Test lifecycle improvements</h3>
-            <ol>
-              <li>Added test closing time.</li>
-              <li>Added closed test page for expired or manually closed tests.</li>
-              <li>Added reopen support by publishing again with a valid future closing time.</li>
-            </ol>
-
-            <h3>v3.01, Preview and navigation support</h3>
-            <ol>
-              <li>Added preview mode links back to the editor and test collection.</li>
-              <li>Improved movement between current and completed tasks.</li>
-            </ol>
-
-            <h3>v2.00, Builder and publishing checks</h3>
-            <ol>
-              <li>Added pre task questions.</li>
-              <li>Added CSV checks for IA tree setup.</li>
-              <li>Added readiness checks before publishing.</li>
-              <li>Added list view in the test collection.</li>
-            </ol>
-
-            <h3>v1.00, Initial MVP</h3>
-            <ol>
-              <li>Added core tree test setup.</li>
-              <li>Added IA tree upload, task setup, participant test runner, response capture, and dashboard export basics.</li>
             </ol>
           </section>
 

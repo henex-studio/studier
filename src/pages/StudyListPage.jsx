@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Network, MessageSquare } from "lucide-react";
 import AdminShell from "../components/AdminShell";
 import { supabase } from "../lib/supabase";
 import { getTonePublishIssues } from "../lib/tonetest/publishChecks";
@@ -70,6 +71,27 @@ function typeLabel(study) {
 
 function typeClass(study) {
   return study.study_type === "tone_test" ? "type-badge type-badge-tone" : "type-badge type-badge-tree";
+}
+
+function typeIcon(study) {
+  return study.study_type === "tone_test" ? MessageSquare : Network;
+}
+
+function typeStripeClass(study) {
+  return study.study_type === "tone_test" ? "type-stripe type-stripe-tone" : "type-stripe type-stripe-tree";
+}
+
+// Type tag: icon plus label, used above the card title and above the title
+// cell in list view. Step 5a moves type out of the chip row so it stops
+// competing with status and owner for the same space.
+function TypeTag({ study }) {
+  const Icon = typeIcon(study);
+  return (
+    <span className={typeClass(study)}>
+      <Icon size={14} strokeWidth={2.25} aria-hidden="true" />
+      {typeLabel(study)}
+    </span>
+  );
 }
 
 function statusLabel(status) {
@@ -149,7 +171,13 @@ export default function StudyListPage({ profile }) {
   const [publishingStudyId, setPublishingStudyId] = useState("");
   const [clearingStudyId, setClearingStudyId] = useState("");
   const [viewMode, setViewMode] = useState("cards");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+
+  const visibleStudies = useMemo(() => {
+    if (typeFilter === "all") return studies;
+    return studies.filter((study) => study.study_type === typeFilter);
+  }, [studies, typeFilter]);
 
   const ownerById = useMemo(() => {
     const map = new Map();
@@ -347,13 +375,26 @@ export default function StudyListPage({ profile }) {
     setCopiedStudyId("");
     setFallbackLink("");
     setMessage("");
+
+    // Each study type keeps its responses in its own tables. Clearing a Tone
+    // Test through the Tree Test list deleted nothing and still reported
+    // success, which would have quietly left a previous round's answers in
+    // place on reuse. Setup, variants, questions, gates and weights are
+    // deliberately not listed here; clearing keeps them (HANDOVER.md 2.6).
+    const isTone = study.study_type === "tone_test";
+    const tables = isTone
+      ? ["tone_responses", "tone_gate_responses", "tone_sessions"]
+      : ["task_responses", "final_responses", "participant_sessions"];
+    const deletes = isTone
+      ? "participant sessions, ratings, and risk gate answers"
+      : "task responses, final question responses, and participant session records";
+
     const typed = window.prompt(
-      `Clear all response data for "${study.title}"? This will permanently delete task responses, final question responses, and participant session records. Type CLEAR to continue.`
+      `Clear all response data for "${study.title}"? This will permanently delete ${deletes}. The test setup is kept. Type CLEAR to continue.`
     );
     if (typed !== "CLEAR") return false;
 
     setClearingStudyId(study.id);
-    const tables = ["task_responses", "final_responses", "participant_sessions"];
     for (const table of tables) {
       const { error } = await supabase.from(table).delete().eq("study_id", study.id);
       if (error) {
@@ -473,7 +514,7 @@ export default function StudyListPage({ profile }) {
         <div className="collection-header-row">
           <div>
             <h1>Test collection</h1>
-            <p>Create and manage internal tree tests.</p>
+            <p>Create and manage internal user tests.</p>
           </div>
 
           <div className="view-toggle" aria-label="Collection view mode">
@@ -510,14 +551,41 @@ export default function StudyListPage({ profile }) {
 
         {message ? <p className="error-box">{message}</p> : null}
         {profile.role !== "admin" ? <p className="muted-text">Test limit: {studies.length} of 3.</p> : null}
+
+        <div className="type-filter" role="group" aria-label="Filter by test type">
+          <button
+            className={typeFilter === "all" ? "type-filter-button type-filter-button-active" : "type-filter-button"}
+            type="button"
+            onClick={() => setTypeFilter("all")}
+          >
+            All types
+          </button>
+          <button
+            className={typeFilter === "tree_test" ? "type-filter-button type-filter-button-active type-filter-button-tree" : "type-filter-button type-filter-button-tree"}
+            type="button"
+            onClick={() => setTypeFilter("tree_test")}
+          >
+            <Network size={14} strokeWidth={2.25} aria-hidden="true" />
+            Tree Test
+          </button>
+          <button
+            className={typeFilter === "tone_test" ? "type-filter-button type-filter-button-active type-filter-button-tone" : "type-filter-button type-filter-button-tone"}
+            type="button"
+            onClick={() => setTypeFilter("tone_test")}
+          >
+            <MessageSquare size={14} strokeWidth={2.25} aria-hidden="true" />
+            Tone Test
+          </button>
+        </div>
       </section>
 
       {loading ? <div className="card">Loading...</div> : null}
       {!loading && studies.length === 0 ? <div className="card">No tests yet.</div> : null}
+      {!loading && studies.length > 0 && visibleStudies.length === 0 ? <div className="card">No tests match this filter.</div> : null}
 
-      {!loading && studies.length > 0 && viewMode === "cards" ? (
+      {!loading && visibleStudies.length > 0 && viewMode === "cards" ? (
         <section className="study-grid">
-          {studies.map((study) => {
+          {visibleStudies.map((study) => {
             const owner = ownerById.get(study.owner_id) || { label: "Unknown user", title: "Unknown user" };
             const isAdminView = profile.role === "admin";
             const fullLink = `${window.location.origin}/test/${study.slug}`;
@@ -525,13 +593,13 @@ export default function StudyListPage({ profile }) {
             const publishIssues = publishIssuesByStudyId[study.id] || [];
 
             return (
-              <article className="card study-card" key={study.id}>
+              <article className={`card study-card ${typeStripeClass(study)}`} key={study.id}>
                 <div className="study-card-header">
                   <span className={statusClass(study.status)}>{statusLabel(study.status)}</span>
-                  <span className={typeClass(study)}>{typeLabel(study)}</span>
                   {isAdminView ? <span className={ownerClass(study.owner_id)} title={owner.title}>{owner.label}</span> : null}
                 </div>
 
+                <TypeTag study={study} />
                 <h2>{study.title}</h2>
                 <p className="study-link-code" title={fullLink}>Test link code: <span>/{study.slug}</span></p>
               <p className="study-expiry-text">{expiryLabel(study)}</p>
@@ -552,7 +620,7 @@ export default function StudyListPage({ profile }) {
         </section>
       ) : null}
 
-      {!loading && studies.length > 0 && viewMode === "list" ? (
+      {!loading && visibleStudies.length > 0 && viewMode === "list" ? (
         <section className="card list-view-card">
           <div className="desktop-table test-list-table-wrap">
             <table className="test-list-table">
@@ -567,7 +635,7 @@ export default function StudyListPage({ profile }) {
                 </tr>
               </thead>
               <tbody>
-                {studies.map((study) => {
+                {visibleStudies.map((study) => {
                   const owner = ownerById.get(study.owner_id) || { label: "Unknown user", title: "Unknown user" };
                   const fullLink = `${window.location.origin}/test/${study.slug}`;
                   const isCopied = copiedStudyId === study.id;
@@ -576,10 +644,9 @@ export default function StudyListPage({ profile }) {
                   return (
                     <React.Fragment key={study.id}>
                       <tr>
-                        <td>
+                        <td className={typeStripeClass(study)}>
+                          <TypeTag study={study} />
                           <a className="test-title-link" href={builderPath(study)}>{study.title}</a>
-                          {" "}
-                          <span className={typeClass(study)}>{typeLabel(study)}</span>
                         </td>
                         <td><span className={statusClass(study.status)}>{statusLabel(study.status)}</span></td>
                         {profile.role === "admin" ? <td><span className={ownerClass(study.owner_id)} title={owner.title}>{owner.label}</span></td> : null}

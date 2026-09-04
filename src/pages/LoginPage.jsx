@@ -64,7 +64,7 @@ export default function LoginPage() {
           <Hero />
 
           <h1>Sign in</h1>
-          <p>Sign in to create and manage tree tests.</p>
+          <p>Sign in to create and manage user tests.</p>
 
           {registered ? (
             <p className="success-box">

@@ -241,8 +241,12 @@ export function computeVariantResult(input) {
     return {
       key: group.key,
       role: group.role,
+      active: roleActive,
       weight: roleActive ? Number(weights[group.key]) || 0 : 0,
-      score: computeGroupScore(ratings)
+      score: computeGroupScore(ratings),
+      // People, not rating rows. Same unit Evidence Confidence uses, so a
+      // reader comparing the two on screen is comparing like with like.
+      responseCount: roleActive ? input.participantCountsByRole?.[group.role] || 0 : 0
     };
   });
 

@@ -9,6 +9,9 @@ import StudyListPage from "./pages/StudyListPage";
 import StudyBuilderPage from "./pages/StudyBuilderPage";
 import DashboardPage from "./pages/DashboardPage";
 import GuidePage from "./pages/GuidePage";
+import VersionHistoryPage from "./pages/VersionHistoryPage";
+import AccountPage from "./pages/AccountPage";
+import ToneGuidePage from "./pages/tonetest/ToneGuidePage";
 import PreviewRunnerPage from "./pages/PreviewRunnerPage";
 import ToneBuilderPage from "./pages/tonetest/ToneBuilderPage";
 import PublicTestRouter from "./pages/tonetest/PublicTestRouter";
@@ -204,7 +207,12 @@ export default function App() {
   if (!session || !profile) return <LoginPage />;
   if (!hasProfileConsent(profile)) return <ConsentPage profile={profile} onAccepted={setProfile} />;
 
-  if (first === "guide") return <GuidePage profile={profile} />;
+  if (first === "guide") {
+    if (parts[1] === "tone") return <ToneGuidePage profile={profile} />;
+    return <GuidePage profile={profile} section={parts[1]} />;
+  }
+  if (first === "version-history") return <VersionHistoryPage profile={profile} />;
+  if (first === "account") return <AccountPage profile={profile} onUpdated={setProfile} />;
   if (first === "preview" && parts[1]) return <PreviewRunnerPage profile={profile} studyId={parts[1]} />;
   if (first === "builder" && parts[1]) return <StudyBuilderPage profile={profile} studyId={parts[1]} />;
   if (first === "tone-builder" && parts[1]) return <ToneBuilderPage profile={profile} studyId={parts[1]} />;

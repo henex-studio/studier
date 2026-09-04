@@ -70,7 +70,7 @@ export default function ConsentPage({ profile = null, onAccepted = null }) {
 
           <h1>Use Studier responsibly</h1>
           <p>
-            Studier is an internal pilot tool for small scale testing and evaluation of menu structures. It is not a production service.
+            Studier is an internal pilot tool for small scale user testing, currently supporting tree tests of menu structures and tone tests of wording. It is not a production service.
           </p>
 
           <div className="consent-section">

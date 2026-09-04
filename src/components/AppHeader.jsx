@@ -1,7 +1,7 @@
 import React from "react";
 import { supabase } from "../lib/supabase";
 
-const APP_VERSION = "v3.07";
+const APP_VERSION = "v4.04";
 
 function navigateTo(path) {
   window.history.pushState({}, "", path);
@@ -15,10 +15,7 @@ export default function AppHeader({ profile }) {
   }
 
   function openVersionHistory() {
-    navigateTo("/guide#version-history");
-    window.setTimeout(() => {
-      document.getElementById("version-history")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 80);
+    navigateTo("/version-history");
   }
 
   const displayName = profile?.display_name || profile?.email || "User";
@@ -47,9 +44,15 @@ export default function AppHeader({ profile }) {
         </div>
 
         <nav className="app-nav" aria-label="Main navigation">
-          <span className="app-user-name" title={profile?.email || displayName}>
+          <button
+            className="app-user-name"
+            type="button"
+            onClick={() => navigateTo("/account")}
+            title={`${profile?.email || displayName} — click to edit your account`}
+            style={{ background: "none", border: 0, cursor: "pointer", padding: 0, font: "inherit" }}
+          >
             {displayName}
-          </span>
+          </button>
 
           <button
             className="app-nav-link"

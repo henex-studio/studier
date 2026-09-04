@@ -509,19 +509,7 @@ A results CSV: one row per wording variant, Content Score, each active role's gr
 
 ---
 
-### Step 4. In-app guide
-
-**What happens.** The guide gains a Tone Test section: what a Tone Test is, what each of the three roles does, how to read the results screen (Content Score, Evidence Confidence, the six gates and what "Not covered" means, the recommendation label, the blame flag), and how to close, clear and reuse a test.
-
-**Where it lives, and why not in `GuidePage.jsx`.** Written as its own component under `src/pages/tonetest/`, with `GuidePage.jsx` gaining only an import, one render line and one table-of-contents entry. `project-config.json` sets a 30-line budget on review paths, and an honest Tone Test guide section is sixty to a hundred lines of prose. Rather than request an exception, the content goes where Tone Test content is supposed to go, and the shared file takes a three-line edit that is genuinely just dispatch. This is the same pattern already used for the builder, the participant runner and the dashboard, so it needs no new reasoning.
-
-**Files touched.** New: `src/pages/tonetest/ToneGuideSection.jsx`. Edited: `src/pages/GuidePage.jsx`, a review path, three lines.
-
-**Operator checks.** Open the guide and confirm the new section reads clearly and matches what the tool actually does.
-
----
-
-### Step 5. Checking it
+### Step 4. Checking it
 
 **What happens.** Checked rather than assumed, same reasoning as every milestone before this one.
 
@@ -533,15 +521,213 @@ Clear a Tone Test with real response data and confirm, directly in the database,
 
 ### End of Milestone 5
 
-Tone Test has the same lifecycle Tree Test already has: publish, answer, read results, export, close, clear, and reuse, each one now actually doing what it claims to for this study type rather than silently doing the wrong thing. This is the last milestone in the current build plan.
+Tone Test has the same lifecycle Tree Test already has: publish, answer, read results, export, close, clear, and reuse, each one now actually doing what it claims to for this study type rather than silently doing the wrong thing.
 
-**Realistic elapsed time.** Three to four hours including the operator's checks. Steps 1 and 3 carry the real risk, one because it deletes data and one because it stops a creator doing something they may expect to be able to do; the rest is additive.
+The in-app guide was originally a step here. It moved to Milestone 6, where all the guide and wording work now sits together, rather than being split across two milestones.
+
+**Realistic elapsed time.** Two to three hours including the operator's checks. Steps 1 and 3 carry the real risk, one because it deletes data and one because it stops a creator doing something they may expect to be able to do; the rest is additive.
 
 ### What this milestone closes, and what stays open
 
 **Closes Q-9**, whether a variant can be deleted after responses exist. Answered in Step 3.
 
 **Leaves open Q-5 and Q-8.** What sensitivity level does, which is currently a free-text note explicitly labelled as having no effect, and whether Evidence Confidence should include researcher judgement, which HANDOVER.md section 3 already says can wait until a real study has run. Neither blocks anything here.
+
+---
+
+## Milestone 6, the product reads as one platform
+
+**Written:** 30 August 2026. **Approve before work starts.**
+
+Studier was built as a tree testing tool and its writing still says so. Now that it runs two kinds of study, the wording, the guide and the version history all describe the old product. This milestone fixes what the product says about itself. It changes almost no behaviour.
+
+### Settled by the operator, 30 August 2026
+
+**The name stays "Tone Test".** Not renamed to Content Test. The operator raised "content test" in conversation; it was a shorthand, not a rename.
+
+**Two onboarding guides, one per study type**, both written for the person creating a study rather than for participants.
+
+**Illustrations are real interface screenshots**, not drawn diagrams, and they are captured only after every wording change below is finished and deployed. Screenshotting a screen whose text is about to change wastes the work twice.
+
+**The screenshots use purpose-built demo content**, not the placeholder text currently in the database. The scenario is a driver licence renewal reminder, chosen because it is ordinary, understandable to anyone, and still a case where tone genuinely matters.
+
+**The screenshot account keeps its existing sign-in but gains a neutral display name**, since the top navigation would otherwise print the operator's email address into every signed-in screenshot in the repository.
+
+### What was checked before planning this
+
+**Screenshots of participant-facing screens work.** The preview deployment sits behind Vercel's deployment protection, so a plain visit lands on a Vercel login page. A temporary Vercel share link gets past that, and the public participant screens then capture correctly; this was confirmed by actually taking one, not assumed. The link expires after roughly a day and can be regenerated.
+
+**Screenshots of signed-in screens are blocked, and need one thing from the operator.** The guide, study list, builders and dashboards sit behind Studier's own sign-in. The assistant will not type an account password. Either the operator signs in once in the in-app browser pane, after which the session persists and screenshots can be captured without further help, or the operator captures those screens and hands the images over. This is the only part of this milestone that cannot proceed unattended.
+
+---
+
+### Step 1. Wording that describes a platform, not a tree test
+
+**What happens.** The user-facing sentences that claim Studier is a tree testing tool are rewritten to describe a testing platform that currently runs two study types. Found by reading the code rather than guessing, the list is:
+
+`GuidePage.jsx`, the hero line and "What Studier is" ("an internal tool for running tree tests"), the key terms ("Test means one tree test project"), and the welcome content advice. `ConsentPage.jsx`, "an internal pilot tool for small scale testing and evaluation of menu structures". `LoginPage.jsx`, "Sign in to create and manage tree tests". `StudyListPage.jsx`, "Create and manage internal tree tests" and the seeded default welcome bullet on a new Tree Test.
+
+Wording that is correctly specific stays specific. The "Tree test" badge on the Tree Test runner, "IA tree CSV" in the Tree Test builder, and the tree-test-specific paragraph in the privacy policy are all describing a tree test and should keep saying so. The change is to sentences describing *Studier*, not sentences describing *a tree test*.
+
+The privacy policy gets one addition rather than a rewrite: it currently explains what is recorded in a tree test and says nothing about what a Tone Test records.
+
+**Files touched.** `src/pages/GuidePage.jsx`, `src/pages/ConsentPage.jsx`, `src/pages/LoginPage.jsx`, `src/pages/StudyListPage.jsx`, all review paths, all small text-only edits. `src/pages/PrivacyPolicyPage.jsx` and `docs/privacy-policy.md`, which must stay identical to each other since the second is the version of record.
+
+**Operator checks.** Read the sign-in page, the consent page and the study list and confirm none of them still claims Studier only does tree testing.
+
+---
+
+### Step 2. Remove the victim example
+
+**What happens.** `GuidePage.jsx` uses "Victims information navigation test" as its worked example of a test title. Replaced with an ordinary service example, along the lines of renewing a licence or applying for a benefit, that carries no implication about who the participants are.
+
+This is the only such example in the product itself. The same framing runs through the older specification documents in `docs/tone-test/`, which are historical records of how the tool came to exist and are left alone. HANDOVER.md's privacy rule about sensitive testing is a safeguard rather than an example and also stays.
+
+**Files touched.** `src/pages/GuidePage.jsx`, a review path, one line.
+
+**Operator checks.** Search the guide for "victim" and confirm nothing remains.
+
+---
+
+### Step 3. Version history moves to its own page and gains the Tone Test line
+
+**What happens.** Version history leaves `GuidePage.jsx` and becomes `/version-history`, its own page, linked from the guide and from the version number in the top navigation exactly as it is now. Nothing about how it is reached changes for the operator.
+
+Tree Test's history keeps its existing numbering, ending at v3.07. Tone Test work is numbered from v4.00 up, as the operator asked. Proposed entries, one per milestone actually built, subject to correction:
+
+v4.00, create a Tone Test and add wording variants. v4.01, roles, weights, risk gates, questions and publishing checks. v4.02, the participant flow, including role choice, wording assignment and submission. v4.03, the results dashboard, Content Score, Evidence Confidence, risk gates and recommendation status. v4.04, lifecycle and guides, clearing and reuse, CSV export, and the rewritten guide.
+
+`APP_VERSION` in `AppHeader.jsx` moves from `v3.07` to `v4.04` on completion, since the number in the navigation should describe the whole product, not the Tree Test half of it.
+
+**Files touched.** New: `src/pages/VersionHistoryPage.jsx`. Edited: `src/App.jsx` for the route, `src/components/AppHeader.jsx` for the version constant and link target, `src/pages/GuidePage.jsx` to remove the section and point at the new page. All review paths, all small.
+
+**Operator checks.** Click the version number in the top navigation and confirm it opens the version history page. Confirm the Tone Test entries describe what was actually built.
+
+---
+
+### Step 4. Two onboarding guides
+
+**What happens.** The single guide becomes a guide home page offering two paths: creating a tree test, and creating a Tone Test. Shared material that applies to both, signing in, the test collection, closing time, publishing, closing and reusing, participants needing no account, is written once and shown in both rather than duplicated.
+
+The Tone Test guide covers what a Tone Test is, the three roles and what each is for, wording variants and the two variant modes, the risk gates and why four are critical, and how to read the results screen: Content Score, Evidence Confidence and why it is separate from the score, "Not covered" versus "Pass", the recommendation status, and the blame flag.
+
+Both are written for someone who has never run either kind of study, in the register `CLAUDE.md` requires: plain language, no jargon without a definition.
+
+**Where the content lives.** The Tone Test guide goes in `src/pages/tonetest/`, a writable path. `project-config.json` puts a 30-line budget on review paths, and an honest Tone Test guide is well past that; rather than ask for an exception, the content goes where Tone Test content belongs and `GuidePage.jsx` keeps only structure and dispatch. Same pattern as the builder, the runner and the dashboard.
+
+**Files touched.** New: `src/pages/tonetest/ToneGuide.jsx`, and a shared-content module for the material both guides use. Edited: `src/pages/GuidePage.jsx`, a review path, restructured into a home page plus the Tree Test path.
+
+**Operator checks.** Read both guides end to end as if new to the tool, and say where they stop making sense.
+
+---
+
+### Step 5. An account page, so a name can be changed without a database edit
+
+**What happens.** Clicking the account name in the top navigation opens an account page. It shows the account's email address and role, both read-only, and lets the display name be changed and saved.
+
+**Why it is here.** `display_name` is written once at registration and there is no way to change it afterwards, anywhere in the product. Anyone who mistypes their name at registration is stuck with it until someone edits the database by hand. This surfaced while preparing for screenshots, when the operator went looking for the setting and found it does not exist.
+
+**Scope, settled by the operator on 30 August 2026: display name only.** Not password, not email address. Changing a password already has a working path through "Forgot your password?", built during the registration work in August. Changing an email address would drag in re-verification and keeping `auth.users` in step with the copy of the address held in `profiles`, which is the most breakable of the three and is not worth opening for a screenshot-driven convenience.
+
+**One thing to check rather than assume.** `profiles` has an owner-update policy for `authenticated`, but the last time a policy was taken on trust the grant behind it was missing and the write silently did nothing. The policy and the table-level UPDATE grant both get checked before the page is written, and the save gets tested as a signed-in user rather than as the database owner.
+
+**Files touched.** New: `src/pages/AccountPage.jsx`. Edited: `src/App.jsx` for the route and `src/components/AppHeader.jsx` to make the name a link, both review paths, both a few lines.
+
+**Operator checks.** Click your name in the top navigation, change it, save, and confirm the new name appears in the navigation and survives a reload. Confirm the email address and role are shown but cannot be edited.
+
+---
+
+### Step 5a. Telling the two test types apart
+
+**What happens.** Test type currently shows as a small chip in the top-right of a test card, sitting beside the status chip and the owner chip. All three are the same shape, the same size, and differ only in colour, so the one that says what a test fundamentally *is* reads as the least important of the three. The card also carries up to eight buttons, so a fourth chip has no chance of being noticed.
+
+Three changes, all agreed with the operator on 30 August 2026 after reviewing mockups:
+
+Type moves out of the chip row and sits above the title, with an icon and its own colour. Status and owner stay where they are. Type stops competing with them for the same space.
+
+The card gains a coloured edge stripe, tree test blue and tone test purple, matching the existing type badge colours. Drawn with `box-shadow: inset`, not `border-left`, so the card keeps its rounded corners; an inset shadow is clipped by `border-radius` where a single-sided border is not. The operator asked for the corners to stay, and this is how both are possible at once.
+
+The list view gets the same treatment in the form a table can carry: the same stripe on the leading cell, and the same icon and type label above the title inside that cell. Both views then share one visual language rather than each inventing its own.
+
+A type filter is added above the collection, working in both views.
+
+**Icons.** `lucide-react` is already a dependency, so no new package. The exact icons are chosen when the step is built and confirmed with the operator, since this introduces the first systematic icon use in the product and sets a precedent.
+
+**Files touched.** `src/pages/StudyListPage.jsx` and `src/style.css`, both review paths. The style file will take more than the 30-line budget, since this is four new visual treatments across two view modes; flagged here rather than discovered later.
+
+**Operator checks.** Look at the collection in both card and list view with at least one test of each type. Confirm the type is the first thing you notice about a card, that the corners are still round, and that the filter works in both views.
+
+---
+
+### Step 5b. A feedback channel
+
+**What happens.** Studier has no way for a user to report a problem or suggest something. Fevnote solved this already and the operator asked for the same thing here, so the structure is copied rather than redesigned.
+
+A floating button sits in the corner of every signed-in screen and opens a short form: a category (something is broken, an idea or request, something else) and a message. Feedback is attached to the sender's account so the operator can reply, and the form says so rather than letting anyone assume it is anonymous.
+
+**Not on participant screens.** The operator was explicit, and the structure gives this for free: the button mounts inside the signed-in part of the app, and participants reach a public link that never renders that part. A participant with something to say tells the person who sent them the link.
+
+**What is copied from fevnote, and why each part.** A `feedback` table with insert-and-read-your-own policies and no update or delete, so what the operator reads is what was written; withdrawing feedback is a support request rather than a button. An admin read path through a `SECURITY DEFINER` function rather than a table policy exception, matching how every other admin read works in both products. A length constraint on the message so a runaway paste cannot fill the table.
+
+**Files touched.** New: a migration, `src/components/FeedbackButton.jsx`, `src/components/FeedbackForm.jsx`. Edited: `src/App.jsx` and `src/style.css`, both review paths.
+
+**Operator checks.** Send feedback from a signed-in screen. Confirm it arrives. Open a participant test link and confirm no feedback button appears anywhere in that flow.
+
+---
+
+### Step 6. Demo content worth photographing
+
+**What happens.** The only Tone Test that exists is placeholder text typed to exercise the forms: a study called "police" with wordings labelled "12e2" and body text like "fajfeojflajflajflajfla", and a single participant's answers. Screenshots of that would teach nobody anything and would look unfinished.
+
+Two demo studies are built instead, using the scenario the operator settled on 30 August 2026, a driver licence renewal reminder.
+
+The Tone Test compares three ways of telling someone their licence is about to expire: one brisk and official, one warm and plain, one that leans on the consequence of not acting. This is an honest test case, because tone genuinely matters here, a badly judged version reads as threatening over something routine, and the risk gates have something real to catch.
+
+The Tree Test covers finding licence and vehicle information in a transport services menu, which gives the Tree Test guide its own worked example rather than borrowing the Tone Test's.
+
+Responses are then submitted through the real participant entry points, not written straight into the tables, so the demo data is produced the same way real data is. Enough of them, across all three roles, that the dashboard shows something worth looking at.
+
+**This also closes a verification gap that has been open since Milestone 4.** Every check so far has run against one participant in one role. The Evidence Confidence imbalance ratio, the proportional weight rescaling when a role group has no responses, and gate coverage across active roles have never once been exercised with two roles answering at the same time. The demo data is the first time they will be, so the numbers it produces get checked by hand before any screenshot is taken of them.
+
+**The existing placeholder study** is left alone until the operator says otherwise. It is the test currently being used to check Milestone 4 and 5 behaviour, and deleting it mid-milestone would remove the only real data those checks run against.
+
+**Before this step, one small change:** the account used for screenshots gets a `display_name`. It is currently unset, so the top navigation falls back to showing the account's email address, which would then appear in every signed-in screenshot committed to the repository. The operator sets it to something neutral.
+
+**Files touched.** None. This is data, created through the running application.
+
+**Operator checks.** Look at both demo studies and say whether they read as something you would show a stakeholder. This is the step most worth being fussy about, since these examples will outlive the milestone.
+
+---
+
+### Step 7. Screenshots
+
+**What happens.** Once Steps 1 to 6 are merged, deployed and populated, the interface is captured screen by screen and the images are placed into both guides next to the steps they illustrate: the test collection, creating each type of study, the two builders, the publish check, the participant view of each study type, and the two dashboards.
+
+This step is deliberately last. Every screen above has its wording changed in Steps 1 to 4 and its content replaced in Step 6, so capturing earlier means capturing text and data that are about to be wrong.
+
+**What is needed from the operator.** A push to `dev` so the preview carries the new wording, and one sign-in in the in-app browser pane so the signed-in screens can be reached. Participant screens need neither.
+
+**Files touched.** The two guide components, plus image files committed to the repository.
+
+**Operator checks.** Confirm each screenshot matches what you see, and that none of them shows old wording.
+
+---
+
+### Step 8. Checking it
+
+**What happens.** Search the whole of `src/` for the wording this milestone was meant to remove, "tree test" in a platform-level sentence and "victim" anywhere, and confirm what remains is deliberate. Open every changed page in the browser rather than trusting the diff. Confirm the guide's version history link, the navigation version link and the new page all agree.
+
+### End of Milestone 6
+
+Studier describes itself as what it now is: a testing platform running two kinds of study, with a guide for each, illustrated with its own interface, and a version history covering both halves of the product.
+
+**Realistic elapsed time.** Eight to eleven hours. Step 4 is the largest single piece of writing, Steps 5a and 5b are the largest pieces of code. Steps 6 and 7 depend on the operator: a push to `dev`, one sign-in in the browser pane, and a look at the demo content before it is photographed.
+
+**Two steps were added on 30 August 2026**, after the guides were written and the operator looked at the product with fresh eyes: 5a, telling the two test types apart, and 5b, a feedback channel. Both are the kind of thing only visible once someone uses the thing rather than builds it.
+
+### What this milestone also fixes, without being asked
+
+The demo data in Step 5 is the first time the scoring built in Milestone 4 will run with more than one role answering. Until now the imbalance ratio, the weight rescaling and the gate coverage rules have only ever been exercised on a single Audience response, which cannot make any of them do anything interesting. That gap was recorded at the end of Milestone 4 and is closed here as a side effect of needing something worth photographing.
 
 ---
 

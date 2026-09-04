@@ -234,14 +234,17 @@ function makeTempKey() {
   return `new-${Math.random().toString(36).slice(2)}-${Date.now()}`;
 }
 
-function VariantEditor({ variants, onUpdate, onRemove, onMove, onAdd }) {
+function VariantEditor({ variants, onUpdate, onRemove, onMove, onAdd, responseCountByVariantId }) {
   return (
     <div>
       {variants.length < MIN_VARIANTS ? (
         <p className="error-box">Add at least {MIN_VARIANTS} variants before this test can be published.</p>
       ) : null}
 
-      {variants.map((variant, index) => (
+      {variants.map((variant, index) => {
+        const responseCount = (variant.id && responseCountByVariantId?.[variant.id]) || 0;
+        const atMinimum = variants.length <= MIN_VARIANTS;
+        return (
         <div className="question-card" key={variant.key}>
           <div className="button-row" style={{ justifyContent: "space-between" }}>
             <p className="form-label">Variant {index + 1}</p>
@@ -265,7 +268,8 @@ function VariantEditor({ variants, onUpdate, onRemove, onMove, onAdd }) {
               <button
                 className="danger-button"
                 type="button"
-                disabled={variants.length <= MIN_VARIANTS}
+                disabled={atMinimum || responseCount > 0}
+                title={responseCount > 0 ? "This wording has been answered and cannot be removed." : undefined}
                 onClick={() => onRemove(variant.key)}
               >
                 Remove
@@ -302,8 +306,17 @@ function VariantEditor({ variants, onUpdate, onRemove, onMove, onAdd }) {
               onChange={(event) => onUpdate(variant.key, "internal_note", event.target.value)}
             />
           </label>
+
+          {responseCount > 0 ? (
+            <p className="muted-text">
+              {responseCount} {responseCount === 1 ? "answer refers" : "answers refer"} to this wording, so it cannot
+              be removed. Deleting it would delete those answers with it. To test different wording, clear the
+              test data first, or add a new variant alongside this one.
+            </p>
+          ) : null}
         </div>
-      ))}
+        );
+      })}
 
       <button className="secondary-button" type="button" disabled={variants.length >= MAX_VARIANTS} onClick={onAdd}>
         Add variant
@@ -400,6 +413,12 @@ export default function ToneBuilderPage({ profile, studyId }) {
   const [variants, setVariants] = useState([]);
   const [removedVariantIds, setRemovedVariantIds] = useState([]);
   const [questions, setQuestions] = useState([]);
+  // How many responses reference each variant. A variant with any is not
+  // removable: tone_responses.variant_id and tone_gate_responses.variant_id
+  // are both ON DELETE CASCADE, so removing it would silently destroy every
+  // rating and gate judgement about that wording and move the Content Score,
+  // with no warning and no way back. Settled as Q-9 on 30 August 2026.
+  const [responseCountByVariantId, setResponseCountByVariantId] = useState({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
@@ -512,6 +531,21 @@ export default function ToneBuilderPage({ profile, studyId }) {
 
       setQuestions(questionRows || []);
 
+      // Counted from both response tables, because a participant can have
+      // answered a gate about a wording without having rated it.
+      const [{ data: ratingRefs }, { data: gateRefs }] = await Promise.all([
+        supabase.from("tone_responses").select("variant_id").eq("study_id", studyId).not("variant_id", "is", null),
+        supabase.from("tone_gate_responses").select("variant_id").eq("study_id", studyId).not("variant_id", "is", null)
+      ]);
+
+      if (!active) return;
+
+      const counts = {};
+      [...(ratingRefs || []), ...(gateRefs || [])].forEach((row) => {
+        counts[row.variant_id] = (counts[row.variant_id] || 0) + 1;
+      });
+      setResponseCountByVariantId(counts);
+
       const loadedVariants = (variantRows || []).map((row) => ({ ...row, key: row.id }));
       // A brand new Tone Test starts with two empty variants, since the test
       // needs at least two to ever be publishable and an empty builder gives
@@ -586,6 +620,11 @@ export default function ToneBuilderPage({ profile, studyId }) {
     setVariants((current) => {
       if (current.length <= MIN_VARIANTS) return current;
       const target = current.find((variant) => variant.key === key);
+      // The Remove button is already disabled in this case. This is the
+      // second line of the same defence, because the cost of the count being
+      // stale for a moment is permanent loss of every answer about this
+      // wording, and a disabled button is a UI state, not a rule.
+      if (target?.id && (responseCountByVariantId[target.id] || 0) > 0) return current;
       if (target?.id) setRemovedVariantIds((ids) => [...ids, target.id]);
       return current
         .filter((variant) => variant.key !== key)
@@ -938,6 +977,7 @@ export default function ToneBuilderPage({ profile, studyId }) {
           variants={variants}
           onUpdate={updateVariant}
           onRemove={removeVariant}
+          responseCountByVariantId={responseCountByVariantId}
           onMove={moveVariant}
           onAdd={addVariant}
         />

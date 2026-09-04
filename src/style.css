@@ -457,12 +457,27 @@ select:focus {
   min-height: 270px;
 }
 
+/* Step 5a. A coloured edge stripe naming the test type at a glance. Drawn
+   with an inset box-shadow rather than border-left so the card's rounded
+   corners survive; a single-sided border would square off that corner. */
+.type-stripe {
+  box-shadow: inset 4px 0 0 0 var(--type-stripe-color), 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 1px rgba(15, 23, 42, 0.04);
+}
+
+.type-stripe-tree {
+  --type-stripe-color: #2563eb;
+}
+
+.type-stripe-tone {
+  --type-stripe-color: #a21caf;
+}
+
 .study-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   min-height: 30px;
 }
 
@@ -494,14 +509,24 @@ select:focus {
   border: 1px solid #fecaca;
 }
 
+/* Step 5a. Type moved out of the chip row to sit above the title, with its
+   own icon and colour, so it reads as what the test fundamentally is
+   rather than as a fourth chip competing with status and owner. */
 .type-badge {
   display: inline-flex;
+  align-items: center;
+  gap: 5px;
   width: fit-content;
   border-radius: 999px;
   padding: 4px 12px;
+  margin-bottom: 6px;
   font-size: 12px;
   font-weight: 800;
   line-height: 1.4;
+}
+
+.type-badge svg {
+  flex-shrink: 0;
 }
 
 .type-badge-tree {
@@ -514,6 +539,44 @@ select:focus {
   background: #fdf4ff;
   color: #86198f;
   border: 1px solid #f0abfc;
+}
+
+.type-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.type-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #475569;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.type-filter-button-active.type-filter-button-tree {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.type-filter-button-active.type-filter-button-tone {
+  background: #fdf4ff;
+  color: #86198f;
+  border-color: #f0abfc;
+}
+
+.type-filter-button-active:not(.type-filter-button-tree):not(.type-filter-button-tone) {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
 }
 
 .owner-chip {
@@ -603,7 +666,20 @@ select:focus {
   vertical-align: middle;
 }
 
+/* Step 5a. List view carries the same stripe and icon-plus-label treatment
+   as the card, on the leading cell, so both views share one visual
+   language for test type rather than each inventing its own. */
+.test-list-table td.type-stripe {
+  box-shadow: inset 4px 0 0 0 var(--type-stripe-color);
+}
+
+.test-list-table td.type-stripe .type-badge {
+  display: flex;
+  margin-bottom: 4px;
+}
+
 .test-title-link {
+  display: block;
   color: #0f172a;
   font-weight: 800;
 }
@@ -1678,6 +1754,106 @@ select:focus {
 @media (max-width: 639px) {
   .app-brand {
     width: 100%;
+  }
+}
+
+/* Step 5b. A floating feedback entry point, mounted once in AdminShell so
+   it appears on every signed-in screen. Structure and z-index sit below
+   .next-toast (1000) but above ordinary page content. */
+.feedback-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 60;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.28), 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.feedback-fab:hover {
+  background: #1d4ed8;
+}
+
+.feedback-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.32);
+}
+
+.feedback-panel {
+  width: 100%;
+  max-width: 380px;
+  margin: 0;
+}
+
+.feedback-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.feedback-panel-header h2 {
+  margin: 0;
+}
+
+.feedback-panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #475569;
+}
+
+.feedback-panel-close:hover {
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.feedback-form {
+  display: grid;
+  gap: 8px;
+}
+
+.feedback-form .muted-text {
+  margin: 0 0 6px;
+}
+
+.feedback-form .form-label {
+  margin-top: 6px;
+}
+
+.feedback-form .button-row {
+  justify-content: flex-end;
+}
+
+@media (max-width: 639px) {
+  .feedback-panel-backdrop {
+    padding: 0;
+    align-items: flex-end;
+    justify-content: stretch;
+  }
+
+  .feedback-panel {
+    max-width: 100%;
+    border-radius: 24px 24px 0 0;
   }
 }
 
