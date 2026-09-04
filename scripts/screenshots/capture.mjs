@@ -152,21 +152,34 @@ async function main() {
     console.log("Saved 08-tone-participant.png");
 
     // --- 9. Tree dashboard ---
+    // The Dashboard link is an in-app route change, not a real navigation
+    // (App.jsx intercepts the click and calls history.pushState), so
+    // waitForLoadState("networkidle") here resolves against the admin
+    // page's own already-idle network, not the dashboard's own Supabase
+    // queries for participants and task answers. Those queries render
+    // in the same pass as the page shell, with no separate loading state,
+    // so the fix is a real wait for them to land, not a longer selector
+    // wait. Clicking Refresh and waiting again is the reliable way to do
+    // that without editing DashboardPage.jsx itself.
     await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
     const treeCardAgain = await studyCard(page, TREE_SLUG);
     await treeCardAgain.locator("a", { hasText: "Dashboard" }).click();
     await page.waitForSelector("h1", { state: "visible" });
-    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(1200);
+    await page.getByRole("button", { name: "Refresh", exact: true }).click();
+    await page.waitForTimeout(1200);
     await settle(page);
     await page.screenshot({ path: path.join(outputDir, "09-tree-dashboard.png") });
     console.log("Saved 09-tree-dashboard.png");
 
-    // --- 10. Tone dashboard ---
+    // --- 10. Tone dashboard --- (same in-app route change caveat as above)
     await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
     const toneCardAgain = await studyCard(page, TONE_SLUG);
     await toneCardAgain.locator("a", { hasText: "Dashboard" }).click();
     await page.waitForSelector("h1", { state: "visible" });
-    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(1200);
+    await page.getByRole("button", { name: "Refresh", exact: true }).click();
+    await page.waitForTimeout(1200);
     await settle(page);
     await page.screenshot({ path: path.join(outputDir, "10-tone-dashboard.png") });
     console.log("Saved 10-tone-dashboard.png");
