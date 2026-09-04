@@ -567,17 +567,45 @@ select:focus {
    chip beside it. The filter buttons and their pale active state above
    are unaffected; they stay light on white. */
 .study-card-header .type-badge-tree,
-.test-list-table .type-badge-tree {
+.test-list-table .type-badge-tree,
+.guide-type-card .type-badge-tree {
   background: #1d4ed8;
   color: #ffffff;
   border-color: #1d4ed8;
 }
 
 .study-card-header .type-badge-tone,
-.test-list-table .type-badge-tone {
+.test-list-table .type-badge-tone,
+.guide-type-card .type-badge-tone {
   background: #86198f;
   color: #ffffff;
   border-color: #86198f;
+}
+
+/* /guide home cards. Same bottom-pinned button pattern as .study-card: the
+   body grows to fill whatever space is available, so the "Open guide"
+   button sits on a level bottom edge across both cards regardless of how
+   long each guide's description runs. */
+.guide-type-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.guide-type-card .type-badge {
+  margin-bottom: 12px;
+}
+
+.guide-type-card-body {
+  flex: 1 1 auto;
+}
+
+.guide-type-card-body h2 {
+  margin-top: 0;
+}
+
+.guide-type-card > .button-row {
+  margin-top: auto;
+  padding-top: 14px;
 }
 
 .type-filter {

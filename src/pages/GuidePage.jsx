@@ -17,30 +17,33 @@ function GuideHome({ profile }) {
         </p>
         <div className="button-row">
           <a className="primary-button" href="/admin">Back to test collection</a>
-          <a className="secondary-button" href="/version-history">Version history</a>
         </div>
       </section>
 
       <section className="study-grid">
-        <article className="card">
+        <article className="card guide-type-card">
           <span className="type-badge type-badge-tree">Tree test</span>
-          <h2>Tree test guide</h2>
-          <p>
-            Check whether people can find information in a menu structure, before a site or service is
-            built. Covers the IA tree, tasks and correct paths, and reading the results.
-          </p>
+          <div className="guide-type-card-body">
+            <h2>Tree test guide</h2>
+            <p>
+              Check whether people can find information in a menu structure, before a site or service is
+              built. Covers the IA tree, tasks and correct paths, and reading the results.
+            </p>
+          </div>
           <div className="button-row">
             <a className="primary-button" href="/guide/tree">Open tree test guide</a>
           </div>
         </article>
 
-        <article className="card">
+        <article className="card guide-type-card">
           <span className="type-badge type-badge-tone">Tone test</span>
-          <h2>Tone test guide</h2>
-          <p>
-            Check how wording lands before it is published. Covers the three reviewer roles, risk gates,
-            scoring, and how to read a recommendation.
-          </p>
+          <div className="guide-type-card-body">
+            <h2>Tone test guide</h2>
+            <p>
+              Check how wording lands before it is published. Covers the three reviewer roles, risk gates,
+              scoring, and how to read a recommendation.
+            </p>
+          </div>
           <div className="button-row">
             <a className="primary-button" href="/guide/tone">Open tone test guide</a>
           </div>
