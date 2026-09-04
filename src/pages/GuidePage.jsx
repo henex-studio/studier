@@ -20,6 +20,11 @@ function GuideHome({ profile }) {
         </div>
       </section>
 
+      <figure className="guide-screenshot">
+        <img src="/guide/01-test-collection.png" alt="Test collection page showing a published tree test and a published tone test as cards" />
+        <figcaption>Test collection: every test you create lives here, of either type.</figcaption>
+      </figure>
+
       <section className="study-grid">
         <article className="card guide-type-card">
           <span className="type-badge type-badge-tree">Tree test</span>
@@ -130,6 +135,10 @@ export default function GuidePage({ profile, section }) {
             </ol>
             <p>Use a clear title, for example:</p>
             <pre>Driver licence renewal navigation test</pre>
+            <figure className="guide-screenshot">
+              <img src="/guide/02-create-tree-test.png" alt="New test title field filled in with Tree Test selected in the type dropdown, before Add new test is selected" />
+              <figcaption>Enter a title, choose Tree Test, then select Add new test.</figcaption>
+            </figure>
           </section>
 
           <section id="welcome-privacy">
@@ -142,6 +151,10 @@ export default function GuidePage({ profile, section }) {
               <li><strong>End text</strong>, shown after the participant submits the test.</li>
             </ol>
             <p>Keep the wording plain and short. The participant should know what to do before they start.</p>
+            <figure className="guide-screenshot">
+              <img src="/guide/04-tree-builder.png" alt="Edit test page showing the Title, Welcome note, What the test is, and Privacy note fields filled in" />
+              <figcaption>These fields sit at the top of the builder, above the tree and tasks.</figcaption>
+            </figure>
           </section>
 
           <section id="pre-task-questions">
@@ -221,6 +234,10 @@ Support,,
               <li>Select Copy link and send the test link to participants.</li>
             </ol>
             <p>Studier checks key setup requirements before publishing. If something is missing, the publish action shows what needs to be fixed.</p>
+            <figure className="guide-screenshot">
+              <img src="/guide/06-publish-check.png" alt="A draft test card after selecting Publish, showing a box listing what is missing before it can go live" />
+              <figcaption>Selecting Publish before the test is ready lists exactly what to fix.</figcaption>
+            </figure>
           </section>
 
           <section id="participant-experience">
@@ -228,6 +245,10 @@ Support,,
             <p>Participants see one task at a time. The tree starts collapsed so the first click can reflect the participant's first instinct.</p>
             <p>Participants can use the task progress navigation to review completed tasks. Submitted answers are locked in review mode and cannot be changed.</p>
             <p>When reviewing a completed task, the tree opens to the submitted answer path so the participant can see where the answer was selected.</p>
+            <figure className="guide-screenshot">
+              <img src="/guide/07-tree-participant.png" alt="Participant welcome screen showing the test title, welcome note, what the test is, and privacy note, with a Start test button" />
+              <figcaption>What a participant sees before starting: welcome, what the test is, and privacy.</figcaption>
+            </figure>
           </section>
 
           <section id="results">
@@ -235,6 +256,10 @@ Support,,
             <p>Open the dashboard from the test card. The dashboard shows task responses, final question responses, exact answers, acceptable answers, wrong answers, skipped answers, and other collected fields.</p>
             <p>If a field says Not recorded, the related data collection setting was not selected for that test.</p>
             <p>Use Export task CSV and Export final CSV to download results.</p>
+            <figure className="guide-screenshot">
+              <img src="/guide/09-tree-dashboard.png" alt="Dashboard showing participant, task answer, exact, acceptable, and wrong counts, plus a per-answer table" />
+              <figcaption>The dashboard, with results from a small pilot run.</figcaption>
+            </figure>
           </section>
 
           <section id="close-reuse">

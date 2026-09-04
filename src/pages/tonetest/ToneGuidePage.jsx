@@ -87,6 +87,10 @@ export default function ToneGuidePage({ profile }) {
               Both are shown to you while you review results, not to participants. Write them anyway.
               A reviewer judging whether wording is accurate needs to know what it was trying to do.
             </p>
+            <figure className="guide-screenshot">
+              <img src="/guide/03-create-tone-test.png" alt="New test title field filled in with Tone Test selected in the type dropdown, before Add new test is selected" />
+              <figcaption>Creating a tone test starts the same way: a title, then Tone Test from the dropdown.</figcaption>
+            </figure>
           </section>
 
           <section id="variants">
@@ -179,6 +183,10 @@ export default function ToneGuidePage({ profile }) {
               receiving it. Raise the Agency weight when accuracy and organisational risk matter more than
               comfort. There is no correct answer, only a choice you should be able to explain later.
             </p>
+            <figure className="guide-screenshot">
+              <img src="/guide/05-tone-builder.png" alt="Tone test builder showing basics, content, roles and Content Score weights, and the risk gates table" />
+              <figcaption>The builder: roles and weights sit above the fixed risk gates table.</figcaption>
+            </figure>
           </section>
 
           <section id="questions">
@@ -252,6 +260,10 @@ export default function ToneGuidePage({ profile }) {
               They can leave and come back on the same browser and continue where they left off. Once they
               submit, reopening the link shows your end message rather than letting them answer twice.
             </p>
+            <figure className="guide-screenshot">
+              <img src="/guide/08-tone-participant.png" alt="Participant welcome screen with privacy note, followed by a Choose your role step listing Audience, Agency and Editor" />
+              <figcaption>Welcome and privacy, then the role choice, before any wording is shown.</figcaption>
+            </figure>
           </section>
 
           <section id="results">
@@ -260,6 +272,10 @@ export default function ToneGuidePage({ profile }) {
               The dashboard shows three separate things for each wording. They answer different questions
               and are deliberately never combined into a single number.
             </p>
+            <figure className="guide-screenshot">
+              <img src="/guide/10-tone-dashboard.png" alt="Dashboard for a tone test showing session counts by role, then a wording's Content Score, Evidence Confidence and Recommendation" />
+              <figcaption>One wording's results: score, confidence, and recommendation, side by side.</figcaption>
+            </figure>
 
             <h3>Content Score</h3>
             <p>
