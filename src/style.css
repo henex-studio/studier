@@ -1168,7 +1168,7 @@ select:focus {
 }
 
 .guide-screenshot {
-  margin: 0;
+  margin: 0 0 16px;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
   overflow: hidden;
@@ -1186,6 +1186,13 @@ select:focus {
   color: #64748b;
   font-size: 14px;
   border-top: 1px solid #e2e8f0;
+}
+
+/* 06-publish-check.png captures one test card, not a full screen like the
+   other nine screenshots, so stretching it to the same column width as
+   those blows the UI up far past its real on-screen size. */
+.guide-screenshot-narrow {
+  max-width: 420px;
 }
 
 .guide-bottom-actions {

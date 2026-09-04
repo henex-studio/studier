@@ -234,7 +234,7 @@ Support,,
               <li>Select Copy link and send the test link to participants.</li>
             </ol>
             <p>Studier checks key setup requirements before publishing. If something is missing, the publish action shows what needs to be fixed.</p>
-            <figure className="guide-screenshot">
+            <figure className="guide-screenshot guide-screenshot-narrow">
               <img src="/guide/06-publish-check.png" alt="A draft test card after selecting Publish, showing a box listing what is missing before it can go live" />
               <figcaption>Selecting Publish before the test is ready lists exactly what to fix.</figcaption>
             </figure>
