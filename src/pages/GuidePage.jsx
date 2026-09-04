@@ -85,7 +85,6 @@ export default function GuidePage({ profile, section }) {
           <a href="#results">View and export results</a>
           <a href="#close-reuse">Close, clear, and reuse a test</a>
           <a href="#good-practice">Good practice</a>
-          <a href="/version-history">Version history</a>
         </aside>
 
         <div className="card guide-content">

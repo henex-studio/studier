@@ -595,25 +595,29 @@ export default function StudyListPage({ profile }) {
             return (
               <article className={`card study-card ${typeStripeClass(study)}`} key={study.id}>
                 <div className="study-card-header">
+                  <TypeTag study={study} />
                   <span className={statusClass(study.status)}>{statusLabel(study.status)}</span>
+                </div>
+
+                <div className="study-card-body">
                   {isAdminView ? <span className={ownerClass(study.owner_id)} title={owner.title}>{owner.label}</span> : null}
+                  <h2>{study.title}</h2>
+                  <p className="study-link-code" title={fullLink}>Test link code: <span>/{study.slug}</span></p>
+                  <p className="study-expiry-text">{expiryLabel(study)}</p>
                 </div>
 
-                <TypeTag study={study} />
-                <h2>{study.title}</h2>
-                <p className="study-link-code" title={fullLink}>Test link code: <span>/{study.slug}</span></p>
-              <p className="study-expiry-text">{expiryLabel(study)}</p>
+                <div className="study-card-actions">
+                  <div className="button-row">
+                    <a className="secondary-button" href={builderPath(study)}>Edit</a>
+                    <a className="secondary-button" href={`/dashboard/${study.id}`}>Dashboard</a>
+                    <a className="secondary-button" href={previewPath(study)}>Preview</a>
+                    {study.status === "published" ? <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open link</a> : null}
+                  </div>
 
-                <div className="button-row">
-                  <a className="secondary-button" href={builderPath(study)}>Edit</a>
-                  <a className="secondary-button" href={`/dashboard/${study.id}`}>Dashboard</a>
-                  <a className="secondary-button" href={previewPath(study)}>Preview</a>
-                  {study.status === "published" ? <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open link</a> : null}
+                  {renderActions(study)}
+                  <PublishIssues issues={publishIssues} />
+                  {isCopied ? <div className="copy-toast">{fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}</div> : null}
                 </div>
-
-                {renderActions(study)}
-                <PublishIssues issues={publishIssues} />
-                {isCopied ? <div className="copy-toast">{fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}</div> : null}
               </article>
             );
           })}

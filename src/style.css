@@ -455,6 +455,8 @@ select:focus {
 .study-card {
   position: relative;
   min-height: 270px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Step 5a. A coloured edge stripe naming the test type at a glance. Drawn
@@ -479,6 +481,26 @@ select:focus {
   gap: 12px;
   margin-bottom: 8px;
   min-height: 30px;
+}
+
+/* Card body grows to take up whatever space is available, which is what
+   pushes .study-card-actions to a consistent bottom edge below, whatever
+   the title length or number of conditional lines above it. */
+.study-card-body {
+  flex: 1 1 auto;
+}
+
+/* Pinned to the bottom of the card regardless of how tall the body above
+   it is, and regardless of how many buttons each card's action rows carry
+   (a draft card and a published card do not offer the same buttons). This
+   is what keeps every card's bottom edge level in the grid. */
+.study-card-actions {
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.study-card-actions .button-row:first-child {
+  margin-top: 0;
 }
 
 .status-badge {
@@ -519,7 +541,6 @@ select:focus {
   width: fit-content;
   border-radius: 999px;
   padding: 4px 12px;
-  margin-bottom: 6px;
   font-size: 12px;
   font-weight: 800;
   line-height: 1.4;
@@ -539,6 +560,24 @@ select:focus {
   background: #fdf4ff;
   color: #86198f;
   border: 1px solid #f0abfc;
+}
+
+/* Card header and list-view leading cell use a solid, dark-background
+   version so the type tag reads with more weight than the pale status
+   chip beside it. The filter buttons and their pale active state above
+   are unaffected; they stay light on white. */
+.study-card-header .type-badge-tree,
+.test-list-table .type-badge-tree {
+  background: #1d4ed8;
+  color: #ffffff;
+  border-color: #1d4ed8;
+}
+
+.study-card-header .type-badge-tone,
+.test-list-table .type-badge-tone {
+  background: #86198f;
+  color: #ffffff;
+  border-color: #86198f;
 }
 
 .type-filter {
