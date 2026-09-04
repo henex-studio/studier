@@ -100,7 +100,7 @@ async function main() {
     await page.waitForSelector("h1", { state: "visible" });
     await page.waitForLoadState("networkidle");
     await settle(page);
-    await page.screenshot({ path: path.join(outputDir, "04-tree-builder.png"), fullPage: true });
+    await page.screenshot({ path: path.join(outputDir, "04-tree-builder.png") });
     console.log("Saved 04-tree-builder.png");
 
     // --- 5. Tone builder, populated with the demo tone test ---
@@ -110,7 +110,7 @@ async function main() {
     await page.waitForSelector("h1", { state: "visible" });
     await page.waitForLoadState("networkidle");
     await settle(page);
-    await page.screenshot({ path: path.join(outputDir, "05-tone-builder.png"), fullPage: true });
+    await page.screenshot({ path: path.join(outputDir, "05-tone-builder.png") });
     console.log("Saved 05-tone-builder.png");
 
     // --- 6. The publish check ---
@@ -125,12 +125,15 @@ async function main() {
     await page.waitForSelector("h1", { state: "visible" }); // now on the new draft's builder page
     await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
     const draftCard = await studyCard(page, "Screenshot publish check");
-    await draftCard.locator("button", { hasText: "Publish" }).click();
+    // "Publish" also matches inside "Clear data and publish" with a plain
+    // hasText filter (Playwright's text matching is case-insensitive
+    // substring by default), so this needs an exact role match instead.
+    await draftCard.getByRole("button", { name: "Publish", exact: true }).click();
     await draftCard.locator(".publish-validation-box").waitFor({ state: "visible", timeout: 15000 });
     await settle(page);
     await draftCard.screenshot({ path: path.join(outputDir, "06-publish-check.png") });
     console.log("Saved 06-publish-check.png");
-    await draftCard.locator("button", { hasText: "Delete" }).click();
+    await draftCard.getByRole("button", { name: "Delete", exact: true }).click();
     await draftCard.waitFor({ state: "detached", timeout: 15000 });
     console.log("Cleaned up the throwaway draft test.");
 
@@ -155,7 +158,7 @@ async function main() {
     await page.waitForSelector("h1", { state: "visible" });
     await page.waitForLoadState("networkidle");
     await settle(page);
-    await page.screenshot({ path: path.join(outputDir, "09-tree-dashboard.png"), fullPage: true });
+    await page.screenshot({ path: path.join(outputDir, "09-tree-dashboard.png") });
     console.log("Saved 09-tree-dashboard.png");
 
     // --- 10. Tone dashboard ---
@@ -165,7 +168,7 @@ async function main() {
     await page.waitForSelector("h1", { state: "visible" });
     await page.waitForLoadState("networkidle");
     await settle(page);
-    await page.screenshot({ path: path.join(outputDir, "10-tone-dashboard.png"), fullPage: true });
+    await page.screenshot({ path: path.join(outputDir, "10-tone-dashboard.png") });
     console.log("Saved 10-tone-dashboard.png");
 
     console.log(`\nAll ten screenshots are in ${outputDir}`);
