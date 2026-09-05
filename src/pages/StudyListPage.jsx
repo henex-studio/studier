@@ -511,10 +511,71 @@ export default function StudyListPage({ profile }) {
   return (
     <AdminShell profile={profile}>
       <section className="card">
+        <h1>Test collection</h1>
+        <p>Create and manage internal user tests.</p>
+      </section>
+
+      <section className={studyType === "tone_test" ? "card new-test-card new-test-card-tone" : "card new-test-card new-test-card-tree"}>
+        <div className="new-test-tabs" role="tablist" aria-label="Test type">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={studyType === "tree_test"}
+            className={studyType === "tree_test" ? "new-test-tab new-test-tab-active new-test-tab-tree" : "new-test-tab"}
+            onClick={() => setStudyType("tree_test")}
+          >
+            <Network size={14} strokeWidth={2.25} aria-hidden="true" />
+            Tree Test
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={studyType === "tone_test"}
+            className={studyType === "tone_test" ? "new-test-tab new-test-tab-active new-test-tab-tone" : "new-test-tab"}
+            onClick={() => setStudyType("tone_test")}
+          >
+            <MessageSquare size={14} strokeWidth={2.25} aria-hidden="true" />
+            Tone Test
+          </button>
+        </div>
+
+        <div className="new-test-panel">
+          <p className="muted-text">You are creating a {studyType === "tone_test" ? "Tone Test" : "Tree Test"}.</p>
+          <div className="inline-form new-test-form">
+            <input className="text-input" placeholder="New test title" value={title} onChange={(event) => setTitle(event.target.value)} />
+            <button className="primary-button" onClick={createStudy}>Add new test</button>
+          </div>
+          {message ? <p className="error-box">{message}</p> : null}
+          {profile.role !== "admin" ? <p className="muted-text">Test limit: {studies.length} of 3.</p> : null}
+        </div>
+      </section>
+
+      <section className="card">
         <div className="collection-header-row">
-          <div>
-            <h1>Test collection</h1>
-            <p>Create and manage internal user tests.</p>
+          <div className="type-filter" role="group" aria-label="Filter by test type">
+            <button
+              className={typeFilter === "all" ? "type-filter-button type-filter-button-active" : "type-filter-button"}
+              type="button"
+              onClick={() => setTypeFilter("all")}
+            >
+              All types
+            </button>
+            <button
+              className={typeFilter === "tree_test" ? "type-filter-button type-filter-button-active type-filter-button-tree" : "type-filter-button type-filter-button-tree"}
+              type="button"
+              onClick={() => setTypeFilter("tree_test")}
+            >
+              <Network size={14} strokeWidth={2.25} aria-hidden="true" />
+              Tree Test
+            </button>
+            <button
+              className={typeFilter === "tone_test" ? "type-filter-button type-filter-button-active type-filter-button-tone" : "type-filter-button type-filter-button-tone"}
+              type="button"
+              onClick={() => setTypeFilter("tone_test")}
+            >
+              <MessageSquare size={14} strokeWidth={2.25} aria-hidden="true" />
+              Tone Test
+            </button>
           </div>
 
           <div className="view-toggle" aria-label="Collection view mode">
@@ -533,60 +594,6 @@ export default function StudyListPage({ profile }) {
               List
             </button>
           </div>
-        </div>
-
-        <div className="inline-form new-test-form">
-          <div className="new-test-type-select" role="group" aria-label="Test type">
-            <button
-              type="button"
-              className={studyType === "tree_test" ? "type-filter-button type-filter-button-active type-filter-button-tree" : "type-filter-button type-filter-button-tree"}
-              aria-pressed={studyType === "tree_test"}
-              onClick={() => setStudyType("tree_test")}
-            >
-              <Network size={14} strokeWidth={2.25} aria-hidden="true" />
-              Tree Test
-            </button>
-            <button
-              type="button"
-              className={studyType === "tone_test" ? "type-filter-button type-filter-button-active type-filter-button-tone" : "type-filter-button type-filter-button-tone"}
-              aria-pressed={studyType === "tone_test"}
-              onClick={() => setStudyType("tone_test")}
-            >
-              <MessageSquare size={14} strokeWidth={2.25} aria-hidden="true" />
-              Tone Test
-            </button>
-          </div>
-          <input className="text-input" placeholder="New test title" value={title} onChange={(event) => setTitle(event.target.value)} />
-          <button className="primary-button" onClick={createStudy}>Add new test</button>
-        </div>
-
-        {message ? <p className="error-box">{message}</p> : null}
-        {profile.role !== "admin" ? <p className="muted-text">Test limit: {studies.length} of 3.</p> : null}
-
-        <div className="type-filter" role="group" aria-label="Filter by test type">
-          <button
-            className={typeFilter === "all" ? "type-filter-button type-filter-button-active" : "type-filter-button"}
-            type="button"
-            onClick={() => setTypeFilter("all")}
-          >
-            All types
-          </button>
-          <button
-            className={typeFilter === "tree_test" ? "type-filter-button type-filter-button-active type-filter-button-tree" : "type-filter-button type-filter-button-tree"}
-            type="button"
-            onClick={() => setTypeFilter("tree_test")}
-          >
-            <Network size={14} strokeWidth={2.25} aria-hidden="true" />
-            Tree Test
-          </button>
-          <button
-            className={typeFilter === "tone_test" ? "type-filter-button type-filter-button-active type-filter-button-tone" : "type-filter-button type-filter-button-tone"}
-            type="button"
-            onClick={() => setTypeFilter("tone_test")}
-          >
-            <MessageSquare size={14} strokeWidth={2.25} aria-hidden="true" />
-            Tone Test
-          </button>
         </div>
       </section>
 

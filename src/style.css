@@ -258,20 +258,67 @@ select:focus {
   margin-top: 10px;
 }
 
-.new-test-form {
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-}
-
-.new-test-type-select {
-  display: inline-flex;
-  gap: 8px;
-}
-
 @media (max-width: 640px) {
   .new-test-form {
     grid-template-columns: 1fr;
   }
+}
+
+.new-test-card {
+  padding-top: 0;
+}
+
+.new-test-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.new-test-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  background: transparent;
+  color: #64748b;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  transform: translateY(1px);
+}
+
+.new-test-tab-active.new-test-tab-tree {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.new-test-tab-active.new-test-tab-tone {
+  background: #fdf4ff;
+  border-color: #f0abfc;
+  color: #86198f;
+}
+
+.new-test-panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 0 16px 16px 16px;
+  padding: 16px;
+}
+
+.new-test-card-tree .new-test-panel {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.new-test-card-tone .new-test-panel {
+  background: #fdf4ff;
+  border-color: #f0abfc;
+}
+
+.new-test-panel .new-test-form {
+  margin-top: 4px;
 }
 
 .button-row,
