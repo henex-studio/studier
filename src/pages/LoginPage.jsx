@@ -107,6 +107,10 @@ export default function LoginPage() {
           <p className="auth-switch-text">
             Need an account? <a href="/register">Register</a>
           </p>
+
+          <p className="auth-switch-text">
+            <a className="text-link" href="/privacy" target="_blank" rel="noreferrer">Privacy policy</a>
+          </p>
         </section>
       </main>
     </div>

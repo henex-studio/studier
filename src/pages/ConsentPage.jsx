@@ -93,7 +93,7 @@ export default function ConsentPage({ profile = null, onAccepted = null }) {
             <p className="muted-text">
               These use conditions are about how you use Studier. What Studier collects about you,
               and about the people who answer your tests, is set out separately in the{" "}
-              <a href="/privacy">privacy policy</a>.
+              <a className="text-link" href="/privacy" target="_blank" rel="noreferrer">privacy policy</a>.
             </p>
 
             <label className="consent-check-row">

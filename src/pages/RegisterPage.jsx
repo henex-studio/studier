@@ -38,6 +38,7 @@ export default function RegisterPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkEmailFor, setCheckEmailFor] = useState("");
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
 
   async function register(event) {
     event.preventDefault();
@@ -69,6 +70,11 @@ export default function RegisterPage() {
 
     if (!cleanInviteCode) {
       setMessage("Invite code is required.");
+      return;
+    }
+
+    if (!privacyAgreed) {
+      setMessage("Please read and agree to the privacy policy before creating an account.");
       return;
     }
 
@@ -188,14 +194,22 @@ export default function RegisterPage() {
             />
 
             <p className="muted-text">
-              By creating an account you agree to our{" "}
-              <a href="/privacy">privacy policy</a>, which explains what Studier collects about
-              you and about the people who answer your tests.
+              Our <a className="text-link" href="/privacy" target="_blank" rel="noreferrer">privacy policy</a>{" "}
+              explains what Studier collects about you and about the people who answer your tests.
             </p>
+
+            <label className="consent-check-row">
+              <input
+                type="checkbox"
+                checked={privacyAgreed}
+                onChange={(e) => setPrivacyAgreed(e.target.checked)}
+              />
+              <span>I have read the privacy policy and agree to it.</span>
+            </label>
 
             {message ? <p className="error-box">{message}</p> : null}
 
-            <button className="primary-button" disabled={loading}>
+            <button className="primary-button" disabled={loading || !privacyAgreed}>
               {loading ? "Creating..." : "Create account"}
             </button>
           </form>

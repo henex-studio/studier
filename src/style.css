@@ -30,6 +30,21 @@ a {
   text-decoration: none;
 }
 
+/* PLAN-account-deletion.md section 2a. This global reset is what makes
+   every button and card action look right without its own class, but it
+   also means a link sitting inside a sentence of body text gives the
+   reader no sign that it is clickable. .text-link puts that signal back,
+   for links that are prose rather than buttons or navigation. */
+.text-link {
+  color: #1d4ed8;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.text-link:hover {
+  text-decoration: none;
+}
+
 table {
   width: 100%;
   min-width: 1200px;

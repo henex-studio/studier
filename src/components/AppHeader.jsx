@@ -73,6 +73,14 @@ export default function AppHeader({ profile }) {
           <button
             className="app-nav-link"
             type="button"
+            onClick={() => navigateTo("/privacy")}
+          >
+            Privacy
+          </button>
+
+          <button
+            className="app-nav-link"
+            type="button"
             onClick={signOut}
           >
             Sign out
