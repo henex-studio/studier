@@ -20,7 +20,11 @@ What is not solved is deleting that one row. A browser holding the anon key cann
 
 ## 2. Decisions only the operator can make
 
-Under H-5.5 these are recorded rather than guessed. The first two change what the feature does.
+**All five settled by the operator on 5 September 2026.** D1 responses are deleted with the account. D2 an administrator may delete their own account, except the last remaining one, which is refused. D3 the typed email confirmation is adopted. D4 the `privacy@henex.uk` route stays alongside the button. D5 the policy version is bumped and existing accounts keep their old string.
+
+**The operator added a sixth item**, from looking at the live page: the privacy policy link does not look like a link, and reading the policy should end in a tick box that has to be ticked before an account can be created. This is section 2a.
+
+The reasoning behind each recommendation is kept below, since it is what makes the answers legible later.
 
 **D1. Participant responses die with the account.** A creator who deletes their account destroys every answer that third-party participants gave to their studies. That is defensible, since the account holder is the one who collected it, and it is also irreversible and takes the research record with it. Two positions are reasonable. Either the deletion goes ahead and the warning states plainly how many responses will be destroyed, or deletion is blocked while any study still holds responses, forcing the person to export or clear first. Recommendation is the first, with counts shown in the warning, because the second turns "delete my account" into a puzzle the person has to solve before they are allowed to leave.
 
@@ -31,6 +35,18 @@ Under H-5.5 these are recorded rather than guessed. The first two change what th
 **D4. Whether the email route stays.** Someone who cannot sign in, because they have lost the password and the mailbox, cannot use a button. Recommendation is that the policy keeps the `privacy@henex.uk` route alongside the button rather than replacing it.
 
 **D5. Privacy policy version.** The policy currently makes a factual claim that this work makes false. Updating the text is not optional. Bumping `PRIVACY_POLICY_VERSION` is a separate question: existing accounts carry the old string, and Studier has no re-consent flow, so a bump records that the wording changed without anyone being asked to agree again. Recommendation is to bump it, since the string exists to answer "which wording did this person see", and to leave the existing accounts alone.
+
+---
+
+## 2a. Links that look like links, and an explicit tick
+
+Two separate problems, found by the operator on the live page.
+
+**The link does not look like one.** `style.css` sets `a { color: inherit; text-decoration: none; }` globally. Every link in the product therefore renders as ordinary text unless a class puts the styling back, which the buttons and the guide contents list do and inline body text does not. The privacy policy link on the registration form is live and clickable; it simply gives the reader nothing to indicate that. The fix is an inline link style applied where links sit inside a sentence, not a change to the global rule, since the global rule is what stops every button looking underlined.
+
+**Agreement is implied rather than given.** The registration form says "By creating an account you agree to our privacy policy". The sign-up then stamps `profiles.privacy_version` with the version the person was shown. That stamp currently records an agreement nobody was asked for. Adding a tick box that must be ticked before the account can be created makes the stamp honest, which matters more here than the usual reason for tick boxes: the string exists specifically to answer "which wording did this person agree to".
+
+The use conditions already work this way on the consent screen, so this is the same mechanism applied to the second document, not a new pattern. Whether the two end up as one tick or two is a small design question to settle when the page is open.
 
 ---
 
@@ -62,6 +78,8 @@ Database first, then the page, in the order `CLAUDE.md` requires.
 
 **Step 5. Make the policy reachable, which today it is not.** The links exist only on the registration form and the consent screen. Nobody who is signed in, and nobody sitting on the sign-in page, can reach `/privacy` from the interface at all. Add a link in the shared shell so it is available from every signed-in page, and one on the sign-in page. `LoginPage.jsx` is a review path and stops for approval.
 
+**Step 5a. Inline link styling and the registration tick box, per section 2a.** `style.css` and `RegisterPage.jsx`, both review paths, so both stop for approval.
+
 **Step 6. Verify on the deployed preview, with a throwaway account.** Create an account, give it a test, answer that test as a participant so real responses exist, then delete the account from the page. Confirm the auth user is gone, the profile is gone, the test and its responses are gone, the session no longer works, and the public test link no longer resolves. Local checks do not prove the session behaviour.
 
 ---
@@ -78,6 +96,18 @@ Nothing in this plan can be tested honestly on a local machine. Deleting the row
 
 ---
 
-## 6. Effort
+## 6. Models, per working agreement section 6
+
+The work splits into three kinds, and they do not want the same model.
+
+Steps 1 and 2, the `SECURITY DEFINER` function and the cascade check, are database and access control design. Opus with extended thinking.
+
+Step 4, the policy text, is a set of factual claims about the system that have to be true rather than a piece of writing. Opus with extended thinking, the same reasoning recorded in `DEV-LOG.md` when the policy was first written.
+
+Steps 3, 5 and 5a, the account page, the links and the tick box, are build and generate work against patterns that already exist. Sonnet, no extended thinking.
+
+---
+
+## 7. Effort
 
 Steps 1 and 2 together are around an hour. Step 3 is two to three hours, most of it in the counts and the confirmation flow rather than the deletion itself. Step 4 is an hour of careful writing. Step 5 is small. Step 6 is an hour and should not be skipped.
