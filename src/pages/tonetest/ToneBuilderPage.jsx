@@ -799,10 +799,8 @@ export default function ToneBuilderPage({ profile, studyId }) {
   return (
     <AdminShell profile={profile}>
       <section className="card">
-        <div className="button-row" style={{ justifyContent: "space-between" }}>
-          <h1>{study.title || "Tone Test"}</h1>
-          <button className="secondary-button" onClick={() => navigateTo("/admin")}>Back to test collection</button>
-        </div>
+        <span className="badge">{study.status}</span>
+        <h1>{study.title || "Tone Test"}</h1>
         <p className="muted-text">
           Tone Test helps a team decide which of two to four wordings to publish. It supports the
           decision. It does not replace policy, legal, privacy, comms or accessibility approval.
@@ -997,13 +995,18 @@ export default function ToneBuilderPage({ profile, studyId }) {
         />
       </section>
 
-      <section className="card">
+      <section className="card sticky-actions">
+        {message ? <p className={message === "Saved." ? "success-box" : "error-box"}>{message}</p> : null}
         <div className="button-row">
-          <button className="primary-button" disabled={saving} onClick={saveAll}>
+          <button className="primary-button" type="button" disabled={saving} onClick={saveAll}>
             {saving ? "Saving..." : "Save"}
           </button>
+          <button className="secondary-button" type="button" onClick={() => navigateTo("/admin")}>Back to test collection</button>
+          <a className="secondary-button" href={`/dashboard/${study.id}`}>Dashboard</a>
+          {study.status === "published" ? (
+            <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open test link</a>
+          ) : null}
         </div>
-        {message ? <p className={message === "Saved." ? "success-box" : "error-box"}>{message}</p> : null}
       </section>
     </AdminShell>
   );

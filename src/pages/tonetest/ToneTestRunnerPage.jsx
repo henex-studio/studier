@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { getParticipantId } from "../../lib/participantId";
 import { ROLE_KEYS, ROLE_LABELS, ROLE_DESCRIPTIONS } from "../../lib/tonetest/defaultQuestions";
@@ -55,8 +55,21 @@ export default function ToneTestRunnerPage({ slug }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [finished, setFinished] = useState(false);
+  const [autoStarting, setAutoStarting] = useState(false);
 
   const participantId = study ? getParticipantId(study.id) : "";
+
+  // A link generated for one role carries ?role=<key> so the person it was
+  // sent to lands straight on their own questions, with no "choose your
+  // role" screen to get wrong. The bare link (no parameter, or an
+  // unrecognised one) keeps the original self-select screen as a fallback,
+  // so an existing link never breaks. See harness-docs/decision-log.md,
+  // the role-links decision recorded 5 September 2026.
+  const roleFromLink = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get("role");
+    return ROLE_KEYS.includes(value) ? value : null;
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -133,6 +146,43 @@ export default function ToneTestRunnerPage({ slug }) {
     load();
     return () => { active = false; };
   }, [slug]);
+
+  // Once the study, settings and any existing session have loaded, a
+  // role-carrying link starts the session itself, with no click needed.
+  // Guarded so it only ever runs once, and only when there is genuinely no
+  // session yet: a returning participant's existing session always wins,
+  // even if the link they used names a different role than the one they
+  // are actually locked into.
+  useEffect(() => {
+    if (loading || !study || session || autoStarting || !roleFromLink) return;
+
+    const activeRoles = settings?.active_roles_json || {};
+    const activeRoleKeys = ROLE_KEYS.filter((roleKey) => activeRoles[roleKey] !== false);
+    if (!activeRoleKeys.includes(roleFromLink)) return;
+
+    let active = true;
+    setAutoStarting(true);
+
+    supabase.rpc("start_tone_session", {
+      p_study_id: study.id,
+      p_participant_id: participantId,
+      p_role: roleFromLink
+    }).then(async ({ data, error }) => {
+      if (!active) return;
+      setAutoStarting(false);
+
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+
+      setSession(data);
+      setSelectedRole(data.selected_role);
+      await loadQuestionsForRole(study.id, data.selected_role);
+    });
+
+    return () => { active = false; };
+  }, [loading, study, session, settings, autoStarting, roleFromLink, participantId]);
 
   async function loadQuestionsForRole(studyId, roleKey) {
     setContentLoading(true);
@@ -412,74 +462,86 @@ export default function ToneTestRunnerPage({ slug }) {
           </div>
         </section>
 
-        <section className="card">
-          <h2>Choose your role</h2>
-          <p className="muted-text">
-            {roleIsLocked
-              ? "You already started answering as this role, so it is fixed for the rest of this test."
-              : "Pick the role that best describes why you are reviewing this wording."}
-          </p>
+        {roleFromLink && (session || autoStarting) ? (
+          <section className="card">
+            <h2>Your role</h2>
+            <p className="muted-text">
+              {autoStarting
+                ? "Starting..."
+                : <>You are answering as <strong>{ROLE_LABELS[selectedRole || roleFromLink]}</strong>.</>}
+            </p>
+            {message ? <p className="error-box">{message}</p> : null}
+          </section>
+        ) : (
+          <section className="card">
+            <h2>Choose your role</h2>
+            <p className="muted-text">
+              {roleIsLocked
+                ? "You already started answering as this role, so it is fixed for the rest of this test."
+                : "Pick the role that best describes why you are reviewing this wording."}
+            </p>
 
-          {activeRoleKeys.length === 0 ? (
-            <p className="error-box">This test has no active roles to answer as yet.</p>
-          ) : (
-            <div>
-              {activeRoleKeys.map((roleKey) => {
-                const isSelected = selectedRole === roleKey;
-                return (
-                  <button
-                    key={roleKey}
-                    type="button"
-                    className={isSelected ? "primary-button" : "secondary-button"}
-                    disabled={roleIsLocked && !isSelected}
-                    onClick={() => chooseRole(roleKey)}
-                    style={{ display: "block", width: "100%", textAlign: "left", marginBottom: "8px" }}
-                  >
-                    <strong>{ROLE_LABELS[roleKey]}</strong>
-                    <div className="muted-text">{ROLE_DESCRIPTIONS[roleKey]}</div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            {activeRoleKeys.length === 0 ? (
+              <p className="error-box">This test has no active roles to answer as yet.</p>
+            ) : (
+              <div>
+                {activeRoleKeys.map((roleKey) => {
+                  const isSelected = selectedRole === roleKey;
+                  return (
+                    <button
+                      key={roleKey}
+                      type="button"
+                      className={isSelected ? "primary-button" : "secondary-button"}
+                      disabled={roleIsLocked && !isSelected}
+                      onClick={() => chooseRole(roleKey)}
+                      style={{ display: "block", width: "100%", textAlign: "left", marginBottom: "8px" }}
+                    >
+                      <strong>{ROLE_LABELS[roleKey]}</strong>
+                      <div className="muted-text">{ROLE_DESCRIPTIONS[roleKey]}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-          {message ? <p className="error-box">{message}</p> : null}
+            {message ? <p className="error-box">{message}</p> : null}
 
-          {!session ? (
-            <div className="button-row">
-              <button
-                className="primary-button"
-                disabled={!selectedRole || starting || activeRoleKeys.length === 0}
-                onClick={confirmRole}
-              >
-                {starting ? "Starting..." : "Confirm and start"}
-              </button>
-            </div>
-          ) : null}
-        </section>
+            {!session ? (
+              <div className="button-row">
+                <button
+                  className="primary-button"
+                  disabled={!selectedRole || starting || activeRoleKeys.length === 0}
+                  onClick={confirmRole}
+                >
+                  {starting ? "Starting..." : "Confirm and start"}
+                </button>
+              </div>
+            ) : null}
+          </section>
+        )}
 
         {session ? (
-          <section className="card">
-            <h2>Wording</h2>
-            {contentLoading ? (
-              <p className="muted-text">Loading...</p>
-            ) : shownVariants.length === 0 ? (
-              <p className="error-box">No wording is available for this test yet.</p>
-            ) : (
-              shownVariants.map((variant, index) => (
-                <div className="question-card" key={variant.id}>
-                  {variantMode === "compare_all" ? (
-                    <p className="form-label">Wording {index + 1}</p>
-                  ) : null}
-                  <p>{variant.variant_text}</p>
-                </div>
-              ))
-            )}
-          </section>
-        ) : null}
+          <div className="tone-runner-layout">
+            <section className="card tone-wording-panel">
+              <h2>Wording</h2>
+              {contentLoading ? (
+                <p className="muted-text">Loading...</p>
+              ) : shownVariants.length === 0 ? (
+                <p className="error-box">No wording is available for this test yet.</p>
+              ) : (
+                shownVariants.map((variant, index) => (
+                  <div className="question-card" key={variant.id}>
+                    {variantMode === "compare_all" ? (
+                      <p className="form-label">Wording {index + 1}</p>
+                    ) : null}
+                    <p>{variant.variant_text}</p>
+                  </div>
+                ))
+              )}
+            </section>
 
-        {session && !contentLoading ? (
-          <section className="card">
+        {!contentLoading ? (
+          <section className="card tone-questions-panel">
             <h2>Questions</h2>
             {questions.length === 0 ? (
               <p className="muted-text">No questions found for this role.</p>
@@ -600,6 +662,8 @@ export default function ToneTestRunnerPage({ slug }) {
               </button>
             </div>
           </section>
+        ) : null}
+          </div>
         ) : null}
       </main>
     </div>

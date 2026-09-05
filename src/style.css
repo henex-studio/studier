@@ -781,6 +781,26 @@ select:focus {
   overflow-wrap: anywhere;
 }
 
+/* One row per active role, each with its own copy button, replacing the
+   single "Copy link" button a tone test used before role links existed. */
+.tone-role-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.tone-role-link-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.tone-role-link-row .copy-toast {
+  margin-top: 0;
+}
+
 .list-view-card {
   padding: 0;
   overflow: hidden;
@@ -904,6 +924,18 @@ select:focus {
   display: grid;
   gap: 16px;
   align-items: stretch;
+}
+
+/* Tone test participant view. On a narrow screen this stacks like any other
+   pair of cards: wording, then questions below it. From 1024px up it
+   becomes two columns, same threshold and same sticky approach as
+   .builder-layout above, so the wording stays on screen while a participant
+   scrolls through the rating and gate questions instead of scrolling back
+   up to re-read it. */
+.tone-runner-layout {
+  display: grid;
+  gap: 16px;
+  align-items: start;
 }
 
 .sticky-tree-panel,
@@ -1456,6 +1488,17 @@ select:focus {
     max-height: calc(100vh - 32px);
     overflow: auto;
     align-self: start;
+  }
+
+  .tone-runner-layout {
+    grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+  }
+
+  .tone-wording-panel {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
   }
 
   .guide-layout {

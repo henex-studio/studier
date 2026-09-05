@@ -3,6 +3,7 @@ import { Network, MessageSquare } from "lucide-react";
 import AdminShell from "../components/AdminShell";
 import { supabase } from "../lib/supabase";
 import { getTonePublishIssues } from "../lib/tonetest/publishChecks";
+import ToneTestLinks from "../components/tonetest/ToneTestLinks";
 
 
 const NZ_TIME_ZONE = "Pacific/Auckland";
@@ -488,7 +489,11 @@ export default function StudyListPage({ profile }) {
         )}
 
         {study.status === "published" ? (
-          <button className="secondary-button" type="button" disabled={isBusy} onClick={() => copyTestLink(study)}>Copy link</button>
+          study.study_type === "tone_test" ? (
+            <ToneTestLinks study={study} />
+          ) : (
+            <button className="secondary-button" type="button" disabled={isBusy} onClick={() => copyTestLink(study)}>Copy link</button>
+          )
         ) : null}
 
         {study.status !== "published" ? (
