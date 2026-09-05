@@ -548,52 +548,50 @@ export default function StudyListPage({ profile }) {
         {profile.role !== "admin" ? <p className="muted-text">Test limit: {studies.length} of 3.</p> : null}
       </section>
 
-      <section className="card">
-        <div className="collection-header-row">
-          <div className="type-filter" role="group" aria-label="Filter by test type">
-            <button
-              className={typeFilter === "all" ? "type-filter-button type-filter-button-active" : "type-filter-button"}
-              type="button"
-              onClick={() => setTypeFilter("all")}
-            >
-              All types
-            </button>
-            <button
-              className={typeFilter === "tree_test" ? "type-filter-button type-filter-button-active type-filter-button-tree" : "type-filter-button type-filter-button-tree"}
-              type="button"
-              onClick={() => setTypeFilter("tree_test")}
-            >
-              <Network size={14} strokeWidth={2.25} aria-hidden="true" />
-              Tree Test
-            </button>
-            <button
-              className={typeFilter === "tone_test" ? "type-filter-button type-filter-button-active type-filter-button-tone" : "type-filter-button type-filter-button-tone"}
-              type="button"
-              onClick={() => setTypeFilter("tone_test")}
-            >
-              <MessageSquare size={14} strokeWidth={2.25} aria-hidden="true" />
-              Tone Test
-            </button>
-          </div>
-
-          <div className="view-toggle" aria-label="Collection view mode">
-            <button
-              className={viewMode === "cards" ? "view-toggle-button view-toggle-button-active" : "view-toggle-button"}
-              type="button"
-              onClick={() => setViewMode("cards")}
-            >
-              Cards
-            </button>
-            <button
-              className={viewMode === "list" ? "view-toggle-button view-toggle-button-active" : "view-toggle-button"}
-              type="button"
-              onClick={() => setViewMode("list")}
-            >
-              List
-            </button>
-          </div>
+      <div className="collection-header-row list-controls">
+        <div className="type-filter" role="group" aria-label="Filter by test type">
+          <button
+            className={typeFilter === "all" ? "type-filter-button type-filter-button-active" : "type-filter-button"}
+            type="button"
+            onClick={() => setTypeFilter("all")}
+          >
+            All types
+          </button>
+          <button
+            className={typeFilter === "tree_test" ? "type-filter-button type-filter-button-active type-filter-button-tree" : "type-filter-button type-filter-button-tree"}
+            type="button"
+            onClick={() => setTypeFilter("tree_test")}
+          >
+            <Network size={14} strokeWidth={2.25} aria-hidden="true" />
+            Tree Test
+          </button>
+          <button
+            className={typeFilter === "tone_test" ? "type-filter-button type-filter-button-active type-filter-button-tone" : "type-filter-button type-filter-button-tone"}
+            type="button"
+            onClick={() => setTypeFilter("tone_test")}
+          >
+            <MessageSquare size={14} strokeWidth={2.25} aria-hidden="true" />
+            Tone Test
+          </button>
         </div>
-      </section>
+
+        <div className="view-toggle" aria-label="Collection view mode">
+          <button
+            className={viewMode === "cards" ? "view-toggle-button view-toggle-button-active" : "view-toggle-button"}
+            type="button"
+            onClick={() => setViewMode("cards")}
+          >
+            Cards
+          </button>
+          <button
+            className={viewMode === "list" ? "view-toggle-button view-toggle-button-active" : "view-toggle-button"}
+            type="button"
+            onClick={() => setViewMode("list")}
+          >
+            List
+          </button>
+        </div>
+      </div>
 
       {loading ? <div className="card">Loading...</div> : null}
       {!loading && studies.length === 0 ? <div className="card">No tests yet.</div> : null}
