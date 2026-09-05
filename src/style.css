@@ -259,11 +259,13 @@ select:focus {
 }
 
 .new-test-form {
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
 }
 
-.new-test-form select {
-  min-width: 130px;
+.new-test-type-select {
+  display: inline-flex;
+  gap: 8px;
 }
 
 @media (max-width: 640px) {

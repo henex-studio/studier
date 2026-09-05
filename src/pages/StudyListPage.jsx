@@ -536,16 +536,27 @@ export default function StudyListPage({ profile }) {
         </div>
 
         <div className="inline-form new-test-form">
+          <div className="new-test-type-select" role="group" aria-label="Test type">
+            <button
+              type="button"
+              className={studyType === "tree_test" ? "type-filter-button type-filter-button-active type-filter-button-tree" : "type-filter-button type-filter-button-tree"}
+              aria-pressed={studyType === "tree_test"}
+              onClick={() => setStudyType("tree_test")}
+            >
+              <Network size={14} strokeWidth={2.25} aria-hidden="true" />
+              Tree Test
+            </button>
+            <button
+              type="button"
+              className={studyType === "tone_test" ? "type-filter-button type-filter-button-active type-filter-button-tone" : "type-filter-button type-filter-button-tone"}
+              aria-pressed={studyType === "tone_test"}
+              onClick={() => setStudyType("tone_test")}
+            >
+              <MessageSquare size={14} strokeWidth={2.25} aria-hidden="true" />
+              Tone Test
+            </button>
+          </div>
           <input className="text-input" placeholder="New test title" value={title} onChange={(event) => setTitle(event.target.value)} />
-          <select
-            className="text-input"
-            aria-label="Test type"
-            value={studyType}
-            onChange={(event) => setStudyType(event.target.value)}
-          >
-            <option value="tree_test">Tree Test</option>
-            <option value="tone_test">Tone Test</option>
-          </select>
           <button className="primary-button" onClick={createStudy}>Add new test</button>
         </div>
 
