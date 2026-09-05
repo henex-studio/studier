@@ -516,12 +516,12 @@ export default function StudyListPage({ profile }) {
       </section>
 
       <section className={studyType === "tone_test" ? "card new-test-card new-test-card-tone" : "card new-test-card new-test-card-tree"}>
-        <div className="new-test-tabs" role="tablist" aria-label="Test type">
+        <div className="new-test-switch" role="tablist" aria-label="Test type">
           <button
             type="button"
             role="tab"
             aria-selected={studyType === "tree_test"}
-            className={studyType === "tree_test" ? "new-test-tab new-test-tab-active new-test-tab-tree" : "new-test-tab"}
+            className={studyType === "tree_test" ? "new-test-switch-button new-test-switch-button-active new-test-switch-button-tree" : "new-test-switch-button"}
             onClick={() => setStudyType("tree_test")}
           >
             <Network size={14} strokeWidth={2.25} aria-hidden="true" />
@@ -531,7 +531,7 @@ export default function StudyListPage({ profile }) {
             type="button"
             role="tab"
             aria-selected={studyType === "tone_test"}
-            className={studyType === "tone_test" ? "new-test-tab new-test-tab-active new-test-tab-tone" : "new-test-tab"}
+            className={studyType === "tone_test" ? "new-test-switch-button new-test-switch-button-active new-test-switch-button-tone" : "new-test-switch-button"}
             onClick={() => setStudyType("tone_test")}
           >
             <MessageSquare size={14} strokeWidth={2.25} aria-hidden="true" />
@@ -539,15 +539,13 @@ export default function StudyListPage({ profile }) {
           </button>
         </div>
 
-        <div className="new-test-panel">
-          <p className="muted-text">You are creating a {studyType === "tone_test" ? "Tone Test" : "Tree Test"}.</p>
-          <div className="inline-form new-test-form">
-            <input className="text-input" placeholder="New test title" value={title} onChange={(event) => setTitle(event.target.value)} />
-            <button className="primary-button" onClick={createStudy}>Add new test</button>
-          </div>
-          {message ? <p className="error-box">{message}</p> : null}
-          {profile.role !== "admin" ? <p className="muted-text">Test limit: {studies.length} of 3.</p> : null}
+        <p className="muted-text">You are creating a {studyType === "tone_test" ? "Tone Test" : "Tree Test"}.</p>
+        <div className="inline-form new-test-form">
+          <input className="text-input" placeholder="New test title" value={title} onChange={(event) => setTitle(event.target.value)} />
+          <button className="primary-button" onClick={createStudy}>Add new test</button>
         </div>
+        {message ? <p className="error-box">{message}</p> : null}
+        {profile.role !== "admin" ? <p className="muted-text">Test limit: {studies.length} of 3.</p> : null}
       </section>
 
       <section className="card">
