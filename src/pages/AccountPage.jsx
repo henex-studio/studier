@@ -215,7 +215,7 @@ export default function AccountPage({ profile, onUpdated }) {
 
         <div className="button-row">
           <button
-            className="danger-button"
+            className={confirmMatches ? "danger-button danger-button-armed" : "danger-button"}
             disabled={!confirmMatches || deleting}
             onClick={deleteAccount}
           >
