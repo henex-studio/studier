@@ -770,6 +770,10 @@ The results section is the part that needed the most care, since it is where the
 
 ---
 
-### End of the registration and privacy work, for now
+### End of the registration and privacy work
 
-All eight steps of `PLAN-registration.md` are complete. The privacy policy itself, `PLAN-privacy-policy.md` Steps 1 through 6, has not been started; it was deliberately sequenced after registration, since the policy's "where information is sent" section depends on the sending service registration Step 3 just put in place. That is the natural next piece of platform work whenever the operator wants it. Milestone 3 of Tone Test is otherwise next in line per `DEV-PLAN.md`.
+**Corrected 5 September 2026.** This section previously said the privacy policy had not been started. That was written on 26 August, before the policy was built later the same day, and was never updated; the entry above, "Privacy policy, Steps 1 to 5 — DONE", is the accurate one. The stale wording was left sitting at the end of the file where a new session reads it last and believes it, which is exactly how it misled one. Both pieces of work are finished:
+
+All eight steps of `PLAN-registration.md` are complete. `PLAN-privacy-policy.md` Steps 1 to 5 are complete, and Step 6 was a decision rather than work: the use conditions and the privacy policy stay separate, each linking to the other.
+
+**Neither is in production.** Both live on `dev`, along with everything else built since the harness began. `main` is still the pre-harness upload and carries no privacy policy, no password reset, and none of Tone Test. Promotion is the operator's decision alone under H-3.5.

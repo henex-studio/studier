@@ -2,7 +2,9 @@
 
 **Written:** 24 August 2026
 **Revised:** 24 August 2026, after the operator connected the fevnote repository and settled two decisions. The invite code stays. The three protected authentication files may be changed.
-**Status:** proposal, nothing built. Approve before work starts.
+**Status:** BUILT AND COMPLETE. All eight steps landed 24 to 26 August 2026, on `dev`. See `DEV-LOG.md`, "Registration and privacy work", for what each step actually did. The sections below are the plan as approved, kept for the reasoning; they are not a description of outstanding work.
+
+**Not yet in production.** Like everything else built since the harness began, this lives on `dev` and has never been promoted to `main`. Promotion is the operator's decision alone under H-3.5.
 **Reference implementation:** `Fevnote/code/fevnote`, in particular `src/services/authService.js`, `src/pages/Register.jsx`, `src/pages/ForgotPassword.jsx`, and `supabase/migrations/0004_multi_account_foundation.sql`.
 
 The earlier draft of this plan assumed the invite code was being removed. The operator has decided to keep it alongside email verification, which is also what fevnote does. That decision simplifies the work and removes most of the risk the first draft was worried about.

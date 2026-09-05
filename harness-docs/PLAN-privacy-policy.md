@@ -2,7 +2,9 @@
 
 **Written:** 24 August 2026
 **Revised:** 24 August 2026, after the operator connected the fevnote repository and settled the three decisions this plan was blocked on.
-**Status:** proposal, nothing built. Approve before work starts.
+**Status:** BUILT AND COMPLETE. Steps 1 to 5 landed 26 August 2026, on `dev`. Step 6 was a decision rather than work, and it is settled: the use conditions and the privacy policy stay as two separate documents, each linking to the other, which was this plan's own recommendation. See `DEV-LOG.md`, "Privacy policy, Steps 1 to 5". The sections below are the plan as approved, kept for the reasoning; they are not a description of outstanding work.
+
+**Not yet in production.** Like everything else built since the harness began, this lives on `dev` and has never been promoted to `main`. Promotion is the operator's decision alone under H-3.5.
 **Reference implementation:** `Fevnote/code/fevnote`, in particular `docs/PRIVACY-POLICY.md`, `src/pages/PrivacyPolicy.jsx` and `src/services/authService.js`.
 **Not legal advice.** fevnote's policy makes specific claims under the Privacy Act 2020. Reusing its structure is sound. Reusing its wording without checking that each claim is true of Studier is not.
 
