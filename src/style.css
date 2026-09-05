@@ -218,23 +218,6 @@ ul {
   background: #fee2e2;
 }
 
-/* AccountPage's own deletion button, once the typed email confirms the
-   action is armed. A solid fill instead of the pale default danger-button
-   used elsewhere, so the moment it becomes clickable reads as clearly as
-   the moment it stops being greyed out. Declared after .danger-button:hover
-   deliberately: both rules match on hover with equal specificity, and the
-   later one wins the tie, which is what makes the armed state hold its own
-   colour on hover instead of falling back to the pale one. */
-.danger-button-armed {
-  background: #dc2626;
-  border-color: #dc2626;
-  color: #ffffff;
-}
-
-.danger-button-armed:hover {
-  background: #b91c1c;
-}
-
 .form-stack,
 .form-block {
   display: grid;
