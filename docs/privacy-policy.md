@@ -1,12 +1,14 @@
 # Studier Privacy Policy
 
-**Version 2026-08-26**
+**Version 2026-09-05**
 
 This version string is recorded against your account when you agree to
 this policy at sign-up, so it stays possible to tell which wording each
 person actually agreed to after the policy is later revised. It matches
-`PRIVACY_POLICY_VERSION` in `src/pages/PrivacyPolicyPage.jsx`. If you
-change the wording below in any way that affects meaning, change both.
+`PRIVACY_POLICY_VERSION`, exported from `src/pages/PrivacyPolicyContent.jsx`
+and re-exported from `src/pages/PrivacyPolicyPage.jsx` for the pages that
+already imported it from there. If you change the wording below in any
+way that affects meaning, change both.
 
 This policy covers two different groups of people, and says so
 throughout, because what Studier holds about each is very different.
@@ -136,10 +138,15 @@ An account holder can clear all responses to one of their tests at any
 time, or delete the test entirely, which permanently removes its
 responses. Doing either cannot be undone.
 
-Studier cannot yet delete an account by itself. If you want your account
-and everything in it removed, email privacy@henex.uk from the address on
-the account and we will do it by hand. We will respond within 20 working
-days.
+You can permanently delete your own account from the account page, at
+any time, without contacting us. This deletes your account, every test
+you own, and every response those tests have collected, including
+responses from participants who never had an account here. There is no
+recovery once this is done.
+
+If you cannot sign in, email privacy@henex.uk from the address on the
+account and we will delete it by hand. We will respond within 20
+working days.
 
 Because Studier is in testing, we may end the test and close all
 accounts. If that happens we will tell account holders first and give a
@@ -156,8 +163,7 @@ file from within the app, and can edit or delete their tests and their
 responses directly.
 
 For anything the app cannot do for you, such as correcting your account
-email or deleting your account entirely, email privacy@henex.uk from the
-address on your account.
+email, email privacy@henex.uk from the address on your account.
 
 Participants are not identified, so we generally cannot find or return
 "your" answers on request: we have no way to tell which anonymous
@@ -165,8 +171,8 @@ responses are yours. If you gave an answer you regret and can tell us
 which test you answered and roughly when, contact the person who sent you
 the test link, since they are the one able to identify and remove it.
 
-You can withdraw your agreement to this policy at any time by asking us
-to delete your account.
+You can withdraw your agreement to this policy at any time by deleting
+your account, from the account page or by asking us to do it for you.
 
 ## Security
 

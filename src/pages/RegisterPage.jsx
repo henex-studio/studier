@@ -3,6 +3,7 @@ import { supabase, supabaseReady } from "../lib/supabase";
 import { CONSENT_VERSION, hasLocalConsent } from "./ConsentPage";
 import { PRIVACY_POLICY_VERSION } from "./PrivacyPolicyPage";
 import Hero from "../components/Hero";
+import PrivacyPolicyModal from "../components/PrivacyPolicyModal";
 
 function normalizeInviteCode(value) {
   return value.trim().toUpperCase();
@@ -39,6 +40,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [checkEmailFor, setCheckEmailFor] = useState("");
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   async function register(event) {
     event.preventDefault();
@@ -194,7 +196,10 @@ export default function RegisterPage() {
             />
 
             <p className="muted-text">
-              Our <a className="text-link" href="/privacy" target="_blank" rel="noreferrer">privacy policy</a>{" "}
+              Our{" "}
+              <button type="button" className="text-link text-link-button" onClick={() => setPrivacyOpen(true)}>
+                privacy policy
+              </button>{" "}
               explains what Studier collects about you and about the people who answer your tests.
             </p>
 
@@ -219,6 +224,8 @@ export default function RegisterPage() {
           </p>
         </section>
       </main>
+
+      <PrivacyPolicyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
     </div>
   );
 }

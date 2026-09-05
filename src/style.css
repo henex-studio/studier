@@ -45,6 +45,14 @@ a {
   text-decoration: none;
 }
 
+.text-link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
 table {
   width: 100%;
   min-width: 1200px;
@@ -1988,6 +1996,26 @@ select:focus {
 
 .feedback-form .form-label {
   margin-top: 6px;
+}
+
+/* PrivacyPolicyModal. Same backdrop as feedback, centred and much larger
+   instead of a bottom-right toast, since a privacy policy is long and a
+   feedback form is short. */
+.policy-modal-backdrop {
+  align-items: center;
+  justify-content: center;
+}
+
+.policy-modal {
+  max-width: 640px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.policy-modal-body {
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .feedback-form .button-row {

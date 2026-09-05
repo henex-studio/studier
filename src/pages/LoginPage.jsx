@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { supabase, supabaseReady } from "../lib/supabase";
 import Hero from "../components/Hero";
+import PrivacyPolicyModal from "../components/PrivacyPolicyModal";
 
 function navigateTo(path) {
   window.history.pushState({}, "", path);
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   const registered = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -109,10 +111,14 @@ export default function LoginPage() {
           </p>
 
           <p className="auth-switch-text">
-            <a className="text-link" href="/privacy" target="_blank" rel="noreferrer">Privacy policy</a>
+            <button type="button" className="text-link text-link-button" onClick={() => setPrivacyOpen(true)}>
+              Privacy policy
+            </button>
           </p>
         </section>
       </main>
+
+      <PrivacyPolicyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
     </div>
   );
 }

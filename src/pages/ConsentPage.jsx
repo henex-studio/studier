@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { supabase } from "../lib/supabase";
 import Hero from "../components/Hero";
+import PrivacyPolicyModal from "../components/PrivacyPolicyModal";
 
 export const CONSENT_VERSION = "2026-05-v2";
 export const CONSENT_STORAGE_KEY = "studier_platform_consent_version";
@@ -26,6 +27,7 @@ export default function ConsentPage({ profile = null, onAccepted = null }) {
   const [agreed, setAgreed] = useState(false);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
   const signedIn = Boolean(profile?.id);
 
   async function acceptForSignedInUser() {
@@ -93,7 +95,9 @@ export default function ConsentPage({ profile = null, onAccepted = null }) {
             <p className="muted-text">
               These use conditions are about how you use Studier. What Studier collects about you,
               and about the people who answer your tests, is set out separately in the{" "}
-              <a className="text-link" href="/privacy" target="_blank" rel="noreferrer">privacy policy</a>.
+              <button type="button" className="text-link text-link-button" onClick={() => setPrivacyOpen(true)}>
+                privacy policy
+              </button>.
             </p>
 
             <label className="consent-check-row">
@@ -141,6 +145,8 @@ export default function ConsentPage({ profile = null, onAccepted = null }) {
           )}
         </section>
       </main>
+
+      <PrivacyPolicyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
     </div>
   );
 }
