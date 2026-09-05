@@ -16,7 +16,8 @@ import { ROLE_KEYS, ROLE_LABELS } from "../../lib/tonetest/defaultQuestions";
 // breaks.
 export default function ToneTestLinks({ study }) {
   const [activeRoleKeys, setActiveRoleKeys] = useState(null);
-  const [copiedRole, setCopiedRole] = useState("");
+  const [chosenRole, setChosenRole] = useState("");
+  const [copied, setCopied] = useState(false);
   const [fallbackLink, setFallbackLink] = useState("");
 
   useEffect(() => {
@@ -32,25 +33,26 @@ export default function ToneTestLinks({ study }) {
       if (!active) return;
 
       const activeRoles = data?.active_roles_json || {};
-      setActiveRoleKeys(ROLE_KEYS.filter((roleKey) => activeRoles[roleKey] !== false));
+      const keys = ROLE_KEYS.filter((roleKey) => activeRoles[roleKey] !== false);
+      setActiveRoleKeys(keys);
+      setChosenRole(keys[0] || "");
     }
 
     load();
     return () => { active = false; };
   }, [study.id]);
 
-  async function copyRoleLink(roleKey) {
-    const fullLink = `${window.location.origin}/test/${study.slug}?role=${roleKey}`;
+  async function copyRoleLink() {
+    if (!chosenRole) return;
+    const fullLink = `${window.location.origin}/test/${study.slug}?role=${chosenRole}`;
     setFallbackLink("");
 
     try {
       await navigator.clipboard.writeText(fullLink);
-      setCopiedRole(roleKey);
-      window.setTimeout(() => {
-        setCopiedRole((current) => (current === roleKey ? "" : current));
-      }, 2200);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
     } catch {
-      setCopiedRole(roleKey);
+      setCopied(true);
       setFallbackLink(fullLink);
     }
   }
@@ -61,24 +63,30 @@ export default function ToneTestLinks({ study }) {
     return <p className="muted-text">This test has no active roles to send a link for yet.</p>;
   }
 
+  // One row: pick the role, copy that role's link. Three separate copy
+  // buttons was the first version and made the study card much taller
+  // than a tree test's, which unbalanced the collection page.
   return (
     <div className="tone-role-links">
-      {activeRoleKeys.map((roleKey) => (
-        <div key={roleKey} className="tone-role-link-row">
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => copyRoleLink(roleKey)}
-          >
-            Copy {ROLE_LABELS[roleKey]} link
-          </button>
-          {copiedRole === roleKey ? (
-            <span className="copy-toast">
-              {fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}
-            </span>
-          ) : null}
-        </div>
-      ))}
+      <div className="tone-role-link-row">
+        <select
+          className="text-input tone-role-select"
+          value={chosenRole}
+          onChange={(event) => { setChosenRole(event.target.value); setCopied(false); }}
+          aria-label="Which role's link to copy"
+        >
+          {activeRoleKeys.map((roleKey) => (
+            <option key={roleKey} value={roleKey}>{ROLE_LABELS[roleKey]}</option>
+          ))}
+        </select>
+        <button type="button" className="secondary-button" onClick={copyRoleLink}>Copy link</button>
+      </div>
+
+      {copied ? (
+        <span className="copy-toast">
+          {fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}
+        </span>
+      ) : null}
     </div>
   );
 }
