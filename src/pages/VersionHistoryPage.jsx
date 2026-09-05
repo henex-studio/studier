@@ -19,7 +19,6 @@ export default function VersionHistoryPage({ profile }) {
         </p>
         <div className="button-row">
           <a className="primary-button" href="/admin">Back to test collection</a>
-          <a className="secondary-button" href="/guide">Guide</a>
         </div>
       </section>
 
