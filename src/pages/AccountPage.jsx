@@ -1,6 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AdminShell from "../components/AdminShell";
 import { supabase } from "../lib/supabase";
+
+// PLAN-account-deletion.md Step 3. Counts are read, not guessed, so the
+// warning names what is actually about to be destroyed rather than a
+// generic sentence. is_study_owner already scopes both response tables to
+// the caller's own studies, the same policy the dashboard relies on, so
+// this asks for nothing it could not already see.
+async function loadDeletionCounts(ownerId) {
+  const { data: myStudies } = await supabase.from("studies").select("id").eq("owner_id", ownerId);
+  const studyIds = (myStudies || []).map((study) => study.id);
+
+  if (studyIds.length === 0) {
+    return { studyCount: 0, participantCount: 0 };
+  }
+
+  const [{ count: treeCount }, { count: toneCount }] = await Promise.all([
+    supabase.from("participant_sessions").select("id", { count: "exact", head: true }).in("study_id", studyIds),
+    supabase.from("tone_sessions").select("id", { count: "exact", head: true }).in("study_id", studyIds)
+  ]);
+
+  return { studyCount: studyIds.length, participantCount: (treeCount || 0) + (toneCount || 0) };
+}
 
 // Milestone 6 Step 5. display_name is written once at registration and
 // there was previously no way to change it, anywhere in the product. This
@@ -27,6 +48,20 @@ export default function AccountPage({ profile, onUpdated }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [counts, setCounts] = useState(null);
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleted, setDeleted] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (profile?.id) {
+      loadDeletionCounts(profile.id).then((result) => { if (active) setCounts(result); });
+    }
+    return () => { active = false; };
+  }, [profile?.id]);
+
   async function save() {
     setSaving(true);
     setMessage("");
@@ -48,6 +83,51 @@ export default function AccountPage({ profile, onUpdated }) {
 
     setMessage("Saved.");
     onUpdated?.(data);
+  }
+
+  // PLAN-account-deletion.md Step 3 and decisions D1 to D3. The button
+  // stays disabled until the typed text matches the signed-in email
+  // exactly, which is the friction the operator asked for in place of a
+  // single OK on a dialog. Refusing the last administrator, and destroying
+  // participant response data along with the account, are both enforced
+  // in delete_my_account() itself, not repeated here, so this page cannot
+  // drift out of step with the one place that decision actually lives.
+  const confirmMatches = confirmEmail.trim().toLowerCase() === (profile?.email || "").trim().toLowerCase();
+
+  async function deleteAccount() {
+    if (!confirmMatches || deleting) return;
+    setDeleting(true);
+    setDeleteError("");
+
+    const { error } = await supabase.rpc("delete_my_account");
+
+    if (error) {
+      setDeleting(false);
+      setDeleteError(error.message);
+      return;
+    }
+
+    setDeleted(true);
+    await supabase.auth.signOut();
+  }
+
+  if (deleted) {
+    return (
+      <div className="page-shell">
+        <main className="container narrow">
+          <section className="card">
+            <h1>Account deleted</h1>
+            <p>
+              Your Studier account, every test you owned, and every response those tests collected
+              have been permanently deleted. This cannot be undone.
+            </p>
+            <div className="button-row">
+              <a className="primary-button" href="/login">Back to sign in</a>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -89,6 +169,57 @@ export default function AccountPage({ profile, onUpdated }) {
         <div className="button-row">
           <button className="primary-button" disabled={saving} onClick={save}>
             {saving ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </section>
+
+      <section className="card">
+        <h2>Delete account</h2>
+        <p>
+          This permanently deletes your Studier account
+          {counts ? (
+            <>
+              {" "}and everything in it: {counts.studyCount} {counts.studyCount === 1 ? "test" : "tests"}
+              {counts.participantCount > 0 ? (
+                <> and {counts.participantCount} {counts.participantCount === 1 ? "response" : "responses"} collected from participants</>
+              ) : null}
+              .
+            </>
+          ) : (
+            " and everything in it, including every test you own and every response those tests have collected."
+          )}
+        </p>
+        <p className="error-box">
+          This cannot be undone. There is no recovery, no grace period, and no way for Studier or
+          Henex Studio to restore it once it is gone. Participant responses are destroyed along
+          with the tests that collected them, even though the participants themselves never had an
+          account here.
+        </p>
+        <p className="muted-text">
+          If you would rather not use the button, email <a href="mailto:privacy@henex.uk">privacy@henex.uk</a>{" "}
+          from this account's address and the same deletion will be done for you within 20 working days.
+        </p>
+
+        <label className="form-block">
+          <span className="form-label">Type your email address, {profile?.email}, to confirm</span>
+          <input
+            className="text-input"
+            value={confirmEmail}
+            onChange={(event) => setConfirmEmail(event.target.value)}
+            placeholder={profile?.email}
+            autoComplete="off"
+          />
+        </label>
+
+        {deleteError ? <p className="error-box">{deleteError}</p> : null}
+
+        <div className="button-row">
+          <button
+            className="danger-button"
+            disabled={!confirmMatches || deleting}
+            onClick={deleteAccount}
+          >
+            {deleting ? "Deleting..." : "Delete my account permanently"}
           </button>
         </div>
       </section>
