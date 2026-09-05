@@ -56,6 +56,8 @@ export default function ToneTestRunnerPage({ slug }) {
   const [submitError, setSubmitError] = useState("");
   const [finished, setFinished] = useState(false);
   const [autoStarting, setAutoStarting] = useState(false);
+  const [wordingExpanded, setWordingExpanded] = useState(false);
+  const [activeWordingIndex, setActiveWordingIndex] = useState(0);
 
   const participantId = study ? getParticipantId(study.id) : "";
 
@@ -521,27 +523,55 @@ export default function ToneTestRunnerPage({ slug }) {
         )}
 
         {session ? (
-          <div className="tone-runner-layout">
-            <section className="card tone-wording-panel">
-              <h2>Wording</h2>
+          <>
+            {/* Stays at the top of the screen while the questions scroll
+                underneath, so the wording being judged is always in view.
+                Collapsed it shows two lines and stays pinned; expanded it
+                releases and scrolls with the page, so a long wording never
+                becomes a pinned block with its own scrollbar. */}
+            <section className={wordingExpanded ? "card tone-wording-bar" : "card tone-wording-bar tone-wording-bar-pinned"}>
               {contentLoading ? (
                 <p className="muted-text">Loading...</p>
               ) : shownVariants.length === 0 ? (
                 <p className="error-box">No wording is available for this test yet.</p>
               ) : (
-                shownVariants.map((variant, index) => (
-                  <div className="question-card" key={variant.id}>
-                    {variantMode === "compare_all" ? (
-                      <p className="form-label">Wording {index + 1}</p>
+                <>
+                  <div className="tone-wording-bar-head">
+                    <h2>Wording</h2>
+
+                    {shownVariants.length > 1 ? (
+                      <div className="tone-wording-tabs">
+                        {shownVariants.map((variant, index) => (
+                          <button
+                            key={variant.id}
+                            type="button"
+                            className={index === activeWordingIndex ? "view-toggle-button view-toggle-button-active" : "view-toggle-button"}
+                            onClick={() => setActiveWordingIndex(index)}
+                          >
+                            Wording {index + 1}
+                          </button>
+                        ))}
+                      </div>
                     ) : null}
-                    <p>{variant.variant_text}</p>
+
+                    <button
+                      type="button"
+                      className="text-link text-link-button"
+                      onClick={() => setWordingExpanded((current) => !current)}
+                    >
+                      {wordingExpanded ? "Show less" : "Show full wording"}
+                    </button>
                   </div>
-                ))
+
+                  <p className={wordingExpanded ? "tone-wording-text" : "tone-wording-text tone-wording-text-clamped"}>
+                    {(shownVariants[activeWordingIndex] || shownVariants[0])?.variant_text}
+                  </p>
+                </>
               )}
             </section>
 
         {!contentLoading ? (
-          <section className="card tone-questions-panel">
+          <section className="card">
             <h2>Questions</h2>
             {questions.length === 0 ? (
               <p className="muted-text">No questions found for this role.</p>
@@ -663,7 +693,7 @@ export default function ToneTestRunnerPage({ slug }) {
             </div>
           </section>
         ) : null}
-          </div>
+          </>
         ) : null}
       </main>
     </div>
