@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AdminShell from "../../components/AdminShell";
+import ConfirmDialog from "../../components/ConfirmDialog";
 import { supabase } from "../../lib/supabase";
 import { buildDefaultQuestions, ROLE_KEYS, ROLE_LABELS, ROLE_DESCRIPTIONS, GATES } from "../../lib/tonetest/defaultQuestions";
 import { WEIGHT_GROUPS, defaultWeights, weightTotal, normalizeWeights } from "../../lib/tonetest/weights";
@@ -423,6 +424,22 @@ export default function ToneBuilderPage({ profile, studyId }) {
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  // Same promise-based confirm as StudyListPage.jsx, so requestRoleToggle
+  // can still read the answer with a plain await. Audit finding B4.
+  function askConfirm(options) {
+    return new Promise((resolve) => {
+      setConfirmDialog({ ...options, resolve });
+    });
+  }
+
+  function resolveConfirm(result) {
+    setConfirmDialog((current) => {
+      current?.resolve(result);
+      return null;
+    });
+  }
 
   useEffect(() => {
     let active = true;
@@ -583,19 +600,21 @@ export default function ToneBuilderPage({ profile, studyId }) {
     setQuestions((current) => current.map((question) => (question.id === questionId ? { ...question, question_text: value } : question)));
   }
 
-  function requestRoleToggle(roleKey, gatesForRole) {
+  async function requestRoleToggle(roleKey, gatesForRole) {
     const activeRoles = settings.active_roles_json || defaultActiveRoles();
     const isCurrentlyActive = activeRoles[roleKey] !== false;
 
     if (isCurrentlyActive) {
       const criticalGates = gatesForRole.filter((gate) => gate.critical);
       const gateNote = gatesForRole.length > 0
-        ? `\n\nThis role currently answers ${gatesForRole.length === 1 ? "this gate" : "these gates"}: ${gatesForRole.map((gate) => `${gate.label}${gate.critical ? " (critical)" : ""}`).join(", ")}.${criticalGates.length > 0 ? " This includes a critical gate, which normally blocks a recommendation on its own if it fails. With this role off, that check will not run at all." : ""}`
-        : "\n\nThis role answers no risk gates, so turning it off does not remove any gate coverage.";
+        ? `This role currently answers ${gatesForRole.length === 1 ? "this gate" : "these gates"}: ${gatesForRole.map((gate) => `${gate.label}${gate.critical ? " (critical)" : ""}`).join(", ")}.${criticalGates.length > 0 ? " This includes a critical gate, which normally blocks a recommendation on its own if it fails. With this role off, that check will not run at all." : ""}`
+        : "This role answers no risk gates, so turning it off does not remove any gate coverage.";
 
-      const confirmed = window.confirm(
-        `Turn off ${ROLE_LABELS[roleKey]}?${gateNote}`
-      );
+      const confirmed = await askConfirm({
+        title: `Turn off ${ROLE_LABELS[roleKey]}?`,
+        message: gateNote,
+        confirmLabel: "Turn off"
+      });
       if (!confirmed) return;
     }
 
@@ -1008,6 +1027,15 @@ export default function ToneBuilderPage({ profile, studyId }) {
           ) : null}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(confirmDialog)}
+        title={confirmDialog?.title}
+        message={confirmDialog?.message}
+        confirmLabel={confirmDialog?.confirmLabel}
+        onConfirm={() => resolveConfirm(true)}
+        onCancel={() => resolveConfirm(false)}
+      />
     </AdminShell>
   );
 }

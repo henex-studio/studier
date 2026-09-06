@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AdminShell from "../components/AdminShell";
 import TreeView from "../components/TreeView";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { supabase } from "../lib/supabase";
 import { treeFromCsv } from "../lib/treeParser";
 
@@ -312,6 +313,7 @@ export default function StudyBuilderPage({ profile, studyId }) {
   const [message, setMessage] = useState("");
   const [selectedPath, setSelectedPath] = useState("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [pendingNavHref, setPendingNavHref] = useState("");
 
   const tree = useMemo(() => treeRecord?.tree_json || [], [treeRecord]);
   const csvChecks = useMemo(() => validateCsv(treeRecord?.csv_text || ""), [treeRecord?.csv_text]);
@@ -364,6 +366,10 @@ export default function StudyBuilderPage({ profile, studyId }) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  // window.confirm answered synchronously, so this could decide inline
+  // whether to let the click through. An in-page dialog cannot: it always
+  // stops the click first, holds the destination, and navigates itself
+  // once the dialog resolves. Audit finding B4.
   useEffect(() => {
     function handleDocumentClick(event) {
       if (!hasUnsavedChanges) return;
@@ -371,16 +377,25 @@ export default function StudyBuilderPage({ profile, studyId }) {
       if (!link) return;
       if (link.target && link.target !== "_self") return;
 
-      const ok = window.confirm("You have unsaved changes. Leave without saving?");
-      if (!ok) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      event.preventDefault();
+      event.stopPropagation();
+      setPendingNavHref(link.getAttribute("href"));
     }
 
     document.addEventListener("click", handleDocumentClick, true);
     return () => document.removeEventListener("click", handleDocumentClick, true);
   }, [hasUnsavedChanges]);
+
+  function navigateTo(path) {
+    window.history.pushState({}, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
+  function confirmLeave() {
+    const href = pendingNavHref;
+    setPendingNavHref("");
+    navigateTo(href);
+  }
 
   async function handleFile(event) {
     const file = event.target.files?.[0];
@@ -675,6 +690,15 @@ export default function StudyBuilderPage({ profile, studyId }) {
           {study.status === "published" ? <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open test link</a> : null}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(pendingNavHref)}
+        title="Leave without saving?"
+        message="You have unsaved changes. Leave without saving?"
+        confirmLabel="Leave without saving"
+        onConfirm={confirmLeave}
+        onCancel={() => setPendingNavHref("")}
+      />
     </AdminShell>
   );
 }

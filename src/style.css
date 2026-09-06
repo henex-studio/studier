@@ -2112,6 +2112,20 @@ select:focus {
   padding-right: 4px;
 }
 
+.confirm-dialog-backdrop {
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-dialog {
+  max-width: 440px;
+}
+
+.confirm-dialog .button-row {
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
 .feedback-form .button-row {
   justify-content: flex-end;
 }

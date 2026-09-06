@@ -4,6 +4,7 @@ import AdminShell from "../components/AdminShell";
 import { supabase } from "../lib/supabase";
 import { getTonePublishIssues } from "../lib/tonetest/publishChecks";
 import ToneTestLinks from "../components/tonetest/ToneTestLinks";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 
 const NZ_TIME_ZONE = "Pacific/Auckland";
@@ -165,6 +166,24 @@ export default function StudyListPage({ profile }) {
   const [viewMode, setViewMode] = useState("cards");
   const [typeFilter, setTypeFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  // Promise-based so clearResponseData and deleteStudy can still read the
+  // answer with a plain await, the same shape window.prompt and
+  // window.confirm had, but rendered as an in-page dialog instead of a
+  // native one. Audit finding B4.
+  function askConfirm(options) {
+    return new Promise((resolve) => {
+      setConfirmDialog({ ...options, resolve });
+    });
+  }
+
+  function resolveConfirm(result) {
+    setConfirmDialog((current) => {
+      current?.resolve(result);
+      return null;
+    });
+  }
 
   const visibleStudies = useMemo(() => {
     if (typeFilter === "all") return studies;
@@ -381,10 +400,14 @@ export default function StudyListPage({ profile }) {
       ? "participant sessions, ratings, and risk gate answers"
       : "task responses, final question responses, and participant session records";
 
-    const typed = window.prompt(
-      `Clear all response data for "${study.title}"? This will permanently delete ${deletes}. The test setup is kept. Type CLEAR to continue.`
-    );
-    if (typed !== "CLEAR") return false;
+    const ok = await askConfirm({
+      title: `Clear response data for "${study.title}"?`,
+      message: `This will permanently delete ${deletes}. The test setup is kept.`,
+      requireText: "CLEAR",
+      confirmLabel: "Clear data",
+      danger: true
+    });
+    if (!ok) return false;
 
     setClearingStudyId(study.id);
     for (const table of tables) {
@@ -438,9 +461,12 @@ export default function StudyListPage({ profile }) {
     setCopiedStudyId("");
     setFallbackLink("");
 
-    const ok = window.confirm(
-      "This will permanently delete this test, its tree, questions, responses, final answers, and dashboard data. This action cannot be undone."
-    );
+    const ok = await askConfirm({
+      title: `Delete "${study.title}"?`,
+      message: "This will permanently delete this test, its tree, questions, responses, final answers, and dashboard data. This action cannot be undone.",
+      confirmLabel: "Delete",
+      danger: true
+    });
     if (!ok) return;
 
     const { error } = await supabase.from("studies").delete().eq("id", study.id);
@@ -695,6 +721,17 @@ export default function StudyListPage({ profile }) {
           </div>
         </section>
       ) : null}
+
+      <ConfirmDialog
+        open={Boolean(confirmDialog)}
+        title={confirmDialog?.title}
+        message={confirmDialog?.message}
+        requireText={confirmDialog?.requireText || ""}
+        confirmLabel={confirmDialog?.confirmLabel}
+        danger={confirmDialog?.danger}
+        onConfirm={() => resolveConfirm(true)}
+        onCancel={() => resolveConfirm(false)}
+      />
     </AdminShell>
   );
 }
