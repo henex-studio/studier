@@ -8,6 +8,11 @@ import AdminShell from "../components/AdminShell";
 // Numbering: tree test releases run v1.00 to v3.07 and keep their original
 // numbers. Tone test work is numbered from v4.00, one entry per milestone
 // actually built, at the operator's instruction on 30 August 2026.
+//
+// A Platform group was added 5 September 2026, numbered from p1.00, for
+// work belonging to neither test type: account and sign-in, navigation,
+// and site-wide interface behaviour. Account deletion and the privacy
+// policy changes needed this group; there was no existing place for them.
 export default function VersionHistoryPage({ profile }) {
   return (
     <AdminShell profile={profile}>
@@ -24,10 +29,33 @@ export default function VersionHistoryPage({ profile }) {
 
       <section className="card guide-content">
         <section>
+          <h2>Platform</h2>
+          <p className="muted-text">
+            Account, sign-in, and site-wide behaviour, shared by both test types.
+          </p>
+
+          <h3>p1.00, Account deletion and dialogs</h3>
+          <ol>
+            <li>Added permanent self-service account deletion from the account page, removing the account and every test and response it owns.</li>
+            <li>Added a privacy policy view that opens in place, so it no longer navigates away from a form in progress.</li>
+            <li>Added a required checkbox agreeing to the privacy policy before registration completes.</li>
+            <li>Added a not-found page, so a broken or outdated link says so instead of quietly opening the test collection or the sign-in page.</li>
+            <li>Replaced browser popup confirmations with in-page dialogs across the site, including a typed confirmation before permanently deleting a test's response data.</li>
+          </ol>
+        </section>
+
+        <section>
           <h2>Tone tests</h2>
           <p className="muted-text">
             A second kind of test, for checking how wording lands before it is published.
           </p>
+
+          <h3>v4.05, Role links and layout</h3>
+          <ol>
+            <li>Added a link per active role, so each reviewer opens straight to their own questions instead of choosing a role themselves.</li>
+            <li>Added a wording panel that stays visible at the top of the screen while answering, instead of needing to scroll back up to it.</li>
+            <li>Added a Save and navigation bar at the bottom of the editor, matching the tree test editor.</li>
+          </ol>
 
           <h3>v4.04, Lifecycle, export, and guides</h3>
           <ol>
