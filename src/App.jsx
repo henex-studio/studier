@@ -16,6 +16,7 @@ import PreviewRunnerPage from "./pages/PreviewRunnerPage";
 import ToneBuilderPage from "./pages/tonetest/ToneBuilderPage";
 import PublicTestRouter from "./pages/tonetest/PublicTestRouter";
 import ConsentPage, { hasLocalConsent, hasProfileConsent } from "./pages/ConsentPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function parsePath() {
   const parts = window.location.pathname.split("/").filter(Boolean);
@@ -217,6 +218,10 @@ export default function App() {
   if (first === "builder" && parts[1]) return <StudyBuilderPage profile={profile} studyId={parts[1]} />;
   if (first === "tone-builder" && parts[1]) return <ToneBuilderPage profile={profile} studyId={parts[1]} />;
   if (first === "dashboard" && parts[1]) return <DashboardPage profile={profile} studyId={parts[1]} />;
+  if (first === "admin") return <StudyListPage profile={profile} />;
 
-  return <StudyListPage profile={profile} />;
+  // Every recognised route is listed above. Anything else, once signed in,
+  // used to silently fall through to the test collection, which made a
+  // stale bookmark or a typo look like a working page. Audit finding B3.
+  return <NotFoundPage />;
 }
