@@ -37,6 +37,7 @@ export default function ToneGuidePage({ profile }) {
           <a href="#questions">Questions</a>
           <a href="#modes">One wording or all of them</a>
           <a href="#publish">Preview and publish</a>
+          <a href="#sending">Sending the test</a>
           <a href="#participants">What participants see</a>
           <a href="#results">Reading the results</a>
           <a href="#comments">Comments</a>
@@ -113,8 +114,9 @@ export default function ToneGuidePage({ profile }) {
           <section id="roles">
             <h2>The three roles</h2>
             <p>
-              Participants choose which role they are answering as before they start. Each role answers
-              different questions, because each one knows something the others do not.
+              Each role answers different questions, because each one knows something the others do not.
+              You send each person a link for their own role, so nobody has to work out which one they
+              are. See <a href="#sending">sending the test</a>.
             </p>
             <p>
               <strong>Audience</strong> means the people the message is actually for. They supply
@@ -231,8 +233,8 @@ export default function ToneGuidePage({ profile }) {
           <section id="publish">
             <h2>Preview and publish</h2>
             <p>
-              Preview by role, in the builder, shows what a participant would see after choosing each
-              active role. It saves nothing.
+              Preview by role, in the builder, shows what a participant would see for each active role.
+              It saves nothing.
             </p>
             <p>
               Publishing is blocked until the test is complete. Studier lists everything that is missing
@@ -241,15 +243,33 @@ export default function ToneGuidePage({ profile }) {
               required question, active weights totalling exactly 100, and a closing time that is not in
               the past.
             </p>
-            <p>Once published, copy the link and send it to participants. They need no account.</p>
+          </section>
+
+          <section id="sending">
+            <h2>Sending the test</h2>
+            <p>
+              A published tone test has one link per active role, not one link for everyone. On the test
+              collection, the tone test's card has a role selector and a Copy link button. Pick a role,
+              copy its link, and send that link only to the people answering as that role. Repeat for each
+              role you turned on.
+            </p>
+            <p>
+              Someone opening a role link lands directly on that role's questions. They are not asked to
+              pick a role and cannot pick the wrong one, which matters because the three roles answer
+              different questions and are weighted differently in the score.
+            </p>
+            <p>
+              Participants need no account. Send each link only to the group it is for: a link is not
+              secret, and anyone holding it can answer as that role.
+            </p>
           </section>
 
           <section id="participants">
             <h2>What participants see</h2>
             <p>
-              A participant opens the link, reads your welcome and privacy content, and chooses a role.
-              Once they answer their first question the role is fixed for that session, so their answers
-              stay consistent.
+              A participant opens their role link, reads your welcome and privacy content, and sees which
+              role they are answering as. The role is fixed from the start, and once they answer their
+              first question it cannot change at all, so their answers stay consistent.
             </p>
             <p>
               They then see the wording, or all the wordings, and answer that role's questions. Rating and
@@ -257,12 +277,17 @@ export default function ToneGuidePage({ profile }) {
               overall, since they ask for a general reflection rather than a judgement on specific wording.
             </p>
             <p>
+              The wording stays at the top of the screen while they answer, shortened to two lines with a
+              control to show all of it, so they can check the exact words without scrolling back up. When
+              they are comparing several wordings, that panel has a tab for each one.
+            </p>
+            <p>
               They can leave and come back on the same browser and continue where they left off. Once they
               submit, reopening the link shows your end message rather than letting them answer twice.
             </p>
             <figure className="guide-screenshot">
-              <img src="/guide/08-tone-participant.png" alt="Participant welcome screen with privacy note, followed by a Choose your role step listing Audience, Agency and Editor" />
-              <figcaption>Welcome and privacy, then the role choice, before any wording is shown.</figcaption>
+              <img src="/guide/08-tone-participant.png" alt="Participant screen showing the welcome and privacy content, the role the link was sent for, and the wording being reviewed" />
+              <figcaption>Welcome and privacy, then the role the link was sent for, then the wording.</figcaption>
             </figure>
           </section>
 
