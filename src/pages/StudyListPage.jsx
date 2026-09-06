@@ -57,15 +57,6 @@ function builderPath(study) {
   return study.study_type === "tone_test" ? `/tone-builder/${study.id}` : `/builder/${study.id}`;
 }
 
-// PreviewRunnerPage (the /preview/<id> route) only ever renders the Tree
-// Test flow; it has no idea a Tone Test exists. A Tone Test's preview is
-// the "Preview by role" section already built into ToneBuilderPage.jsx, so
-// its Preview link points at the same builder page as Edit, rather than at
-// a screen that would show the wrong study type's questions.
-function previewPath(study) {
-  return study.study_type === "tone_test" ? `/tone-builder/${study.id}` : `/preview/${study.id}`;
-}
-
 function typeLabel(study) {
   return study.study_type === "tone_test" ? "Tone Test" : "Tree Test";
 }
@@ -546,7 +537,10 @@ export default function StudyListPage({ profile }) {
 
         <p className="muted-text">You are creating a {studyType === "tone_test" ? "Tone Test" : "Tree Test"}.</p>
         <div className="inline-form new-test-form">
-          <input className="text-input" placeholder="New test title" value={title} onChange={(event) => setTitle(event.target.value)} />
+          <label className="sr-only-label">
+            <span className="sr-only">New test title</span>
+            <input className="text-input" placeholder="New test title" value={title} onChange={(event) => setTitle(event.target.value)} />
+          </label>
           <button className="primary-button" onClick={createStudy}>Add new test</button>
         </div>
         {message ? <p className="error-box">{message}</p> : null}
@@ -629,7 +623,7 @@ export default function StudyListPage({ profile }) {
                   <div className="button-row">
                     <a className="secondary-button" href={builderPath(study)}>Edit</a>
                     <a className="secondary-button" href={`/dashboard/${study.id}`}>Dashboard</a>
-                    <a className="secondary-button" href={previewPath(study)}>Preview</a>
+                    {study.study_type !== "tone_test" ? <a className="secondary-button" href={`/preview/${study.id}`}>Preview</a> : null}
                     {study.status === "published" ? <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open link</a> : null}
                   </div>
 
@@ -678,7 +672,7 @@ export default function StudyListPage({ profile }) {
                           <div className="list-link-row">
                             <a href={builderPath(study)}>Edit</a>
                             <a href={`/dashboard/${study.id}`}>Dashboard</a>
-                            <a href={previewPath(study)}>Preview</a>
+                            {study.study_type !== "tone_test" ? <a href={`/preview/${study.id}`}>Preview</a> : null}
                             {study.status === "published" ? <a href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open</a> : null}
                           </div>
                         </td>

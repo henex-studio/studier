@@ -165,35 +165,43 @@ export default function RegisterPage() {
           <h1>Create account</h1>
 
           <form className="form-stack" onSubmit={register}>
-            <input
-              className="text-input"
-              placeholder="Display name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-            />
+            <label className="form-block">
+              <span className="form-label">Display name</span>
+              <input
+                className="text-input"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+            </label>
 
-            <input
-              className="text-input"
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <label className="form-block">
+              <span className="form-label">Email</span>
+              <input
+                className="text-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
 
-            <input
-              className="text-input"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <label className="form-block">
+              <span className="form-label">Password</span>
+              <input
+                className="text-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </label>
 
-            <input
-              className="text-input"
-              placeholder="Invite code"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value)}
-            />
+            <label className="form-block">
+              <span className="form-label">Invite code</span>
+              <input
+                className="text-input"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+              />
+            </label>
 
             <p className="muted-text">
               Our{" "}
