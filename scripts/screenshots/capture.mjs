@@ -137,13 +137,26 @@ async function main() {
     // button or the validation it runs. A throwaway draft test triggers the
     // real check, gets its screenshot, then is deleted, leaving the two demo
     // studies untouched.
+    //
+    // The title carries a timestamp. A fixed title here, "Screenshot
+    // publish check", caused a real production incident on 6 September
+    // 2026: a run that failed before reaching the delete step (the delete
+    // confirmation was still a native window.confirm back then) left a
+    // draft with that title in the live database, which this script has no
+    // dev branch to protect it from (finding A7). The next run then failed
+    // differently, with a strict-mode locator error, because two studies
+    // now shared that exact title. A unique title every run means a
+    // leftover from a previous failed run can never collide with this
+    // run's own draft.
+    const draftTitle = `Screenshot publish check ${Date.now()}`;
+    console.log(`Creating throwaway draft "${draftTitle}". If this script fails before it is deleted, remove it by hand from the test collection.`);
     await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
-    await page.fill('input[placeholder="New test title"]', "Screenshot publish check");
+    await page.fill('input[placeholder="New test title"]', draftTitle);
     await page.getByRole("tab", { name: "Tree Test" }).click();
     await page.click('button:has-text("Add new test")');
     await page.waitForSelector("h1", { state: "visible" }); // now on the new draft's builder page
     await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
-    const draftCard = await studyCard(page, "Screenshot publish check");
+    const draftCard = await studyCard(page, draftTitle);
     // "Publish" also matches inside "Clear data and publish" with a plain
     // hasText filter (Playwright's text matching is case-insensitive
     // substring by default), so this needs an exact role match instead.
