@@ -37,7 +37,11 @@ Each task ends with a build, a commit, and a report naming the review path files
 
 ## Task 1. Harden the three access control functions
 
-Covers A1 and A2. Do this first and on its own.
+Covers A1. Done 6 September 2026, migration 016.
+
+**A2 was dropped during implementation.** The audit's recommendation to revoke execute from `anon` was wrong: six policies granted to `{anon, authenticated}` call all three functions, so revoking would have broken every public test link. See the corrected A2 in `AUDIT-2026-09-05.md`. The real fix, moving the helpers into an unexposed schema, moves to round two.
+
+Original text follows.
 
 `is_admin()`, `is_study_owner(uuid)` and `is_study_published(uuid)` are `SECURITY DEFINER` with no fixed search path, and all three are callable by anonymous visitors. Every row level security policy in the database calls at least one of them.
 
@@ -192,6 +196,8 @@ These cannot be done from here.
 ## Round two, for later
 
 C1 and C2, the accessibility pass over the participant flow. No `aria-pressed` exists anywhere, and the rating scale is five unrelated buttons rather than a labelled single-choice group. This affects the ratings, the risk gate buttons, the preferred wording buttons, the role buttons, the wording tabs and the view toggle. Do it as one pass, not scattered through other work.
+
+A2 as corrected. Move `is_admin`, `is_study_owner` and `is_study_published` into a schema PostgREST does not expose, and repoint every policy that calls them. This removes the REST endpoints without touching what participants are allowed to do. It rewrites more than twenty policies, so it needs its own task, its own verification on a preview, and a check that anonymous participants can still open a published test afterwards.
 
 A4, A5 and A6, the database performance findings. Ten unindexed foreign keys, eight policies re-evaluating `auth.uid()` per row, and six tables carrying duplicate permissive select policies. Invisible at current volume. Worth doing before a real study, and A6 is worth doing for readability regardless.
 
