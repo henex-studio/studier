@@ -25,9 +25,18 @@ import { fileURLToPath } from "node:url";
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const outputDir = path.join(dirname, "..", "..", "public", "guide");
 
-// The dev preview Vercel builds from this repository's dev branch. Both it
-// and local development point at the Supabase development branch, per
-// harness-docs/CLAUDE.md section 5, so neither can touch production data.
+// The dev preview Vercel builds from this repository's dev branch.
+//
+// Correction, 6 September 2026. This comment used to say that the preview
+// and local development both point at a Supabase development branch, per
+// CLAUDE.md section 5, so neither could touch production data. There is no
+// Supabase development branch. list_branches returns nothing, and every
+// environment points at the production database. Recorded as finding A7 in
+// harness-docs/AUDIT-2026-09-05.md.
+//
+// So this script drives real production data with a real signed-in session.
+// It only reads and screenshots, and it never writes, but do not add a step
+// here that creates, edits or deletes anything until A7 is resolved.
 const BASE_URL = "https://studier-git-dev-cafes-projects-5a353a12.vercel.app";
 
 // Ground truth for the two demo studies is their slug, visited directly
