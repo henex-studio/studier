@@ -495,37 +495,52 @@ export default function StudyListPage({ profile }) {
     const isClearing = clearingStudyId === study.id;
     const isBusy = isPublishing || isClearing;
 
+    // Grouped rather than one flat row of identical pills: the link, the
+    // lifecycle, then the one destructive action, separated. Eight controls
+    // at the same visual weight read as a wall and made the tone test card
+    // noticeably taller than a tree test's. Operator's decision, 6
+    // September 2026: regroup, do not introduce a menu or new button
+    // styles.
     return (
-      <div className="button-row stable-action-row">
-        {study.status !== "published" ? (
-          <button className="primary-button" disabled={isBusy} onClick={() => updateStatus(study, "published")}>
-            {isPublishing ? "Checking..." : "Publish"}
-          </button>
-        ) : (
-          <button className="secondary-button" disabled={isBusy} onClick={() => updateStatus(study, "closed")}>Close</button>
-        )}
-
+      <div className="card-action-groups">
         {study.status === "published" ? (
-          study.study_type === "tone_test" ? (
-            <ToneTestLinks study={study} />
+          <div className="button-row action-group">
+            {study.study_type === "tone_test" ? (
+              <ToneTestLinks study={study} />
+            ) : (
+              <>
+                <button className="secondary-button" type="button" disabled={isBusy} onClick={() => copyTestLink(study)}>Copy link</button>
+                <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open</a>
+              </>
+            )}
+          </div>
+        ) : null}
+
+        <div className="button-row action-group">
+          {study.status !== "published" ? (
+            <button className="primary-button" disabled={isBusy} onClick={() => updateStatus(study, "published")}>
+              {isPublishing ? "Checking..." : "Publish"}
+            </button>
           ) : (
-            <button className="secondary-button" type="button" disabled={isBusy} onClick={() => copyTestLink(study)}>Copy link</button>
-          )
-        ) : null}
+            <button className="secondary-button" disabled={isBusy} onClick={() => updateStatus(study, "closed")}>Close</button>
+          )}
 
-        {study.status !== "published" ? (
-          <button className="secondary-button" type="button" disabled={isBusy} onClick={() => clearResponseData(study)}>
-            {isClearing ? "Clearing..." : "Clear test data"}
-          </button>
-        ) : null}
+          {study.status !== "published" ? (
+            <button className="secondary-button" type="button" disabled={isBusy} onClick={() => clearResponseData(study)}>
+              {isClearing ? "Clearing..." : "Clear test data"}
+            </button>
+          ) : null}
 
-        {study.status !== "published" ? (
-          <button className="secondary-button" type="button" disabled={isBusy} onClick={() => clearDataAndPublish(study)}>
-            {isBusy ? "Working..." : "Clear data and publish"}
-          </button>
-        ) : null}
+          {study.status !== "published" ? (
+            <button className="secondary-button" type="button" disabled={isBusy} onClick={() => clearDataAndPublish(study)}>
+              {isBusy ? "Working..." : "Clear data and publish"}
+            </button>
+          ) : null}
+        </div>
 
-        <button className="danger-button" disabled={isBusy} onClick={() => deleteStudy(study)}>Delete</button>
+        <div className="button-row action-group action-group-destructive">
+          <button className="danger-button" disabled={isBusy} onClick={() => deleteStudy(study)}>Delete</button>
+        </div>
       </div>
     );
   }
@@ -650,7 +665,6 @@ export default function StudyListPage({ profile }) {
                     <a className="secondary-button" href={builderPath(study)}>Edit</a>
                     <a className="secondary-button" href={`/dashboard/${study.id}`}>Dashboard</a>
                     {study.study_type !== "tone_test" ? <a className="secondary-button" href={`/preview/${study.id}`}>Preview</a> : null}
-                    {study.status === "published" ? <a className="secondary-button" href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open link</a> : null}
                   </div>
 
                   {renderActions(study)}
@@ -699,7 +713,6 @@ export default function StudyListPage({ profile }) {
                             <a href={builderPath(study)}>Edit</a>
                             <a href={`/dashboard/${study.id}`}>Dashboard</a>
                             {study.study_type !== "tone_test" ? <a href={`/preview/${study.id}`}>Preview</a> : null}
-                            {study.status === "published" ? <a href={`/test/${study.slug}`} target="_blank" rel="noreferrer">Open</a> : null}
                           </div>
                         </td>
                         <td>{renderActions(study)}</td>

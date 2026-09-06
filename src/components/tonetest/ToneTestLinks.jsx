@@ -90,6 +90,14 @@ export default function ToneTestLinks({ study }) {
           ))}
         </select>
         <button type="button" className="secondary-button" onClick={copyRoleLink}>Copy link</button>
+        <a
+          className="secondary-button"
+          href={`/test/${study.slug}?role=${chosenRole}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open
+        </a>
       </div>
 
       {copied ? (
