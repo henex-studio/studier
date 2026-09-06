@@ -160,6 +160,16 @@ export default function PreviewRunnerPage({ profile, studyId }) {
       return;
     }
 
+    // This page only ever renders the Tree Test flow. A Tone Test has no
+    // tree, tasks or final questions to load, so continuing past here
+    // would render an empty or broken screen instead of a clear message.
+    // Its own preview is the "Preview by role" section in
+    // ToneBuilderPage.jsx. Recorded as audit finding B2.
+    if (studyData.study_type === "tone_test") {
+      window.location.replace(`/tone-builder/${studyData.id}`);
+      return;
+    }
+
     setStudy(studyData);
 
     const { data: treeRows } = await supabase

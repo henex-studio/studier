@@ -19,18 +19,24 @@ export default function ToneTestLinks({ study }) {
   const [chosenRole, setChosenRole] = useState("");
   const [copied, setCopied] = useState(false);
   const [fallbackLink, setFallbackLink] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     let active = true;
 
     async function load() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("tone_test_settings")
         .select("active_roles_json")
         .eq("study_id", study.id)
         .maybeSingle();
 
       if (!active) return;
+
+      if (error) {
+        setLoadError(error.message);
+        return;
+      }
 
       const activeRoles = data?.active_roles_json || {};
       const keys = ROLE_KEYS.filter((roleKey) => activeRoles[roleKey] !== false);
@@ -55,6 +61,10 @@ export default function ToneTestLinks({ study }) {
       setCopied(true);
       setFallbackLink(fullLink);
     }
+  }
+
+  if (loadError) {
+    return <p className="error-box">Could not load links: {loadError}</p>;
   }
 
   if (!activeRoleKeys) return null;

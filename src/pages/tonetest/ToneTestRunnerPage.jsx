@@ -58,6 +58,7 @@ export default function ToneTestRunnerPage({ slug }) {
   const [autoStarting, setAutoStarting] = useState(false);
   const [wordingExpanded, setWordingExpanded] = useState(false);
   const [activeWordingIndex, setActiveWordingIndex] = useState(0);
+  const [questionsError, setQuestionsError] = useState("");
 
   const participantId = study ? getParticipantId(study.id) : "";
 
@@ -188,12 +189,20 @@ export default function ToneTestRunnerPage({ slug }) {
 
   async function loadQuestionsForRole(studyId, roleKey) {
     setContentLoading(true);
-    const { data } = await supabase
+    setQuestionsError("");
+    const { data, error } = await supabase
       .from("tone_questions")
       .select("*")
       .eq("study_id", studyId)
       .eq("role_key", roleKey)
       .order("display_order");
+
+    if (error) {
+      setQuestionsError(error.message);
+      setQuestions([]);
+      setContentLoading(false);
+      return;
+    }
 
     setQuestions(
       (data || []).slice().sort(
@@ -573,7 +582,9 @@ export default function ToneTestRunnerPage({ slug }) {
         {!contentLoading ? (
           <section className="card">
             <h2>Questions</h2>
-            {questions.length === 0 ? (
+            {questionsError ? (
+              <p className="error-box">Could not load questions: {questionsError}</p>
+            ) : questions.length === 0 ? (
               <p className="muted-text">No questions found for this role.</p>
             ) : (
               questions.map((question) => {
