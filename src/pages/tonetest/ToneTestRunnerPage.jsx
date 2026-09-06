@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { getParticipantId } from "../../lib/participantId";
 import { ROLE_KEYS, ROLE_LABELS, ROLE_DESCRIPTIONS } from "../../lib/tonetest/defaultQuestions";
@@ -156,14 +156,28 @@ export default function ToneTestRunnerPage({ slug }) {
   // session yet: a returning participant's existing session always wins,
   // even if the link they used names a different role than the one they
   // are actually locked into.
+  //
+  // The guard is a ref, not the autoStarting state, and there is no
+  // cleanup that cancels the request. An earlier version used both, and
+  // the two combined to deadlock the page on "Starting..." every time:
+  // setAutoStarting(true) changed a value this effect depended on, React
+  // therefore tore the effect down and ran it again, the teardown flipped
+  // the in-flight request's active flag to false, and the response was
+  // then discarded on arrival. Nothing ever set the session, so no
+  // participant using a role link could reach the questions. A ref does
+  // not trigger a re-render, so the effect stays put while the request is
+  // in flight. Found 7 September 2026 by the screenshot script, which is
+  // the first thing to exercise this path end to end.
+  const autoStartedRef = useRef(false);
+
   useEffect(() => {
-    if (loading || !study || session || autoStarting || !roleFromLink) return;
+    if (loading || !study || session || autoStartedRef.current || !roleFromLink) return;
 
     const activeRoles = settings?.active_roles_json || {};
     const activeRoleKeys = ROLE_KEYS.filter((roleKey) => activeRoles[roleKey] !== false);
     if (!activeRoleKeys.includes(roleFromLink)) return;
 
-    let active = true;
+    autoStartedRef.current = true;
     setAutoStarting(true);
 
     supabase.rpc("start_tone_session", {
@@ -171,7 +185,6 @@ export default function ToneTestRunnerPage({ slug }) {
       p_participant_id: participantId,
       p_role: roleFromLink
     }).then(async ({ data, error }) => {
-      if (!active) return;
       setAutoStarting(false);
 
       if (error) {
@@ -183,9 +196,7 @@ export default function ToneTestRunnerPage({ slug }) {
       setSelectedRole(data.selected_role);
       await loadQuestionsForRole(study.id, data.selected_role);
     });
-
-    return () => { active = false; };
-  }, [loading, study, session, settings, autoStarting, roleFromLink, participantId]);
+  }, [loading, study, session, settings, roleFromLink, participantId]);
 
   async function loadQuestionsForRole(studyId, roleKey) {
     setContentLoading(true);
