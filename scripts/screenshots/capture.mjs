@@ -70,7 +70,13 @@ async function main() {
   const browser = await chromium.launch({ headless: false, args: ["--disable-gpu", "--disable-software-rasterizer"] });
   const page = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 2 });
   page.on("pageerror", (error) => console.error("Browser page error:", error.message));
-  page.on("dialog", (dialog) => dialog.accept()); // accepts the "delete this test" confirm at the end
+  // No native browser dialog remains anywhere in the app as of 6 September
+  // 2026 (audit finding B4): clearing test data, deleting a study, leaving
+  // a builder with unsaved changes, and turning off a tone test role all
+  // now use an in-page ConfirmDialog instead of window.confirm or
+  // window.prompt. This listener has nothing left to do; kept only so a
+  // native dialog appearing anywhere by mistake does not hang the script.
+  page.on("dialog", (dialog) => dialog.accept());
 
   try {
     // --- Sign in, by hand, in the window that just opened ---
@@ -146,7 +152,15 @@ async function main() {
     await settle(page);
     await draftCard.screenshot({ path: path.join(outputDir, "06-publish-check.png") });
     console.log("Saved 06-publish-check.png");
+    // Delete now opens an in-page ConfirmDialog instead of a native
+    // window.confirm (audit finding B4, 6 September 2026), so this is two
+    // clicks: the card's Delete button opens the dialog, then the dialog's
+    // own Delete button confirms it. The dialog is a page-level overlay,
+    // not inside the card, and both buttons share the exact name "Delete",
+    // so the second click is scoped to .confirm-dialog to hit the right
+    // one.
     await draftCard.getByRole("button", { name: "Delete", exact: true }).click();
+    await page.locator(".confirm-dialog").getByRole("button", { name: "Delete", exact: true }).click();
     await draftCard.waitFor({ state: "detached", timeout: 15000 });
     console.log("Cleaned up the throwaway draft test.");
 
