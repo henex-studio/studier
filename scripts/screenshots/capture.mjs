@@ -154,8 +154,20 @@ async function main() {
     console.log("Saved 07-tree-participant.png");
 
     // --- 8. Tone test, participant view ---
-    await page.goto(`${BASE_URL}/test/${TONE_SLUG}`, { waitUntil: "networkidle" });
+    // ?role=audience, not the bare link. The bare link still shows the old
+    // self-select "Choose your role" screen, which the guide deliberately
+    // stopped documenting once role links landed (audit finding D1/D2,
+    // 5 September 2026). This shot needs to show the current flow: opening
+    // a role link and landing straight on that role's questions.
+    await page.goto(`${BASE_URL}/test/${TONE_SLUG}?role=audience`, { waitUntil: "networkidle" });
     await page.waitForSelector(".hero-card", { state: "visible" });
+    // The role link starts a session automatically (a Supabase round trip),
+    // so the hero card alone can be visible before "You are answering as
+    // Audience" and the wording have loaded in below it. Wait for the
+    // actual content, not just the page shell, or this risks capturing a
+    // half-loaded state.
+    await page.waitForSelector("text=You are answering as", { state: "visible", timeout: 15000 });
+    await page.waitForSelector(".tone-wording-bar", { state: "visible", timeout: 15000 });
     await settle(page);
     await page.screenshot({ path: path.join(outputDir, "08-tone-participant.png") });
     console.log("Saved 08-tone-participant.png");
