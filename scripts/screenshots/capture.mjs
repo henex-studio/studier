@@ -88,15 +88,19 @@ async function main() {
     console.log("Saved 01-test-collection.png");
 
     // --- 2. Creating a tree test (form filled, not submitted) ---
+    // The type field used to be a <select>; the new test card redesign
+    // (Milestone, before this audit round) replaced it with a tablist of
+    // two buttons. Corrected 6 September 2026, found while re-running this
+    // script for the first time since that redesign landed.
     await page.fill('input[placeholder="New test title"]', "Example tree test");
-    await page.selectOption('select[aria-label="Test type"]', "tree_test");
+    await page.getByRole("tab", { name: "Tree Test" }).click();
     await settle(page);
     await page.screenshot({ path: path.join(outputDir, "02-create-tree-test.png") });
     console.log("Saved 02-create-tree-test.png");
 
     // --- 3. Creating a tone test (form filled, not submitted) ---
     await page.fill('input[placeholder="New test title"]', "Example tone test");
-    await page.selectOption('select[aria-label="Test type"]', "tone_test");
+    await page.getByRole("tab", { name: "Tone Test" }).click();
     await settle(page);
     await page.screenshot({ path: path.join(outputDir, "03-create-tone-test.png") });
     console.log("Saved 03-create-tone-test.png");
@@ -129,7 +133,7 @@ async function main() {
     // studies untouched.
     await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
     await page.fill('input[placeholder="New test title"]', "Screenshot publish check");
-    await page.selectOption('select[aria-label="Test type"]', "tree_test");
+    await page.getByRole("tab", { name: "Tree Test" }).click();
     await page.click('button:has-text("Add new test")');
     await page.waitForSelector("h1", { state: "visible" }); // now on the new draft's builder page
     await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
