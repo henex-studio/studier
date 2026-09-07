@@ -555,15 +555,24 @@ select:focus {
   color: #1d4ed8;
 }
 
+/* Two grids of cards, one scale. Both were 12 until 7 September 2026.
+   They share this rule, which is worth saying out loud: the tone dashboard
+   fix below was written without noticing the selectors were grouped, so the
+   study collection's grid moved with it. Keeping the change, because 14 is
+   the scale and two card grids spaced differently was never a decision. */
 .study-grid,
-/* Measured on a tone dashboard, 7 September 2026: the heading row sat 0
-   from the score cards below it and the score cards sat 0 from the warning
-   under them, so a pill on the right of the heading looked stuck to the
-   card beneath it. Neither zero was chosen; the grid simply carried no
-   vertical margin. */
 .summary-grid {
   display: grid;
   gap: var(--control-gap);
+}
+
+/* Measured on a tone dashboard: the heading row sat 0 from the score cards
+   below it and the score cards sat 0 from the warning under them, so the
+   pill on the right of the heading looked stuck to the card beneath it.
+   Neither zero was chosen; the grid carried no vertical margin.
+   On .summary-grid only. The same margin reached .study-grid by accident
+   while the selectors were grouped, and is taken back off it here. */
+.summary-grid {
   margin: var(--control-gap) 0;
 }
 

@@ -1,5 +1,5 @@
-// Measures the space between adjacent elements on the participant screens
-// and reports anything that does not match the scale.
+// Measures the space between adjacent elements across the app and reports
+// anything that does not match the scale.
 //
 // Why this exists. Spacing has been reported three times in one day and
 // fixed twice by eye, and each time the fix was partial because looking at
@@ -10,18 +10,21 @@
 //
 //   npm run spacing
 //
-// It measures the participant screens: the ones an outside participant
-// sees, reachable with a link alone, and where the fault was. Operator
-// screens are not covered; that would need a Studier session, which is
-// what npm run smoke is for.
+// It covers both sides of the product. The participant screens, which an
+// outside participant sees and cannot report a fault on, and the operator
+// screens, which need a signed-in session.
 //
-// That gap is real and has already cost something. The two spacing faults
-// the operator reported on the study card and the tone dashboard are both
-// on operator screens this script cannot reach, and both had to be found
-// by eye and then measured by hand. Extending it to a signed-in context is
-// the obvious next step and is not done. The sign-in this script may ask for is
-// Vercel's, not Studier's, and only because preview deployments are
-// protected. See the note on BASE_URL.
+// The operator screens were added on 7 September 2026 because leaving them
+// out had already cost something: both spacing faults reported that day,
+// on the study card and on the tone dashboard, were on screens this script
+// could not reach, so both were found by eye and measured by hand
+// afterwards. A check whose coverage does not match where the faults are
+// is a check that reassures more than it verifies.
+//
+// One sign-in covers everything: Vercel's gate on preview deployments, if
+// the target is a preview, and Studier's own. It is the same manual pause
+// npm run smoke and npm run screenshots already use, and it never types a
+// password.
 //
 // A run creates a tone test session on the study it opens, because opening
 // a role link is what starts one. It deletes nothing, so clear those out
@@ -51,8 +54,10 @@ const BASE_URL = process.env.SPACING_URL || "https://studier-git-dev-cafes-proje
 //
 //   Or turn on Vercel's protection bypass for automation and put the secret
 //     in the environment, never in a file here.
-const NEEDS_SIGN_IN = !process.env.SPACING_URL;
-
+//
+// Neither removes the Studier sign-in, which the operator screens need. A
+// fully unattended version would have to hold an account's credentials,
+// which is not something this repository will do.
 function ask(question) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => rl.question(question, (answer) => { rl.close(); resolve(answer); }));
@@ -125,71 +130,107 @@ async function measure(page) {
   }, { CONTROL, LABEL, LABEL_PAIRS, PROSE: [...PROSE] });
 }
 
+// The operator screens. Their ids are not known in advance, so they are
+// read off the test collection: each card links to its own builder and
+// dashboard, and the two study types use different builder paths.
+async function operatorPages(page) {
+  await page.goto(`${BASE_URL}/admin`, { waitUntil: "domcontentloaded" });
+  await page.waitForSelector(".study-grid, .list-view-card", { timeout: 20000 });
+
+  const found = await page.evaluate(() => {
+    const pick = (type) => {
+      const cards = [...document.querySelectorAll(".study-card")];
+      const match = cards.find((card) =>
+        [...card.querySelectorAll("a")].some((a) => (a.getAttribute("href") || "").startsWith(type))
+      );
+      if (!match) return null;
+      const href = (selector) => match.querySelector(selector)?.getAttribute("href") || null;
+      return { builder: href(`a[href^="${type}"]`), dashboard: href('a[href^="/dashboard/"]') };
+    };
+    return { tree: pick("/builder/"), tone: pick("/tone-builder/") };
+  });
+
+  const pages = [{ name: "Test collection", path: "/admin" }];
+  if (found.tree?.builder) pages.push({ name: "Tree builder", path: found.tree.builder });
+  if (found.tree?.dashboard) pages.push({ name: "Tree dashboard", path: found.tree.dashboard });
+  if (found.tone?.builder) pages.push({ name: "Tone builder", path: found.tone.builder });
+  if (found.tone?.dashboard) pages.push({ name: "Tone dashboard", path: found.tone.dashboard });
+
+  if (pages.length === 1) {
+    console.log("  note  No studies on the test collection, so only /admin was measured.");
+  }
+  return pages;
+}
+
+async function measurePage(page, viewport, target) {
+  await page.goto(`${BASE_URL}${target.path}`, { waitUntil: "domcontentloaded" });
+
+  // domcontentloaded above, not networkidle: this site keeps analytics
+  // connections open, so "the network went quiet" never arrives and the
+  // navigation times out before anything is measured. This wait is what
+  // decides when the page is ready.
+  //
+  // On failure, say which page and what was on it. The first version died
+  // with a bare selector timeout naming neither, and the answer, a
+  // redirect to a Vercel login, was invisible until it started printing
+  // the url. That has now been the fault in three scripts here.
+  try {
+    await page.waitForSelector(".card", { timeout: 20000 });
+  } catch {
+    const text = (await page.evaluate(() => document.body.innerText)).trim().replace(/\s+/g, " ").slice(0, 200);
+    throw new Error(
+      `${viewport.name} ${target.name}: nothing rendered within 20s.\n` +
+      `          url:   ${page.url()}\n` +
+      `          title: ${await page.title()}\n` +
+      `          text:  ${text || "(the page is empty)"}`
+    );
+  }
+
+  await page.waitForTimeout(1500);
+
+  const found = await measure(page);
+  const tally = new Map();
+  found.forEach((f) => {
+    const key = `${f.gap}px where ${f.expected}px expected   ${f.pair}`;
+    tally.set(key, (tally.get(key) || 0) + 1);
+  });
+
+  if (tally.size === 0) {
+    console.log(`  ok    ${viewport.name.padEnd(7)} ${target.name}`);
+    return 0;
+  }
+
+  console.log(`  TIGHT ${viewport.name.padEnd(7)} ${target.name}`);
+  [...tally.entries()].sort().forEach(([line, count]) => {
+    console.log(`          x${String(count).padEnd(3)} ${line}`);
+  });
+  return tally.size;
+}
+
 async function main() {
-  const browser = await chromium.launch({ headless: !NEEDS_SIGN_IN });
+  const browser = await chromium.launch({ headless: false });
   let total = 0;
 
   try {
-    if (NEEDS_SIGN_IN) {
-      // One window, cleared once, then reused for every measurement below.
-      const gate = await browser.newPage({ viewport: VIEWPORTS[0] });
-      await gate.goto(`${BASE_URL}${PAGES[0].path}`, { waitUntil: "domcontentloaded" });
-      console.log("\nA browser window has opened.");
-      console.log("Vercel protects preview deployments, so it may show a Vercel login first.");
-      console.log("Sign in there if asked, until the Studier test page is on screen.");
-      await ask("Then press Enter here to start measuring... ");
-      await gate.close();
-    }
+    const gate = await browser.newPage({ viewport: VIEWPORTS[0] });
+    await gate.goto(`${BASE_URL}/admin`, { waitUntil: "domcontentloaded" });
+    console.log("\nA browser window has opened.");
+    console.log("Sign in to Studier there. If the target is a preview deployment,");
+    console.log("Vercel may ask for its own login first; that one is not Studier's.");
+    await ask("Once the test collection is on screen, press Enter here... ");
+    await gate.close();
+
+    // Read the operator pages once, in one context, then measure everything
+    // at both widths.
+    const scout = await browser.newPage({ viewport: VIEWPORTS[0] });
+    const operator = await operatorPages(scout);
+    await scout.close();
 
     for (const viewport of VIEWPORTS) {
       const page = await browser.newPage({ viewport });
-
-      for (const target of PAGES) {
-        // domcontentloaded, not networkidle. This site keeps analytics
-        // connections open, so "the network went quiet" never happens and
-        // the navigation times out before anything is measured. The waits
-        // below are what actually decide when the page is ready.
-        await page.goto(`${BASE_URL}${target.path}`, { waitUntil: "domcontentloaded" });
-
-        // The tone pages start a session over the network before there is
-        // anything to measure. If that never arrives, say which page it
-        // was and what was on it instead. The first version waited and
-        // then died with a bare selector timeout, naming neither the page
-        // nor what the page was actually showing, which is the same
-        // failure this repository has now hit three times in other
-        // scripts.
-        try {
-          await page.waitForSelector(".card", { timeout: 20000 });
-        } catch {
-          const text = (await page.evaluate(() => document.body.innerText)).trim().replace(/\s+/g, " ").slice(0, 200);
-          throw new Error(
-            `${viewport.name} ${target.name}: nothing rendered within 20s.\n` +
-            `          url:   ${page.url()}\n` +
-            `          title: ${await page.title()}\n` +
-            `          text:  ${text || "(the page is empty)"}`
-          );
-        }
-
-        await page.waitForTimeout(1500);
-
-        const found = await measure(page);
-        const tally = new Map();
-        found.forEach((f) => {
-          const key = `${f.gap}px where ${f.expected}px expected   ${f.pair}`;
-          tally.set(key, (tally.get(key) || 0) + 1);
-        });
-
-        if (tally.size === 0) {
-          console.log(`  ok    ${viewport.name.padEnd(7)} ${target.name}`);
-        } else {
-          total += tally.size;
-          console.log(`  TIGHT ${viewport.name.padEnd(7)} ${target.name}`);
-          [...tally.entries()].sort().forEach(([line, count]) => {
-            console.log(`          x${String(count).padEnd(3)} ${line}`);
-          });
-        }
+      for (const target of [...PAGES, ...operator]) {
+        total += await measurePage(page, viewport, target);
       }
-
       await page.close();
     }
   } finally {
@@ -206,6 +247,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Spacing check crashed:", error);
+  console.error("Spacing check crashed:", error.message);
   process.exit(1);
 });
