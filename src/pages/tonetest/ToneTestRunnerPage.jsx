@@ -296,8 +296,25 @@ export default function ToneTestRunnerPage({ slug, studyId, preview = false }) {
     setContentLoading(false);
   }
 
-  function chooseRole(roleKey) {
+  async function chooseRole(roleKey) {
     setSelectedRole(roleKey);
+
+    // For a participant this is only a selection; nothing happens until
+    // they confirm, and after that the role is fixed. In preview the whole
+    // point is to look at all three, so a click switches immediately and
+    // clears whatever was answered as the previous role. Without this the
+    // buttons stayed clickable, the highlight moved, the questions did
+    // not, and the confirm button had already disappeared: an operator
+    // could sit looking at Audience questions under a highlighted Editor.
+    if (preview && session && roleKey !== session.selected_role) {
+      setSession({ ...session, selected_role: roleKey });
+      setRatingAnswers({});
+      setGateAnswers({});
+      setOpenAnswers({});
+      setPreferredVariantId(null);
+      setSubmitError("");
+      if (study) await loadQuestionsForRole(study.id, roleKey);
+    }
   }
 
   async function confirmRole() {
@@ -616,11 +633,13 @@ export default function ToneTestRunnerPage({ slug, studyId, preview = false }) {
           </section>
         ) : (
           <section className="card">
-            <h2>Choose your role</h2>
+            <h2>{preview ? "Preview as which role" : "Choose your role"}</h2>
             <p className="muted-text">
-              {roleIsLocked
-                ? "You already started answering as this role, so it is fixed for the rest of this test."
-                : "Pick the role that best describes why you are reviewing this wording."}
+              {preview
+                ? "Switch freely to see each role's questions. A participant chooses once and is then fixed for the rest of the test."
+                : roleIsLocked
+                  ? "You already started answering as this role, so it is fixed for the rest of this test."
+                  : "Pick the role that best describes why you are reviewing this wording."}
             </p>
 
             {activeRoleKeys.length === 0 ? (
