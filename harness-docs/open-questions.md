@@ -280,6 +280,23 @@ The pattern across D-1, D-2 and D-6 is the same. The scoring model was revised, 
 
 **Severity:** Major. Recorded as S-8.2.
 
+
+---
+
+## Q-16. The local development environment has never been run
+
+**Raised:** 7 September 2026, while trying to run the smoke test against a deliberately broken build.
+
+`CLAUDE.md` section 5 says build and regression checks run locally. There is no `.env.local` in the working copy, only `.env.example`, so `npm run dev` starts and then reports "Supabase environment variables are missing". Local development has therefore never actually run against a database.
+
+This has not mattered so far because every check has been run against the deployed preview. It mattered once: it blocked verifying that the smoke test detects the fault it was written for, since injecting that fault into the shared preview would mean pushing a broken commit to `dev`. That verification was dropped as not worth the setup cost, which is a reasonable call while nothing else depends on a local environment.
+
+It is the same shape as A7. A governing document describes a capability that is not present. Either stand the local environment up, or correct section 5 to say that verification happens on the preview.
+
+**Blocks:** nothing today. Blocks any future fault-injection check, and any work that needs to run without touching the shared preview.
+
+**Severity:** Minor while the project has one operator and no users. Grows the moment a second person works on the repository.
+
 ---
 
 # Part 3. Resolution order
@@ -296,4 +313,4 @@ Q-1 and Q-6 should be answered together. Q-6 changes what Q-1 means, because a c
 
 **Then, document repair.** D-1, D-2, D-3, D-6. Mechanical once the decisions above are settled. D-2 is the most urgent of these, because the stakeholder-facing proposal page currently shows superseded weights.
 
-**Remaining count:** 11 open questions, 5 open conflicts.
+**Remaining count:** 12 open questions, 5 open conflicts. Q-16 was added 7 September 2026 and sits outside the scoring work; it is documentation and environment repair, in the same family as A7.
