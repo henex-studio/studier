@@ -8,6 +8,9 @@
 :root {
   --control-gap: 14px;
   --control-height: 44px;
+  /* A label or a caption belongs to the control beside it, so it sits
+     closer than two separate things do. Two values, not eleven. */
+  --label-gap: 8px;
 }
 
 * {
@@ -150,7 +153,7 @@ ul {
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: var(--control-gap);
 }
 
 .muted-text {
@@ -166,10 +169,19 @@ ul {
   color: rgba(255, 255, 255, 0.88);
 }
 
+.button-row + .textarea {
+  /* A risk gate's comment box sat flush against its Pass, Concern and Fail
+     buttons at exactly 0, in fifteen places on one screen, because the
+     wrapper around them had no layout rule and neither element carried a
+     margin. Measured on the participant screens, 7 September 2026. */
+  margin-top: var(--control-gap);
+}
+
 .rating-scale-labels {
   display: flex;
   justify-content: space-between;
-  margin-top: 6px;
+  /* A caption for the scale above it, not a separate thing. */
+  margin-top: var(--label-gap);
   color: #64748b;
   font-size: 12px;
 }
@@ -974,7 +986,7 @@ select:focus {
   border-radius: 20px;
   background: #ffffff;
   padding: 16px;
-  margin: 12px 0;
+  margin: var(--control-gap) 0;
 }
 
 .privacy-card {
@@ -1059,7 +1071,7 @@ select:focus {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--control-gap);
 }
 
 .tone-wording-bar-head h2 {
@@ -1073,7 +1085,7 @@ select:focus {
 }
 
 .tone-wording-text {
-  margin-top: 10px;
+  margin-top: var(--control-gap);
   margin-bottom: 0;
 }
 

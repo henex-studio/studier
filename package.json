@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "screenshots": "node scripts/screenshots/capture.mjs",
     "smoke": "node scripts/smoke/smoke.mjs",
-    "smoke:clean": "node scripts/smoke/smoke.mjs --clean-only"
+    "smoke:clean": "node scripts/smoke/smoke.mjs --clean-only",
+    "spacing": "node scripts/spacing/check.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.105.4",
