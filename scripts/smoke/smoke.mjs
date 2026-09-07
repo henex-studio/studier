@@ -251,7 +251,9 @@ async function sweep(page) {
 
 async function main() {
   const browser = await chromium.launch({ headless: false, args: ["--disable-gpu", "--disable-software-rasterizer"] });
-  const page = await browser.newPage({ viewport: VIEWPORT });
+  // acceptDownloads defaults to true, but the CSV step depends on it, so
+  // it is stated rather than assumed.
+  const page = await browser.newPage({ viewport: VIEWPORT, acceptDownloads: true });
   const pageErrors = [];
 
   page.on("pageerror", (error) => {
@@ -475,16 +477,42 @@ async function main() {
       await leaf.click();
 
       await page.getByRole("button", { name: "Next", exact: true }).click();
-      await page.locator(".done-card").waitFor({ state: "visible", timeout: 20000 });
+
+      // Answering the last task does not finish a tree test. next() always
+      // moves to the "Final questions" screen, which renders even when the
+      // test has no final questions, and the response is only written when
+      // Submit is clicked there. An earlier version of this step waited
+      // for the end card straight after Next and timed out. See
+      // TestRunnerPage.jsx, next() and submitFinal().
+      await page.getByRole("heading", { name: "Final questions" }).waitFor({ state: "visible", timeout: 20000 });
+      await page.getByRole("button", { name: "Submit", exact: true }).click();
+
+      const done = page.locator(".done-card");
+      const refused = page.locator(".error-box");
+
+      await Promise.race([
+        done.waitFor({ state: "visible", timeout: 20000 }),
+        refused.first().waitFor({ state: "visible", timeout: 20000 })
+      ]).catch(() => {});
+
+      if (await refused.first().isVisible().catch(() => false)) {
+        throw new Error(`The app refused the submission: ${(await refused.first().innerText()).trim()}`);
+      }
+
+      await done.waitFor({ state: "visible", timeout: 20000 });
     });
 
     // ---------- Reporting ----------
 
     await step("The tone dashboard shows the submitted response", async () => {
+      // Reading the href and navigating, rather than clicking. App.jsx
+      // intercepts in-app links and changes route with pushState, so a
+      // click is not a navigation and waiting for load state after it
+      // resolves against the page already on screen.
       await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
       const card = studyCard(page, TONE_TITLE);
-      await card.getByRole("link", { name: "Dashboard" }).click();
-      await page.waitForSelector("h1", { state: "visible" });
+      const href = await card.getByRole("link", { name: "Dashboard" }).getAttribute("href");
+      await page.goto(`${BASE_URL}${href}`, { waitUntil: "networkidle" });
       await page.getByRole("button", { name: "Refresh" }).click();
 
       // A tone test opens ToneDashboardPage, which counts sessions in
@@ -504,8 +532,8 @@ async function main() {
     await step("Export a CSV from the tree dashboard", async () => {
       await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
       const card = studyCard(page, TREE_TITLE);
-      await card.getByRole("link", { name: "Dashboard" }).click();
-      await page.waitForSelector("h1", { state: "visible" });
+      const href = await card.getByRole("link", { name: "Dashboard" }).getAttribute("href");
+      await page.goto(`${BASE_URL}${href}`, { waitUntil: "networkidle" });
 
       const download = page.waitForEvent("download", { timeout: 20000 });
       await page.getByRole("button", { name: "Export task CSV" }).click();
