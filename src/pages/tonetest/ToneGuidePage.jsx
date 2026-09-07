@@ -262,6 +262,17 @@ export default function ToneGuidePage({ profile }) {
               Participants need no account. Send each link only to the group it is for: a link is not
               secret, and anyone holding it can answer as that role.
             </p>
+            <p>
+              One person takes part once. A browser that has completed the test as one role cannot
+              answer another role's link, and will be told which role it already answered as. This is
+              deliberate: the three roles are weighted differently in the Content Score, so one person
+              answering as all three would move the result on their own.
+            </p>
+            <p>
+              To see all three roles yourself, use Preview on the test's card rather than the links you
+              send out. Preview walks the same screens, lets you switch between roles freely, and records
+              nothing, so it does not appear in your results.
+            </p>
           </section>
 
           <section id="participants">
