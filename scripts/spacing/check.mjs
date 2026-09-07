@@ -13,7 +13,13 @@
 // It measures the participant screens: the ones an outside participant
 // sees, reachable with a link alone, and where the fault was. Operator
 // screens are not covered; that would need a Studier session, which is
-// what npm run smoke is for. The sign-in this script may ask for is
+// what npm run smoke is for.
+//
+// That gap is real and has already cost something. The two spacing faults
+// the operator reported on the study card and the tone dashboard are both
+// on operator screens this script cannot reach, and both had to be found
+// by eye and then measured by hand. Extending it to a signed-in context is
+// the obvious next step and is not done. The sign-in this script may ask for is
 // Vercel's, not Studier's, and only because preview deployments are
 // protected. See the note on BASE_URL.
 //
