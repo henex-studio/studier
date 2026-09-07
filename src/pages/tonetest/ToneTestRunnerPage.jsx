@@ -506,13 +506,15 @@ export default function ToneTestRunnerPage({ slug }) {
             {activeRoleKeys.length === 0 ? (
               <p className="error-box">This test has no active roles to answer as yet.</p>
             ) : (
-              <div>
+              <div role="radiogroup" aria-label="Choose your role">
                 {activeRoleKeys.map((roleKey) => {
                   const isSelected = selectedRole === roleKey;
                   return (
                     <button
                       key={roleKey}
                       type="button"
+                      role="radio"
+                      aria-checked={isSelected}
                       className={isSelected ? "primary-button" : "secondary-button"}
                       disabled={roleIsLocked && !isSelected}
                       onClick={() => chooseRole(roleKey)}
@@ -559,12 +561,18 @@ export default function ToneTestRunnerPage({ slug }) {
                   <div className="tone-wording-bar-head">
                     <h2>Wording</h2>
 
+                    {/* These switch which wording is on show rather than
+                        answering anything, so they are tabs, not radios. The
+                        type tabs in StudyListPage.jsx already use this
+                        pattern. Audit finding C1. */}
                     {shownVariants.length > 1 ? (
-                      <div className="tone-wording-tabs">
+                      <div className="tone-wording-tabs" role="tablist" aria-label="Which wording to show">
                         {shownVariants.map((variant, index) => (
                           <button
                             key={variant.id}
                             type="button"
+                            role="tab"
+                            aria-selected={index === activeWordingIndex}
                             className={index === activeWordingIndex ? "view-toggle-button view-toggle-button-active" : "view-toggle-button"}
                             onClick={() => setActiveWordingIndex(index)}
                           >
@@ -631,11 +639,29 @@ export default function ToneTestRunnerPage({ slug }) {
 
                         {question.question_type === "rating" ? (
                           <div>
-                            <div className="button-row">
+                            {/* Six buttons that look like a scale to a sighted
+                                participant were six unrelated buttons to a
+                                screen reader: nothing said they belonged
+                                together, that only one could be chosen, which
+                                question they answered, or which one was
+                                chosen, because the choice showed as colour
+                                only. As a radiogroup they announce all four.
+                                Audit findings C1 and C2. */}
+                            <div
+                              className="button-row"
+                              role="radiogroup"
+                              aria-label={
+                                variantMode === "compare_all"
+                                  ? `${question.question_text} For wording ${index + 1}`
+                                  : question.question_text
+                              }
+                            >
                               {[1, 2, 3, 4, 5].map((value) => (
                                 <button
                                   key={value}
                                   type="button"
+                                  role="radio"
+                                  aria-checked={ratingAnswers[question.id]?.[variant.id] === value}
                                   className={ratingAnswers[question.id]?.[variant.id] === value ? "primary-button" : "secondary-button"}
                                   onClick={() => setRating(question.id, variant.id, value)}
                                 >
@@ -644,6 +670,8 @@ export default function ToneTestRunnerPage({ slug }) {
                               ))}
                               <button
                                 type="button"
+                                role="radio"
+                                aria-checked={ratingAnswers[question.id]?.[variant.id] === "na"}
                                 className={ratingAnswers[question.id]?.[variant.id] === "na" ? "primary-button" : "secondary-button"}
                                 onClick={() => setRating(question.id, variant.id, "na")}
                               >
@@ -657,11 +685,21 @@ export default function ToneTestRunnerPage({ slug }) {
                           </div>
                         ) : (
                           <div>
-                            <div className="button-row">
+                            <div
+                              className="button-row"
+                              role="radiogroup"
+                              aria-label={
+                                variantMode === "compare_all"
+                                  ? `${question.question_text} For wording ${index + 1}`
+                                  : question.question_text
+                              }
+                            >
                               {GATE_STATUS_OPTIONS.map((option) => (
                                 <button
                                   key={option.value}
                                   type="button"
+                                  role="radio"
+                                  aria-checked={gateAnswers[question.id]?.[variant.id]?.status === option.value}
                                   className={gateAnswers[question.id]?.[variant.id]?.status === option.value ? "primary-button" : "secondary-button"}
                                   onClick={() => setGate(question.id, variant.id, "status", option.value)}
                                 >
@@ -687,11 +725,13 @@ export default function ToneTestRunnerPage({ slug }) {
             {variantMode === "compare_all" && shownVariants.length > 1 ? (
               <div className="question-card">
                 <p className="form-label">Which wording did you prefer?</p>
-                <div className="button-row">
+                <div className="button-row" role="radiogroup" aria-label="Which wording did you prefer?">
                   {shownVariants.map((variant, index) => (
                     <button
                       key={variant.id}
                       type="button"
+                      role="radio"
+                      aria-checked={preferredVariantId === variant.id}
                       className={preferredVariantId === variant.id ? "primary-button" : "secondary-button"}
                       onClick={() => setPreferredVariantId(variant.id)}
                     >

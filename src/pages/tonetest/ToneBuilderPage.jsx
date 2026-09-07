@@ -350,11 +350,21 @@ function RolePreview({ activeRoles, variantMode, variants, questions }) {
 
   return (
     <div>
-      <div className="button-row" style={{ flexWrap: "wrap" }}>
+      {/* Which role's preview is on show. Tabs rather than radios: these
+          switch a view, they do not record an answer. Audit finding C1, the
+          selected one previously differed only in colour. */}
+      <div
+        className="button-row"
+        style={{ flexWrap: "wrap" }}
+        role="tablist"
+        aria-label="Preview as which role"
+      >
         {activeRoleKeys.map((roleKey) => (
           <button
             key={roleKey}
             type="button"
+            role="tab"
+            aria-selected={roleKey === currentRole}
             className={roleKey === currentRole ? "primary-button" : "secondary-button"}
             onClick={() => setPreviewRole(roleKey)}
           >

@@ -108,11 +108,18 @@ export default function TreeView({ tree = [], selectedPath = "", onSelect, defau
 
       return (
         <div className="tree-node" key={path}>
+          {/* The tick that marks the chosen item is aria-hidden, so before
+              this the only thing announcing a selection was the colour, and
+              a screen reader heard the same thing for every item in the tree.
+              aria-current rather than aria-pressed, because this button also
+              expands and collapses, and calling it pressed would describe the
+              wrong action. Audit finding C1. */}
           <button
             className={isSelected ? "tree-button tree-button-selected" : "tree-button"}
             type="button"
             onClick={() => handleSelect(path, hasChildren)}
             aria-expanded={hasChildren ? isExpanded : undefined}
+            aria-current={isSelected ? "true" : undefined}
             style={{ paddingLeft: `${12 + depth * 14}px` }}
           >
             <span className="tree-label-wrap">

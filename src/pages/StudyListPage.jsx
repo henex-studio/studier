@@ -589,10 +589,13 @@ export default function StudyListPage({ profile }) {
       </section>
 
       <div className="collection-header-row list-controls">
+        {/* Both groups showed which option was active through colour alone.
+            aria-pressed says it out loud. Audit finding C1. */}
         <div className="type-filter" role="group" aria-label="Filter by test type">
           <button
             className={typeFilter === "all" ? "type-filter-button type-filter-button-active" : "type-filter-button"}
             type="button"
+            aria-pressed={typeFilter === "all"}
             onClick={() => setTypeFilter("all")}
           >
             All types
@@ -600,6 +603,7 @@ export default function StudyListPage({ profile }) {
           <button
             className={typeFilter === "tree_test" ? "type-filter-button type-filter-button-active type-filter-button-tree" : "type-filter-button type-filter-button-tree"}
             type="button"
+            aria-pressed={typeFilter === "tree_test"}
             onClick={() => setTypeFilter("tree_test")}
           >
             <Network size={14} strokeWidth={2.25} aria-hidden="true" />
@@ -608,6 +612,7 @@ export default function StudyListPage({ profile }) {
           <button
             className={typeFilter === "tone_test" ? "type-filter-button type-filter-button-active type-filter-button-tone" : "type-filter-button type-filter-button-tone"}
             type="button"
+            aria-pressed={typeFilter === "tone_test"}
             onClick={() => setTypeFilter("tone_test")}
           >
             <MessageSquare size={14} strokeWidth={2.25} aria-hidden="true" />
@@ -615,10 +620,11 @@ export default function StudyListPage({ profile }) {
           </button>
         </div>
 
-        <div className="view-toggle" aria-label="Collection view mode">
+        <div className="view-toggle" role="group" aria-label="Collection view mode">
           <button
             className={viewMode === "cards" ? "view-toggle-button view-toggle-button-active" : "view-toggle-button"}
             type="button"
+            aria-pressed={viewMode === "cards"}
             onClick={() => setViewMode("cards")}
           >
             Cards
@@ -626,6 +632,7 @@ export default function StudyListPage({ profile }) {
           <button
             className={viewMode === "list" ? "view-toggle-button view-toggle-button-active" : "view-toggle-button"}
             type="button"
+            aria-pressed={viewMode === "list"}
             onClick={() => setViewMode("list")}
           >
             List
