@@ -139,7 +139,11 @@ async function main() {
       const page = await browser.newPage({ viewport });
 
       for (const target of PAGES) {
-        await page.goto(`${BASE_URL}${target.path}`, { waitUntil: "networkidle" });
+        // domcontentloaded, not networkidle. This site keeps analytics
+        // connections open, so "the network went quiet" never happens and
+        // the navigation times out before anything is measured. The waits
+        // below are what actually decide when the page is ready.
+        await page.goto(`${BASE_URL}${target.path}`, { waitUntil: "domcontentloaded" });
 
         // The tone pages start a session over the network before there is
         // anything to measure. If that never arrives, say which page it
