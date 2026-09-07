@@ -23,11 +23,13 @@ export default function PublicTestRouter({ slug }) {
 
     async function checkType() {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("studies")
-        .select("study_type")
-        .eq("slug", slug)
-        .maybeSingle();
+      // Looked up through get_public_study rather than by reading the
+      // studies table. Reading the table works, but the permission that
+      // allows it also allows an unfiltered read, so anyone could list
+      // every published test with its title and link code without holding
+      // a link at all. The function answers one slug at a time and applies
+      // the same visibility rules. See Q-17 and migration 020.
+      const { data, error } = await supabase.rpc("get_public_study", { p_slug: slug });
 
       if (!active) return;
 

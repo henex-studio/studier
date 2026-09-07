@@ -78,11 +78,14 @@ export default function ToneTestRunnerPage({ slug }) {
     let active = true;
 
     async function load() {
+      // One slug at a time, through get_public_study, instead of reading
+      // the studies table. See Q-17 and migration 020: the permission that
+      // let this page find its study also let anyone list every published
+      // test. The function returns null rather than an error when the slug
+      // is unknown or not visible to this caller, so both cases are
+      // handled together below.
       const { data: studyData, error: studyError } = await supabase
-        .from("studies")
-        .select("*")
-        .eq("slug", slug)
-        .single();
+        .rpc("get_public_study", { p_slug: slug });
 
       if (!active) return;
 

@@ -144,11 +144,12 @@ export default function TestRunnerPage({ slug }) {
   }
 
   async function load() {
+    // One slug at a time, through get_public_study, instead of reading the
+    // studies table. The permission that let this page find its study also
+    // let anyone list every published test with its title and link code.
+    // See Q-17 and migration 020.
     const { data: studyData, error } = await supabase
-      .from("studies")
-      .select("*")
-      .eq("slug", slug)
-      .single();
+      .rpc("get_public_study", { p_slug: slug });
 
     if (error || !studyData) {
       setMessage("This test link is not available.");
