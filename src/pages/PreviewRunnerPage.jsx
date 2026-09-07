@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import TreeView from "../components/TreeView";
 import PreviewBanner from "../components/PreviewBanner";
+import DoneCard from "../components/DoneCard";
 import ToneTestRunnerPage from "./tonetest/ToneTestRunnerPage";
 import { supabase } from "../lib/supabase";
 import { getMatchResult } from "../lib/matching";
@@ -364,7 +365,7 @@ export default function PreviewRunnerPage({ profile, studyId }) {
   }
 
   if (screen === "done") {
-    return <div ref={topRef} className="page-shell"><main className="container narrow"><PreviewBanner builderPath={`/builder/${study.id}`} /><section className="card done-card"><CheckCircle2 className="done-icon" /><h1>Preview complete</h1><p>Responses were not saved.</p><div className="button-row action-center"><a className="primary-button" href={`/builder/${study.id}`}>Back to editor</a><a className="secondary-button" href="/admin">Back to test collection</a></div></section></main></div>;
+    return <div ref={topRef} className="page-shell"><main className="container narrow"><PreviewBanner builderPath={`/builder/${study.id}`} /><DoneCard heading="Preview complete" paragraphs={["Responses were not saved."]}><div className="button-row action-center"><a className="primary-button" href={`/builder/${study.id}`}>Back to editor</a><a className="secondary-button" href="/admin">Back to test collection</a></div></DoneCard></main></div>;
   }
 
   return (

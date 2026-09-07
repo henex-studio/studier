@@ -3,7 +3,7 @@ import { supabase } from "../../lib/supabase";
 import { getParticipantId } from "../../lib/participantId";
 import { ROLE_KEYS, ROLE_LABELS, ROLE_DESCRIPTIONS } from "../../lib/tonetest/defaultQuestions";
 import PreviewBanner from "../../components/PreviewBanner";
-import { CheckCircle2 } from "lucide-react";
+import DoneCard from "../../components/DoneCard";
 
 function isPastExpiry(value) {
   if (!value) return false;
@@ -560,29 +560,28 @@ export default function ToneTestRunnerPage({ slug, studyId, preview = false }) {
   }
 
   if (finished) {
+    // The same ending as a tree test, through the same component. A tone
+    // test used to finish on a bare card with two lines of text while a
+    // tree test finished with a tick and a heading, so the platform said
+    // goodbye two different ways depending on which test someone had been
+    // sent. Reported by the operator on 7 September 2026.
     return (
       <div className="page-shell">
         <main className="container narrow">
           {preview ? <PreviewBanner builderPath={`/tone-builder/${study.id}`} /> : null}
-          <section className="card done-card">
-            {preview ? (
-              // Worded and shaped to match the tree test's preview ending,
-              // so "preview" means the same thing in both.
-              <>
-                <CheckCircle2 className="done-icon" />
-                <h1>Preview complete</h1>
-                <p>Responses were not saved.</p>
-                <div className="button-row action-center">
-                  <a className="primary-button" href={`/tone-builder/${study.id}`}>Back to editor</a>
-                  <a className="secondary-button" href="/admin">Back to test collection</a>
-                </div>
-              </>
-            ) : (
-              (study.end_text?.length ? study.end_text : ["You have completed the test.", "Thank you for your feedback."]).map(
-                (text, index) => <p key={index}>{text}</p>
-              )
-            )}
-          </section>
+          {preview ? (
+            <DoneCard heading="Preview complete" paragraphs={["Responses were not saved."]}>
+              <div className="button-row action-center">
+                <a className="primary-button" href={`/tone-builder/${study.id}`}>Back to editor</a>
+                <a className="secondary-button" href="/admin">Back to test collection</a>
+              </div>
+            </DoneCard>
+          ) : (
+            <DoneCard
+              heading="Thank you"
+              paragraphs={study.end_text?.length ? study.end_text : ["You have completed the test."]}
+            />
+          )}
         </main>
       </div>
     );

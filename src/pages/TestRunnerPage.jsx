@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import TreeView from "../components/TreeView";
+import DoneCard from "../components/DoneCard";
 import { supabase } from "../lib/supabase";
 import { getParticipantId } from "../lib/participantId";
 import { getMatchResult } from "../lib/matching";
@@ -371,11 +372,10 @@ export default function TestRunnerPage({ slug }) {
     return (
       <div ref={topRef} className="page-shell">
         <main className="container narrow">
-          <section className="card done-card">
-            <CheckCircle2 className="done-icon" />
-            <h1>Sorry, this test is now closed.</h1>
-            <p>Do not worry. If you want to take part, please contact the person who shared this test with you.</p>
-          </section>
+          <DoneCard
+            heading="Sorry, this test is now closed."
+            paragraphs={["Do not worry. If you want to take part, please contact the person who shared this test with you."]}
+          />
         </main>
       </div>
     );
@@ -436,7 +436,7 @@ export default function TestRunnerPage({ slug }) {
   }
 
   if (screen === "done") {
-    return <div ref={topRef} className="page-shell"><main className="container narrow"><section className="card done-card"><CheckCircle2 className="done-icon" /><h1>Thank you</h1>{(study.end_text || []).map((text, index) => <p key={index}>{text}</p>)}</section></main></div>;
+    return <div ref={topRef} className="page-shell"><main className="container narrow"><DoneCard heading="Thank you" paragraphs={study.end_text || []} /></main></div>;
   }
 
   return (
