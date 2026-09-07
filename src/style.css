@@ -598,13 +598,37 @@ select:focus {
    it is, and regardless of how many buttons each card's action rows carry
    (a draft card and a published card do not offer the same buttons). This
    is what keeps every card's bottom edge level in the grid. */
+/* One source of spacing, not three. Measured before changing: a card had
+   14px between buttons in a row, 0 between the navigation row and the
+   first action group, 28 between action groups, and 14 above Delete. The
+   0 and the 28 were not chosen. They fell out of three rules competing:
+   .card-action-groups contributed its gap, .study-grid .button-row added a
+   top margin on top of that, and .study-card-actions .button-row:first-child
+   cancelled the margin on whichever row happened to come first.
+
+   The container now owns the spacing and the rows carry no margins, so
+   there is one number to change and nothing to cancel. */
 .study-card-actions {
   margin-top: auto;
-  padding-top: 14px;
+  padding-top: var(--control-gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--control-gap);
 }
 
-.study-card-actions .button-row:first-child {
+/* Rows inside a study card carry no vertical margin of their own. Their
+   container spaces them. The rule this replaces set margin-top: 0 on
+   whichever row came first, which is why the first gap in a card measured
+   0 while the next measured 28. */
+.study-card-actions .button-row,
+.study-card-actions .card-action-groups {
   margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* The owner name sat directly against the title with no space at all. */
+.study-card-body .owner-chip {
+  margin-bottom: 8px;
 }
 
 .status-badge {

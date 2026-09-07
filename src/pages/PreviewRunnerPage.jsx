@@ -227,6 +227,15 @@ export default function PreviewRunnerPage({ profile, studyId }) {
       setTaskIndex(taskIndex + 1);
       setStartedAt(Date.now());
       showNextQuestionNotice();
+    } else if (finalQuestions.length === 0) {
+      // Matches TestRunnerPage: a test with no final questions skips the
+      // empty screen and finishes. Kept in step deliberately. The point of
+      // a preview is to show what a participant sees, so a difference here
+      // is worse than the same code appearing twice. It diverged for a few
+      // hours on 7 September when the participant runner was changed and
+      // this file was not, which is the clearest argument yet for the
+      // duplication between these two files being a real cost.
+      finishPreview();
     } else {
       setScreen("final");
       showNextQuestionNotice();
