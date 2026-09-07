@@ -556,9 +556,23 @@ select:focus {
 }
 
 .study-grid,
+/* Measured on a tone dashboard, 7 September 2026: the heading row sat 0
+   from the score cards below it and the score cards sat 0 from the warning
+   under them, so a pill on the right of the heading looked stuck to the
+   card beneath it. Neither zero was chosen; the grid simply carried no
+   vertical margin. */
 .summary-grid {
   display: grid;
-  gap: 12px;
+  gap: var(--control-gap);
+  margin: var(--control-gap) 0;
+}
+
+/* A card inside a grid is spaced by the grid. Carrying its own bottom
+   margin as well made stacked score cards sit 30 apart, 14 from the gap
+   plus 16 from the margin, which only shows at one column and so was
+   invisible on a wide screen. */
+.summary-grid .summary-card {
+  margin-bottom: 0;
 }
 
 .study-grid .button-row {
@@ -1013,7 +1027,7 @@ select:focus {
 
 .settings-list {
   display: grid;
-  gap: 10px;
+  gap: var(--control-gap);
   margin-top: 14px;
 }
 
