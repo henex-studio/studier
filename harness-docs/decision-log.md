@@ -343,3 +343,16 @@ Where two sources disagree, the entry is marked **Contested** and the conflict i
 **Fix.** A `waitForList` helper waits for the grid or an explicit empty message, which is the difference between "the page has something on it" and "the list has finished". It runs after navigation and after every deletion. The sweep then re-reads the page and throws if anything matching the fixture pattern survives, so an under-delete now fails loudly instead of passing quietly.
 
 **The general lesson.** This is the third instance in three days of the same shape: A2 on 6 September, the sweep matching in S-9.3, and this. Each time a check was written to a description of what should happen and never confirmed against what did happen. Verification steps in this repository assert their own result. A cleanup step that does not re-read the world afterwards is not a cleanup step.
+
+### S-9.5 The smoke test cannot see anonymous-only faults
+**Status:** Active limitation, recorded 7 September 2026.
+
+**What was found.** A tone test participant saw "No wording is available for this test yet." above a full list of questions about wording they could not read. The runner asked for `select("*")` on `tone_variants` and `tone_test_settings`. `anon` is granted select on those tables one column at a time, deliberately withholding `internal_note`, `content_score_weights_json`, `evidence_confidence_settings_json` and `blame_flag_threshold`. Asking for every column asked for those too, so PostgREST refused the whole request with 42501 and the page received nothing. Live since the feature shipped.
+
+**Why nothing caught it.** Both the operator opening their own link and the smoke test run as `authenticated`, which holds table-level select and can read every column. The fault only exists when signed out. This is exactly what CLAUDE.md section 5 says about verification: a session carrying authentication masks the failure. The section was right, and the smoke test was built without honouring it.
+
+**The gap this leaves.** The smoke test signs in once and drives everything from that one signed-in browser context, including the steps labelled as the participant path. Those steps prove the participant screens render and submit, but they prove nothing about whether an anonymous visitor can use them. Every access fault that only affects `anon` is invisible to it, which is the category most likely to reach an outside participant.
+
+**What would close it.** Run the participant steps in a separate browser context with no session, while the operator steps keep the signed-in one. Playwright supports this directly. Recorded rather than done, because it changes the shape of the script and should be its own task with its own verification.
+
+**The general lesson, again.** Three times this week the same shape: a check written to describe an intent rather than to observe the thing it claims to check. Here the intent was "exercise the participant path" and what was actually exercised was "the participant screens, as an administrator".

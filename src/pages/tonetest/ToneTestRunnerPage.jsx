@@ -101,7 +101,16 @@ export default function ToneTestRunnerPage({ slug }) {
 
       const { data: settingsData } = await supabase
         .from("tone_test_settings")
-        .select("*")
+        // Named columns, not *. A participant is anonymous, and anon is
+        // granted select on this table one column at a time, deliberately
+        // withholding content_score_weights_json,
+        // evidence_confidence_settings_json and blame_flag_threshold, which
+        // are the operator's scoring configuration and none of a
+        // participant's business. Asking for * asks for those too, so the
+        // whole request was refused with "permission denied for table
+        // tone_test_settings" and the page fell back to defaults. See the
+        // note on the tone_variants query below.
+        .select("id, study_id, scenario, content_goal, sensitivity_level, variant_mode, active_roles_json")
         .eq("study_id", studyData.id)
         .maybeSingle();
 
@@ -110,7 +119,23 @@ export default function ToneTestRunnerPage({ slug }) {
 
       const { data: variantRows } = await supabase
         .from("tone_variants")
-        .select("*")
+        // Named columns for the same reason, and this one was the visible
+        // failure. anon may read every column here except internal_note,
+        // the operator's private note about a wording. Asking for * asked
+        // for internal_note as well, so PostgREST refused the whole request
+        // with 42501 and the runner received no variants at all. A
+        // participant therefore saw "No wording is available for this test
+        // yet." above a full list of questions about wording they could not
+        // read. Live since the feature shipped.
+        //
+        // It stayed hidden because it only happens when signed out. An
+        // operator opening their own link, and the smoke test, both run as
+        // authenticated, which holds table-level select and sees
+        // everything. This is precisely the case CLAUDE.md section 5 warns
+        // about: a session that carries authentication masks the fault.
+        // Found 7 September 2026 by requesting the page's own query as an
+        // anonymous visitor.
+        .select("id, study_id, label, variant_text, display_order")
         .eq("study_id", studyData.id)
         .order("display_order");
 
