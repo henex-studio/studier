@@ -201,9 +201,32 @@ async function answerQuestionCard(card) {
 // database credentials out of this script and out of the repository
 // entirely, which CLAUDE.md section 2 requires, and has the side benefit
 // of exercising the delete path on every run.
+// Waits for the test collection to finish loading and settle on a real
+// end state.
+//
+// This exists because of a false pass. loadStudies() raises a loading
+// flag and the grid renders only when that flag is down, so the list
+// unmounts completely while it reloads, and deleting a study triggers
+// exactly that reload. The sweep used to wait for ".study-card, .card",
+// which matches the "new test" card at the top of the page and is
+// therefore satisfied before any study has loaded, then count cards and
+// find none. It concluded there was nothing to delete and reported
+// success. On 7 September 2026 that left two published studies behind
+// across two runs while step 01 reported PASS both times.
+//
+// Waiting for the grid or an explicit empty message, rather than for any
+// card, is the difference between "the page has something on it" and
+// "the list has finished".
+async function waitForList(page) {
+  await page.waitForFunction(() => {
+    if (document.querySelector(".study-grid") || document.querySelector(".list-view-card")) return true;
+    return /No tests yet\.|No tests match this filter\./.test(document.body.innerText);
+  }, null, { timeout: 30000 });
+}
+
 async function sweep(page) {
   await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
-  await page.waitForSelector(".study-card, .card", { state: "visible" });
+  await waitForList(page);
 
   let removed = 0;
 
@@ -241,9 +264,30 @@ async function sweep(page) {
     await page.locator(UI.confirmDialog).waitFor({ state: "visible", timeout: 15000 });
     await page.locator(UI.confirmDialog).getByRole("button", { name: "Delete", exact: true }).click();
     await target.waitFor({ state: "detached", timeout: 15000 });
+    // The card detaches the moment the list unmounts to reload, which is
+    // well before the reload finishes. Counting again here without
+    // waiting is what left studies behind.
+    await waitForList(page);
 
     removed += 1;
     console.log(`  swept  ${targetTitle}`);
+  }
+
+  // Check the result instead of assuming it. The failure mode here is not
+  // a delete that errors loudly, it is a sweep that quietly matches
+  // nothing and reports success, which is exactly what happened twice
+  // before waitForList existed. Cleanup that cannot fail visibly is worth
+  // very little when it is the only thing standing between this script
+  // and the production database.
+  const leftover = await page.evaluate((pattern) => {
+    const test = new RegExp(pattern);
+    return Array.from(document.querySelectorAll(".study-card .study-card-body h2"))
+      .map((heading) => heading.textContent.trim())
+      .filter((title) => test.test(title));
+  }, FIXTURE_TITLE.source);
+
+  if (leftover.length > 0) {
+    throw new Error(`Sweep finished but these are still on the page: ${leftover.join(", ")}`);
   }
 
   return removed;

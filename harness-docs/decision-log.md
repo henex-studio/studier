@@ -331,3 +331,15 @@ Where two sources disagree, the entry is marked **Contested** and the conflict i
 **Fix.** Cleanup now reads each card's title and tests it in JavaScript against `/^SMOKE \d{13} (tree|tone)$/`, anchored at both ends and case-sensitive, rather than delegating the match to a locator whose defaults can widen it. The ceiling dropped from 20 to 6. The pattern was checked against a table of real and near-miss titles before the script ran again.
 
 **The general lesson, which is the reason this is in the decision log rather than only in a commit message.** A destructive rule must be verified against the data it will run on before it runs, not reasoned about. This is the same failure as the A2 correction on 6 September, where a recommendation about revoking database permissions was written from a description of the policies rather than from the policies themselves. That one was caught because a baseline query was run first. This one was not, because no equivalent check existed. Any future step in this repository that deletes, revokes or overwrites states what it will match, and that statement is tested against current data, before it is allowed to run.
+
+### S-9.4 Cleanup reported success while leaving studies behind
+**Status:** Resolved 7 September 2026.
+**What happened.** The first fully passing run of the smoke test reported fourteen steps passed and "Cleanup removed 1 study". Two published tree tests were still in the production database, one from that run and one from the failed run before it. Step 01, the pre-run sweep, reported PASS both times without deleting anything.
+
+**Cause.** Deleting a study calls `loadStudies()`, which raises a loading flag, and the grid renders only when that flag is down. The list therefore unmounts completely while it reloads. The sweep waited for `.study-card, .card`, which the "new test" card at the top of the page satisfies before any study has loaded, then counted cards, found none, and concluded there was nothing to delete. The same race hit again immediately after each deletion.
+
+**Why it matters more than an ordinary bug.** The sweep is the only control standing between this script and the production database, and it failed silently in the direction of leaving data behind while reporting success. A destructive-adjacent step that cannot fail visibly is worth very little.
+
+**Fix.** A `waitForList` helper waits for the grid or an explicit empty message, which is the difference between "the page has something on it" and "the list has finished". It runs after navigation and after every deletion. The sweep then re-reads the page and throws if anything matching the fixture pattern survives, so an under-delete now fails loudly instead of passing quietly.
+
+**The general lesson.** This is the third instance in three days of the same shape: A2 on 6 September, the sweep matching in S-9.3, and this. Each time a check was written to a description of what should happen and never confirmed against what did happen. Verification steps in this repository assert their own result. A cleanup step that does not re-read the world afterwards is not a cleanup step.
