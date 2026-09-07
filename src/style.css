@@ -1,3 +1,15 @@
+/* Spacing between controls. There were eleven different gap values in
+   this file and no way to tell which was deliberate, so anything sitting
+   beside or above another control now measures itself against these two
+   rather than picking a number. --control-gap separates controls from
+   each other, whether side by side or stacked. --control-height is the
+   height every control in such a row shares, so an input or a select
+   never stands shorter than the buttons next to it. */
+:root {
+  --control-gap: 14px;
+  --control-height: 44px;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -252,6 +264,16 @@ select {
   outline: none;
 }
 
+/* Every select in the app, not only the one on a study card. A native
+   select draws its arrow inside its own padding box, so the 12px that
+   suits an input on all four sides leaves the label pressed against the
+   arrow. Written at class strength as well, because one select carries
+   .text-input and would otherwise keep the symmetric padding. */
+select,
+select.text-input {
+  padding-right: 38px;
+}
+
 .text-input:focus,
 .textarea:focus,
 select:focus {
@@ -354,8 +376,8 @@ select:focus {
 .topbar-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-  row-gap: 14px;
+  gap: var(--control-gap);
+  row-gap: var(--control-gap);
   align-items: center;
 }
 
@@ -528,10 +550,10 @@ select:focus {
 }
 
 .study-grid .button-row {
-  margin-top: 14px;
-  margin-bottom: 2px;
-  gap: 14px;
-  row-gap: 14px;
+  margin-top: var(--control-gap);
+  margin-bottom: 0;
+  gap: var(--control-gap);
+  row-gap: var(--control-gap);
 }
 
 .study-card {
@@ -803,10 +825,14 @@ select:focus {
 /* Study card actions, grouped: the link, then the lifecycle, then the one
    destructive action. Previously a single flat row of eight identically
    weighted pills, which wrapped to five lines on a tone test card. */
+/* Stacked groups sit as far apart as the buttons inside a row do. They
+   used to be 8px apart while a row's buttons were 14px apart, so the rows
+   read as crowded against each other while looking airy inside
+   themselves. Matching the two is what makes the grouping legible. */
 .card-action-groups {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--control-gap);
   width: 100%;
 }
 
@@ -823,8 +849,8 @@ select:focus {
 
 .study-card .action-group-destructive {
   border-top: 1px solid #f1f5f9;
-  padding-top: 10px;
-  margin-top: 2px;
+  padding-top: var(--control-gap);
+  margin-top: 0;
 }
 
 /* Pick a role, copy that role's link, or open it. One row, so a tone test
@@ -832,23 +858,31 @@ select:focus {
 .tone-role-links {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--control-gap);
   width: 100%;
 }
 
 .tone-role-link-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--control-gap);
   flex-wrap: wrap;
 }
 
+/* Sits in a row with Copy link and Open, so it matches their height and
+   their text size rather than setting its own. It was 9px of padding and
+   14px text against their 44px and inherited size, which read as a
+   different kind of control that happened to be nearby.
+
+   The right padding is larger than the left on purpose. A native select
+   draws its arrow inside the padding box, so symmetric padding leaves the
+   label touching the arrow. */
 .tone-role-select {
   width: auto;
   min-width: 116px;
   flex: 0 1 auto;
-  padding: 9px 10px;
-  font-size: 14px;
+  min-height: var(--control-height);
+  padding: 12px 38px 12px 16px;
 }
 
 .tone-role-links .copy-toast {
