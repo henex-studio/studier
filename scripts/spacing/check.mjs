@@ -10,18 +10,47 @@
 //
 //   npm run spacing
 //
-// It signs in to nothing. The participant screens are the ones an outside
-// participant sees, they are reachable with a link alone, and they are
-// where the fault was. Operator screens are not covered, and adding them
-// would mean a signed-in session, which is what npm run smoke is for.
+// It measures the participant screens: the ones an outside participant
+// sees, reachable with a link alone, and where the fault was. Operator
+// screens are not covered; that would need a Studier session, which is
+// what npm run smoke is for. The sign-in this script may ask for is
+// Vercel's, not Studier's, and only because preview deployments are
+// protected. See the note on BASE_URL.
 //
 // A run creates a tone test session on the study it opens, because opening
 // a role link is what starts one. It deletes nothing, so clear those out
 // afterwards the same way the smoke test does.
 
 import { chromium } from "playwright";
+import readline from "node:readline";
 
-const BASE_URL = "https://studier-git-dev-cafes-projects-5a353a12.vercel.app";
+// Where to measure. The dev preview by default, overridable so this can be
+// pointed at production after a merge without editing the file.
+const BASE_URL = process.env.SPACING_URL || "https://studier-git-dev-cafes-projects-5a353a12.vercel.app";
+
+// Vercel protects preview deployments. A browser that has never signed in
+// to Vercel gets redirected to vercel.com/login, so the first version of
+// this script, which ran headless and unattended, measured nothing and
+// timed out waiting for a card that was never going to appear. It reported
+// only "waiting for locator to be visible", which named neither the page
+// nor the redirect; that is why it now prints the url and title on failure,
+// and that is how this was found in one run instead of several.
+//
+// So it opens a visible window and waits, the same way npm run screenshots
+// and npm run smoke already do. Two ways to make it unattended again, both
+// requiring something this repository cannot hold:
+//
+//   Point it at production, which Vercel does not protect:
+//     SPACING_URL=https://<production-domain> npm run spacing
+//
+//   Or turn on Vercel's protection bypass for automation and put the secret
+//     in the environment, never in a file here.
+const NEEDS_SIGN_IN = !process.env.SPACING_URL;
+
+function ask(question) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => rl.question(question, (answer) => { rl.close(); resolve(answer); }));
+}
 
 // The scale, and the only two values that should appear.
 //
@@ -91,10 +120,21 @@ async function measure(page) {
 }
 
 async function main() {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ headless: !NEEDS_SIGN_IN });
   let total = 0;
 
   try {
+    if (NEEDS_SIGN_IN) {
+      // One window, cleared once, then reused for every measurement below.
+      const gate = await browser.newPage({ viewport: VIEWPORTS[0] });
+      await gate.goto(`${BASE_URL}${PAGES[0].path}`, { waitUntil: "domcontentloaded" });
+      console.log("\nA browser window has opened.");
+      console.log("Vercel protects preview deployments, so it may show a Vercel login first.");
+      console.log("Sign in there if asked, until the Studier test page is on screen.");
+      await ask("Then press Enter here to start measuring... ");
+      await gate.close();
+    }
+
     for (const viewport of VIEWPORTS) {
       const page = await browser.newPage({ viewport });
 
