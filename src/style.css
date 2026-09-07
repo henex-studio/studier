@@ -1060,6 +1060,16 @@ select:focus {
   overflow: hidden;
 }
 
+/* The bar stays pinned when the wording is expanded, so the full text must
+   not be able to fill the screen and leave no room for the questions it is
+   there to help answer. Capped at roughly two fifths of the viewport, and
+   it scrolls inside that. The heading and tabs sit outside this element, so
+   they stay put while the text scrolls. */
+.tone-wording-text-expanded {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
 .sticky-tree-panel,
 .task-editor-panel {
   min-height: 560px;

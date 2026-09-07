@@ -548,10 +548,18 @@ export default function ToneTestRunnerPage({ slug }) {
           <>
             {/* Stays at the top of the screen while the questions scroll
                 underneath, so the wording being judged is always in view.
-                Collapsed it shows two lines and stays pinned; expanded it
-                releases and scrolls with the page, so a long wording never
-                becomes a pinned block with its own scrollbar. */}
-            <section className={wordingExpanded ? "card tone-wording-bar" : "card tone-wording-bar tone-wording-bar-pinned"}>
+                Pinned whether collapsed or expanded.
+
+                It used to release when expanded, on the reasoning that a
+                long wording should not become a pinned block with its own
+                scrollbar. That got it backwards: expanding is what a
+                participant does when they want to keep reading the wording
+                while they answer, so releasing it at that moment takes the
+                text away exactly when it is wanted. Changed 7 September 2026
+                on the operator's call. The original worry is handled by
+                capping the expanded text's height rather than by unpinning
+                the bar. */}
+            <section className="card tone-wording-bar tone-wording-bar-pinned">
               {contentLoading ? (
                 <p className="muted-text">Loading...</p>
               ) : shownVariants.length === 0 ? (
@@ -591,7 +599,7 @@ export default function ToneTestRunnerPage({ slug }) {
                     </button>
                   </div>
 
-                  <p className={wordingExpanded ? "tone-wording-text" : "tone-wording-text tone-wording-text-clamped"}>
+                  <p className={wordingExpanded ? "tone-wording-text tone-wording-text-expanded" : "tone-wording-text tone-wording-text-clamped"}>
                     {(shownVariants[activeWordingIndex] || shownVariants[0])?.variant_text}
                   </p>
                 </>
