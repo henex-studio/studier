@@ -304,6 +304,19 @@ It is the same shape as A7. A governing document describes a capability that is 
 
 **Raised:** 7 September 2026, from a baseline check taken before migration 017.
 
+**Confirmed by a real request, not by inference, the same day.** The first
+evidence was a SQL session that switched itself to the `anon` role, which is a
+simulation. It was then reproduced properly: a browser with no session open,
+loading the deployed site, reading the public configuration out of the site's
+own shipped JavaScript, and calling the REST API. HTTP 200, three rows, with
+titles and link codes. No account, no tooling, no link needed beforehand.
+
+The published key being readable from the page is not a misconfiguration. A
+participant has to reach a test before signing in, so the key ships in the
+page by design, and the access rules are the defence rather than the key. The
+draft study did not appear in the result, so the rule is working as written.
+It is written more broadly than it probably should be.
+
 Reading the `studies` table as an anonymous visitor returns every published study, not only the one whose link the visitor has. Today that is three rows, with their titles, link codes and welcome text.
 
 Anonymous read access to `studies` is necessary. The participant page looks a study up by its link code, and that lookup runs before anyone has signed in. The question is whether it should return one row or all of them.
