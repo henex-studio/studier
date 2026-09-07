@@ -27,13 +27,15 @@
 // paying. See harness-docs/decision-log.md.
 //
 // That decision comes with an obligation, and it is the reason for the
-// shape of the cleanup below. Every object this script creates is named
-// with the SMOKE prefix, and cleanup runs from a finally block, so a
-// failure part-way through still tidies up. Cleanup also sweeps anything
-// left by an earlier run, not just this one, because a hard kill (ctrl-C,
-// closing the window, a laptop going to sleep) skips finally entirely.
-// Two orphaned drafts reached production that way during the screenshot
-// work. Sweeping by prefix is what stops that becoming a habit.
+// shape of the cleanup below. Cleanup runs from a finally block, so a
+// failure part-way through still tidies up, and it sweeps anything left
+// by an earlier run as well, because a hard kill (ctrl-C, closing the
+// window, a laptop going to sleep) skips finally entirely. Two orphaned
+// drafts reached production that way during the screenshot work.
+//
+// Read FIXTURE_TITLE below before changing anything about what cleanup
+// matches. Deleting is the one thing here that cannot be undone, and the
+// first version of this script proved that by deleting a real study.
 //
 // If a real study with external participants is ever run, this decision is
 // revisited before this script runs again.
@@ -44,13 +46,35 @@ import readline from "node:readline";
 const BASE_URL = "https://studier-git-dev-cafes-projects-5a353a12.vercel.app";
 const VIEWPORT = { width: 1440, height: 900 };
 
-// Everything this script creates carries this prefix, and cleanup deletes
-// by this prefix. Changing it orphans anything an earlier run left behind,
-// so if it ever changes, sweep with the old value first.
-const PREFIX = "SMOKE";
+// Everything this script creates is titled to match FIXTURE_TITLE exactly,
+// and cleanup deletes only titles that match it exactly.
+//
+// This pattern is strict on purpose. The first version of this script
+// swept on the substring "SMOKE" using Playwright's hasText, which matches
+// case-insensitively. It deleted a real study called "Smoke test, shopping
+// menu" on its first run, on 7 September 2026. The deletion cascaded to
+// every child row and the free plan has no point-in-time recovery, so the
+// study was unrecoverable. Nothing about that was the database's fault:
+// the sweep was written to a description of what it should match rather
+// than to a check of what it would match.
+//
+// Hence: a case-sensitive regular expression, anchored at both ends,
+// carrying a thirteen digit timestamp that no hand-typed title will ever
+// contain by accident. Cleanup reads each card's title and tests it in
+// JavaScript rather than delegating the match to a locator, so the rule is
+// visible here and cannot be widened by a library's default.
+//
+// If this pattern ever changes, sweep with the old one first.
+const FIXTURE_TITLE = /^SMOKE \d{13} (tree|tone)$/;
 const RUN_ID = Date.now();
-const TREE_TITLE = `${PREFIX} ${RUN_ID} tree`;
-const TONE_TITLE = `${PREFIX} ${RUN_ID} tone`;
+const TREE_TITLE = `SMOKE ${RUN_ID} tree`;
+const TONE_TITLE = `SMOKE ${RUN_ID} tone`;
+
+// A hard ceiling. This script creates two studies per run, so even with
+// leftovers from a couple of interrupted runs the sweep should never reach
+// this. If it does, something is matching more than it should and the
+// right response is to stop rather than to keep deleting.
+const MAX_SWEEP = 6;
 
 const CLEAN_ONLY = process.argv.includes("--clean-only");
 
@@ -123,7 +147,7 @@ async function answerQuestionCard(card) {
   const textareas = card.locator("textarea");
   const textareaCount = await textareas.count();
   for (let i = 0; i < textareaCount; i += 1) {
-    await textareas.nth(i).fill(`${PREFIX} automated answer`);
+    await textareas.nth(i).fill("Automated answer from the smoke test.");
   }
 
   const options = card.locator("button:not([disabled])");
@@ -133,7 +157,7 @@ async function answerQuestionCard(card) {
   }
 }
 
-// Deletes every study whose title starts with the SMOKE prefix, through
+// Deletes every study whose title matches FIXTURE_TITLE exactly, through
 // the app's own delete path. Going through the UI rather than SQL keeps
 // database credentials out of this script and out of the repository
 // entirely, which CLAUDE.md section 2 requires, and has the side benefit
@@ -144,24 +168,43 @@ async function sweep(page) {
 
   let removed = 0;
 
-  // Re-query each pass. Deleting a card re-renders the list, so a
+  // Re-read the list each pass. Deleting a card re-renders it, so a
   // collection captured up front goes stale after the first deletion.
   for (;;) {
-    const cards = page.locator(".study-card", { hasText: PREFIX });
-    if (await cards.count() === 0) break;
+    const cards = page.locator(".study-card");
+    const count = await cards.count();
 
-    const card = cards.first();
-    const title = (await card.locator("h2, h3").first().innerText().catch(() => "")).trim();
+    let target = null;
+    let targetTitle = "";
 
-    await card.getByRole("button", { name: "Delete", exact: true }).click();
+    for (let i = 0; i < count; i += 1) {
+      const card = cards.nth(i);
+      const title = (await card.locator(".study-card-body h2").first().innerText().catch(() => "")).trim();
+      // The whole safety of this script is this one line. Read the title,
+      // test it here, delete nothing that does not match exactly.
+      if (FIXTURE_TITLE.test(title)) {
+        target = card;
+        targetTitle = title;
+        break;
+      }
+    }
+
+    if (!target) break;
+
+    if (removed >= MAX_SWEEP) {
+      throw new Error(
+        `Sweep wanted to delete more than ${MAX_SWEEP} studies. Stopping without deleting "${targetTitle}". ` +
+        `Check the fixture pattern before running again.`
+      );
+    }
+
+    await target.getByRole("button", { name: "Delete", exact: true }).click();
     await page.locator(UI.confirmDialog).waitFor({ state: "visible", timeout: 15000 });
     await page.locator(UI.confirmDialog).getByRole("button", { name: "Delete", exact: true }).click();
-    await card.waitFor({ state: "detached", timeout: 15000 });
+    await target.waitFor({ state: "detached", timeout: 15000 });
 
     removed += 1;
-    console.log(`  swept  ${title || "(untitled)"}`);
-
-    if (removed > 20) throw new Error("Sweep removed more than 20 studies. Stopping in case the prefix match is too broad.");
+    console.log(`  swept  ${targetTitle}`);
   }
 
   return removed;
@@ -193,7 +236,7 @@ async function main() {
       return;
     }
 
-    console.log(`\nSigned in. Running the critical path. Fixtures are named "${PREFIX} ${RUN_ID} ...".\n`);
+    console.log(`\nSigned in. Running the critical path. Fixtures are named "${TREE_TITLE}" and "${TONE_TITLE}".\n`);
 
     // Clear anything an earlier interrupted run left behind, before
     // counting anything, so a stale fixture cannot be mistaken for a
@@ -218,13 +261,20 @@ async function main() {
       await page.fill(UI.csvInput, TREE_CSV);
 
       await page.getByRole("button", { name: "Add task" }).click();
-      await field(page, "Task text").fill("Where would you go to renew a licence?");
+      // The task's label is "Task 1", not "Task text". Corrected after the
+      // first run, where getByLabel("Task text") timed out. The panel is
+      // scoped explicitly because the tone builder is not the only place
+      // in the app with a textarea inside a .question-card.
+      await page.locator(".task-editor-panel .question-card").first().locator("textarea").first()
+        .fill("Where would you go to renew a licence?");
 
       // A target path is set by picking a node in the tree, then adding
       // the selection. There is no way to type a path directly, so this
       // is the one interaction here that depends on the tree widget's
-      // internals. If this step starts failing, check TreeView first.
-      await page.getByText("Renew a licence", { exact: true }).first().click();
+      // internals. Scoped to the tree panel so it cannot accidentally
+      // match the same words sitting in the CSV textarea above it. If
+      // this step starts failing, check TreeView first.
+      await page.locator(".sticky-tree-panel").getByText("Renew a licence", { exact: true }).first().click();
       await page.getByRole("button", { name: "Add selected path as target" }).click();
 
       await page.getByRole("button", { name: "Save", exact: true }).click();
@@ -382,7 +432,7 @@ async function main() {
       } catch (cleanupError) {
         console.error(
           `\nCLEANUP FAILED: ${cleanupError.message}\n` +
-          `Studies named "${PREFIX} ${RUN_ID} ..." may still be in the live test collection.\n` +
+          `"${TREE_TITLE}" and "${TONE_TITLE}" may still be in the live test collection.\n` +
           `Delete them by hand, or run: npm run smoke:clean\n`
         );
         failed = true;
