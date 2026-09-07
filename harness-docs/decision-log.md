@@ -299,3 +299,25 @@ Where two sources disagree, the entry is marked **Contested** and the conflict i
 **Source:** OVER, time estimate
 **Estimate:** 25 to 36 sessions across five milestones, being 8 to 14 weeks at two to three sessions per week. Milestone 2, creator setup, is the largest at 10 to 14 sessions and is flagged as not to be rushed.
 **Note:** This estimate predates the harness. It assumes the direct-push method in S-8.3 and does not include harness setup, Playwright regression scaffolding, or the branch and migration work in Q-12 and Q-13.
+
+---
+
+## S-9 Verification
+
+### S-9.1 The smoke test runs against the production database
+**Status:** Active
+**Decided:** 7 September 2026, by Cafe.
+**Decision:** The critical path smoke test (`scripts/smoke/smoke.mjs`, `npm run smoke`) creates, publishes, answers, reads and deletes real studies in the production Supabase database. It does not wait for a separate development database.
+
+**Why.** There is no Supabase development branch, and every environment shares one database (audit finding A7). Two ways out were priced. A real branch costs about USD 9.70 a month per branch and almost certainly requires the Pro plan at about USD 25 a month, because the `henex` organisation is on the free plan. A second free Supabase project costs nothing but has no migration tooling, so every schema change would have to be applied twice by hand, and free projects pause after seven days idle. Against that, the platform has no active users and is classified internal, so a stray row costs almost nothing. Waiting was judged the more expensive option.
+
+**What it obliges.** Every object the script creates is named with the `SMOKE` prefix. Cleanup deletes by that prefix from a `finally` block, so a failed run still tidies up, and it sweeps before it starts as well as after it finishes, because a hard kill skips `finally`. `npm run smoke:clean` sweeps without testing. Cleanup goes through the application's own delete path, not SQL, so no database credentials enter the script or the repository, per CLAUDE.md section 2.
+
+**What reverses it.** Any real study with external participants. At that point the classification changes, and a separate development database is required before this script runs again. A7 stays open for that reason and now has two dependants rather than one.
+
+### S-9.2 Coverage is the full critical path, not the participant path alone
+**Status:** Active
+**Decided:** 7 September 2026, by Cafe.
+**Decision:** The smoke test covers create, fill, save, publish, participate, dashboard, export and delete, for both study types, rather than the narrower participant-only path.
+**Trade-off accepted.** Wider coverage means more selectors, and selectors are what broke the screenshot script three times in two days. The mitigation is that every selector lives in one `UI` block at the top of the script and each step carries a name, so a failure reports what the script was trying to do rather than only which locator timed out. The most fragile step is setting a tree task's target path, which requires clicking a node inside the tree widget because no path can be typed directly.
+**Trigger.** Run before merging to `dev`. Automating it in CI was deferred: it needs credentials that cannot live in the repository.
