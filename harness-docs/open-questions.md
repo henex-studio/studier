@@ -327,7 +327,13 @@ If it should be restricted, the fix is a policy that requires the query to name 
 
 **Blocks:** nothing today.
 
-**Severity:** Minor while the platform is an internal pilot with three published tests. Revisit before any test runs with external participants, alongside A7 and Q-16.
+**Resolved 7 September 2026, migrations 020 and 021.** The operator decided it was worth fixing once it was clear the link did not have to be guessed.
+
+A policy cannot see a query's WHERE clause, so no policy could express "only the one you asked for". The fix is a lookup function, `get_public_study(p_slug)`, which takes a link code and returns at most one study, with the same visibility the policies had: published, or owned by the caller, or caller is admin. It also returns only the columns the participant pages read, so `owner_id`, `created_at`, `updated_at` and `published_at` no longer reach the browser. The anon select policy and grant on `studies` are gone.
+
+Done as two migrations either side of a deployment. Applying both at once would have taken every published test link offline for the length of that deployment.
+
+Verified from a browser with no session, against the deployed site: listing the table returns 42501, a published slug returns its study without `owner_id`, a draft slug returns null, and both participant links still open and run to the questions.
 
 ---
 
@@ -345,4 +351,4 @@ Q-1 and Q-6 should be answered together. Q-6 changes what Q-1 means, because a c
 
 **Then, document repair.** D-1, D-2, D-3, D-6. Mechanical once the decisions above are settled. D-2 is the most urgent of these, because the stakeholder-facing proposal page currently shows superseded weights.
 
-**Remaining count:** 13 open questions, 5 open conflicts. Q-16 and Q-17 were added 7 September 2026 and sit outside the scoring work. Q-16 is environment repair, in the same family as A7. Q-17 is a product judgement about how much of the platform an anonymous visitor should be able to enumerate.
+**Remaining count:** 12 open questions, 5 open conflicts. Q-16 was added 7 September 2026 and is environment repair, in the same family as A7. Q-17 was added and resolved the same day, migrations 020 and 021.
