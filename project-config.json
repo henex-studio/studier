@@ -5,11 +5,10 @@
   "phase": "audit and consolidation",
   "data_classification": "internal",
   "approval_mode": "A",
-  "_protected_paths_comment": "Absolute deny. Rewritten 7 September 2026 on the operator's instruction, once Tone Test was built and the audit needed to touch the code the old list existed to keep it away from. Almost everything here was protected for one reason: Tone Test had no business editing it. That reason has expired. What is left is protected for reasons that have not. Credentials, because they are never mine to read or write and that has nothing to do with this project's rules. The decision record, because it is the evidence for why things were done and the party being recorded should not be able to rewrite it. The enforcement mechanism itself, which the operator did not ask to keep but which is included because a guard the guarded party can edit is not a guard; say so if that is not wanted. This file stays on the list, so changing it again takes the same explicit instruction that changed it this time.",
+  "_protected_paths_comment": "Absolute deny. Rewritten 7 September 2026 on the operator's instruction, once Tone Test was built and the audit needed to touch the code the old list existed to keep it away from. Almost everything here was protected for one reason: Tone Test had no business editing it. That reason has expired. What is left is protected for reasons that have not. Credentials, because they are never mine to read or write and that has nothing to do with this project's rules. decision-log.md was removed on the operator's instruction, 7 September 2026, because protecting it meant decisions reached in conversation could not be written down at the moment they were made, which is worse than the risk it guarded against. agents/ and briefs/ stay: they define how the work is done rather than record what was decided. The enforcement mechanism itself, which the operator did not ask to keep but which is included because a guard the guarded party can edit is not a guard; say so if that is not wanted. This file stays on the list, so changing it again takes the same explicit instruction that changed it this time.",
   "protected_paths": [
     ".env",
     ".env.local",
-    "harness-docs/decision-log.md",
     "harness-docs/agents/",
     "harness-docs/briefs/",
     "project-config.json",

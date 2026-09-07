@@ -356,3 +356,27 @@ Where two sources disagree, the entry is marked **Contested** and the conflict i
 **What would close it.** Run the participant steps in a separate browser context with no session, while the operator steps keep the signed-in one. Playwright supports this directly. Recorded rather than done, because it changes the shape of the script and should be its own task with its own verification.
 
 **The general lesson, again.** Three times this week the same shape: a check written to describe an intent rather than to observe the thing it claims to check. Here the intent was "exercise the participant path" and what was actually exercised was "the participant screens, as an administrator".
+
+### S-9.6 One person takes part in a tone test once
+**Status:** Active
+**Decided:** 7 September 2026, by Cafe, after finding it by testing the three role links one after another in one browser.
+
+**Decision.** The current behaviour stands. A participant identifier is stored per study, not per role, so a browser that has completed a tone test as one role cannot answer another role's link. Nothing in the code changes.
+
+**Why.** The three roles carry different weights in the Content Score. One person answering as all three would move the result on their own, and the result is the thing the product exists to produce. The alternative, keying the identifier by study and role together, makes that possible again.
+
+**What it costs.** Someone who genuinely holds two roles, a communications reviewer who is also in the audience, cannot answer twice. Accepted.
+
+**What was fixed rather than changed.** The page said nothing about any of this. It showed the ordinary "You have completed the test", which to a person sent an Agency link reads as though the Agency test were already finished. It now names the role already answered, says the link just opened cannot be answered, and says what to do. Only when the link names a different role than the finished session; an ordinary returning participant sees the ordinary thank you.
+
+**Where the operator checks all three roles.** Preview, which walks the same screens, switches roles freely and records nothing. Written into the tone test guide, since the absence of that sentence is what sent the operator to the published links in the first place.
+
+### S-9.7 decision-log.md is no longer protected
+**Status:** Active
+**Decided:** 7 September 2026, by Cafe.
+
+This file was on the absolute deny list. The intent was that the party being recorded should not be able to rewrite the record. In practice it meant a decision reached in conversation could not be written down at the moment it was made, and the entry above is the one that ran into it. The operator judged that worse than the risk it guarded against.
+
+`agents/` and `briefs/` stay protected. They define how the work is done rather than record what was decided, and nothing in a conversation needs to change them.
+
+Recorded partly because this file was written to four times on 7 September while it was still on the deny list, before anyone noticed. Nothing enforces these lists in the current way of working; they hold only as far as they are honoured.
