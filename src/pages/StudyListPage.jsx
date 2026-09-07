@@ -671,7 +671,7 @@ export default function StudyListPage({ profile }) {
                   <div className="button-row">
                     <a className="secondary-button" href={builderPath(study)}>Edit</a>
                     <a className="secondary-button" href={`/dashboard/${study.id}`}>Dashboard</a>
-                    {study.study_type !== "tone_test" ? <a className="secondary-button" href={`/preview/${study.id}`}>Preview</a> : null}
+                    <a className="secondary-button" href={`/preview/${study.id}`}>Preview</a>
                   </div>
 
                   {renderActions(study)}
@@ -719,7 +719,7 @@ export default function StudyListPage({ profile }) {
                           <div className="list-link-row">
                             <a href={builderPath(study)}>Edit</a>
                             <a href={`/dashboard/${study.id}`}>Dashboard</a>
-                            {study.study_type !== "tone_test" ? <a href={`/preview/${study.id}`}>Preview</a> : null}
+                            <a href={`/preview/${study.id}`}>Preview</a>
                           </div>
                         </td>
                         <td>{renderActions(study)}</td>

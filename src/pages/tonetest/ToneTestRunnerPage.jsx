@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { getParticipantId } from "../../lib/participantId";
 import { ROLE_KEYS, ROLE_LABELS, ROLE_DESCRIPTIONS } from "../../lib/tonetest/defaultQuestions";
+import PreviewBanner from "../../components/PreviewBanner";
+import { CheckCircle2 } from "lucide-react";
 
 function isPastExpiry(value) {
   if (!value) return false;
@@ -26,7 +28,17 @@ const GATE_STATUS_OPTIONS = [
 // and tone_variants tables, whose select policies already allow anyone to
 // read a published study's content). This page never writes tone_sessions,
 // tone_responses or tone_gate_responses directly.
-export default function ToneTestRunnerPage({ slug }) {
+// Two callers. A participant reaches this by link code, and that is the
+// only mode that writes anything. An operator reaches it from the Preview
+// button with `preview` set and a study id instead of a slug, walks the
+// same screens in the same order, and nothing is recorded.
+//
+// One component rather than a second page, decided by the operator on
+// 7 September 2026 after the tree test's two copies drifted apart that
+// morning. The rule for anything added here: if a branch on `preview`
+// changes what a participant sees, it is wrong. Preview may only skip
+// writing and add the banner.
+export default function ToneTestRunnerPage({ slug, studyId, preview = false }) {
   const [loading, setLoading] = useState(true);
   const [study, setStudy] = useState(null);
   const [settings, setSettings] = useState(null);
@@ -84,20 +96,28 @@ export default function ToneTestRunnerPage({ slug }) {
       // test. The function returns null rather than an error when the slug
       // is unknown or not visible to this caller, so both cases are
       // handled together below.
-      const { data: studyData, error: studyError } = await supabase
-        .rpc("get_public_study", { p_slug: slug });
+      // A preview is opened by id from the test collection, by someone who
+      // is signed in and owns the test. A participant arrives with a link
+      // code and no session. The rest of this function is the same for
+      // both.
+      const { data: studyData, error: studyError } = preview
+        ? await supabase.from("studies").select("*").eq("id", studyId).single()
+        : await supabase.rpc("get_public_study", { p_slug: slug });
 
       if (!active) return;
 
       if (studyError || !studyData) {
-        setMessage("This test link is not available.");
+        setMessage(preview ? "Preview is not available." : "This test link is not available.");
         setLoading(false);
         return;
       }
 
       setStudy(studyData);
 
-      if (studyData.status !== "published") {
+      // A preview exists so a draft can be checked before it goes out, so
+      // it does not require the test to be published. A participant link
+      // still does.
+      if (!preview && studyData.status !== "published") {
         setLoading(false);
         return;
       }
@@ -154,6 +174,15 @@ export default function ToneTestRunnerPage({ slug }) {
       // act on the second one and cannot act on the first.
       if (settingsError || variantsError) {
         setMessage((settingsError || variantsError).message);
+      }
+
+      // A preview never touches tone_sessions, in either direction. It does
+      // not look for a session and it does not create one, so previewing a
+      // live test cannot disturb a real participant's answers and cannot
+      // add a session to the operator's own counts.
+      if (preview) {
+        setLoading(false);
+        return;
       }
 
       // Reopening the link on the same browser returns to whatever session
@@ -273,6 +302,28 @@ export default function ToneTestRunnerPage({ slug }) {
 
   async function confirmRole() {
     if (!selectedRole || !study) return;
+
+    // In preview the session is made here and goes no further than this
+    // browser tab. It carries the same fields the real one does, so every
+    // screen after this behaves identically. The variant order is the
+    // stored order rather than a shuffled one, because a preview that
+    // reordered itself on each visit would be harder to check against the
+    // builder, and the panel it replaces said the same.
+    if (preview) {
+      setSession({
+        id: null,
+        selected_role: selectedRole,
+        answer_count: 0,
+        completed_at: null,
+        assigned_variant_id: variants[0]?.id || null,
+        variant_order_json: variants.map((variant) => variant.id),
+        preferred_variant_id: null
+      });
+      setMessage("");
+      await loadQuestionsForRole(study.id, selectedRole);
+      return;
+    }
+
     setStarting(true);
     setMessage("");
 
@@ -352,6 +403,15 @@ export default function ToneTestRunnerPage({ slug }) {
     const missing = findMissingRequired(shownVariants, questions);
     if (missing.length > 0) {
       setSubmitError(`Please answer: ${missing.join("; ")}.`);
+      return;
+    }
+
+    // A preview stops here. The check above still runs, so the operator
+    // finds out that a required question cannot be skipped, which is one
+    // of the things worth knowing before sending a link out. Nothing is
+    // written.
+    if (preview) {
+      setFinished(true);
       return;
     }
 
@@ -486,9 +546,24 @@ export default function ToneTestRunnerPage({ slug }) {
     return (
       <div className="page-shell">
         <main className="container narrow">
+          {preview ? <PreviewBanner builderPath={`/tone-builder/${study.id}`} /> : null}
           <section className="card done-card">
-            {(study.end_text?.length ? study.end_text : ["You have completed the test.", "Thank you for your feedback."]).map(
-              (text, index) => <p key={index}>{text}</p>
+            {preview ? (
+              // Worded and shaped to match the tree test's preview ending,
+              // so "preview" means the same thing in both.
+              <>
+                <CheckCircle2 className="done-icon" />
+                <h1>Preview complete</h1>
+                <p>Responses were not saved.</p>
+                <div className="button-row action-center">
+                  <a className="primary-button" href={`/tone-builder/${study.id}`}>Back to editor</a>
+                  <a className="secondary-button" href="/admin">Back to test collection</a>
+                </div>
+              </>
+            ) : (
+              (study.end_text?.length ? study.end_text : ["You have completed the test.", "Thank you for your feedback."]).map(
+                (text, index) => <p key={index}>{text}</p>
+              )
             )}
           </section>
         </main>
@@ -518,6 +593,7 @@ export default function ToneTestRunnerPage({ slug }) {
   return (
     <div className="page-shell">
       <main className="container narrow">
+        {preview ? <PreviewBanner builderPath={`/tone-builder/${study.id}`} /> : null}
         <section className="card hero-card">
           <span className="badge">Tone Test</span>
           <h1>{study.title}</h1>

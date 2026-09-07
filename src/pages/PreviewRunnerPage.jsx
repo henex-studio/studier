@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import TreeView from "../components/TreeView";
+import PreviewBanner from "../components/PreviewBanner";
+import ToneTestRunnerPage from "./tonetest/ToneTestRunnerPage";
 import { supabase } from "../lib/supabase";
 import { getMatchResult } from "../lib/matching";
 import { CheckCircle2 } from "lucide-react";
@@ -111,6 +113,7 @@ export default function PreviewRunnerPage({ profile, studyId }) {
   const [showNextNotice, setShowNextNotice] = useState(false);
   const [startedAt, setStartedAt] = useState(Date.now());
   const [message, setMessage] = useState("");
+  const [toneStudyId, setToneStudyId] = useState(null);
 
   const task = tasks[taskIndex];
   const currentAnswer = task
@@ -160,13 +163,17 @@ export default function PreviewRunnerPage({ profile, studyId }) {
       return;
     }
 
-    // This page only ever renders the Tree Test flow. A Tone Test has no
-    // tree, tasks or final questions to load, so continuing past here
-    // would render an empty or broken screen instead of a clear message.
-    // Its own preview is the "Preview by role" section in
-    // ToneBuilderPage.jsx. Recorded as audit finding B2.
+    // A tone test hands off to its own runner in preview mode. This page
+    // renders the tree flow and has no tree, tasks or final questions to
+    // show for a tone test.
+    //
+    // Until 7 September this redirected to the tone builder, because a
+    // tone test had no preview to send anyone to. It now has one, so
+    // /preview/<id> means the same thing for both types, which is what
+    // the operator asked for.
     if (studyData.study_type === "tone_test") {
-      window.location.replace(`/tone-builder/${studyData.id}`);
+      setToneStudyId(studyData.id);
+      setLoading(false);
       return;
     }
 
@@ -288,22 +295,14 @@ export default function PreviewRunnerPage({ profile, studyId }) {
     setScreen("done");
   }
 
-  function PreviewBanner() {
-    if (!study) return null;
-    return (
-      <section className="preview-banner">
-        <div className="preview-banner-text">
-          <strong>Preview mode</strong>
-          <span>Responses are not saved.</span>
-        </div>
-        <div className="preview-banner-actions">
-          <a className="secondary-button" href={`/builder/${study.id}`}>Back to editor</a>
-          <a className="secondary-button" href="/admin">Back to test collection</a>
-        </div>
-      </section>
-    );
-  }
 
+  // A tone test previews through its own runner, in preview mode. Handing
+  // straight over keeps /preview/<id> meaning one thing for both types.
+  //
+  // Placed here, below every hook, not beside the state that drives it. An
+  // early return above a useEffect skips that hook on the render after
+  // toneStudyId is set, and React counts hooks per render.
+  if (toneStudyId) return <ToneTestRunnerPage studyId={toneStudyId} preview />;
 
   if (loading) return <div className="page-shell"><main className="container narrow"><section className="card">Loading...</section></main></div>;
 
@@ -316,7 +315,7 @@ export default function PreviewRunnerPage({ profile, studyId }) {
     return (
       <div ref={topRef} className="page-shell">
         <main className="container narrow">
-          <PreviewBanner />
+          <PreviewBanner builderPath={`/builder/${study.id}`} />
           <section className="card hero-card">
             <span className="badge">Tree test</span>
             <h1>{study.title}</h1>
@@ -334,7 +333,7 @@ export default function PreviewRunnerPage({ profile, studyId }) {
     return (
       <div ref={topRef} className="page-shell">
         <main className="container narrow">
-          <PreviewBanner />
+          <PreviewBanner builderPath={`/builder/${study.id}`} />
           <section className="card">
             <span className="badge">Before you start</span>
             <h1>Before you start</h1>
@@ -351,7 +350,7 @@ export default function PreviewRunnerPage({ profile, studyId }) {
     return (
       <div ref={topRef} className="page-shell">
         <main className="container narrow">
-          <PreviewBanner />
+          <PreviewBanner builderPath={`/builder/${study.id}`} />
           {showNextNotice ? <div className="next-toast">Next question loaded</div> : null}
           <section className="card">
             <h1>Final questions</h1>
@@ -365,13 +364,13 @@ export default function PreviewRunnerPage({ profile, studyId }) {
   }
 
   if (screen === "done") {
-    return <div ref={topRef} className="page-shell"><main className="container narrow"><PreviewBanner /><section className="card done-card"><CheckCircle2 className="done-icon" /><h1>Preview complete</h1><p>Responses were not saved.</p><div className="button-row action-center"><a className="primary-button" href={`/builder/${study.id}`}>Back to editor</a><a className="secondary-button" href="/admin">Back to test collection</a></div></section></main></div>;
+    return <div ref={topRef} className="page-shell"><main className="container narrow"><PreviewBanner builderPath={`/builder/${study.id}`} /><section className="card done-card"><CheckCircle2 className="done-icon" /><h1>Preview complete</h1><p>Responses were not saved.</p><div className="button-row action-center"><a className="primary-button" href={`/builder/${study.id}`}>Back to editor</a><a className="secondary-button" href="/admin">Back to test collection</a></div></section></main></div>;
   }
 
   return (
     <div ref={topRef} className="page-shell">
       <main className="container">
-        <PreviewBanner />
+        <PreviewBanner builderPath={`/builder/${study.id}`} />
         {showNextNotice ? <div className="next-toast">Next question loaded</div> : null}
         <TaskProgressNavigation tasks={tasks} taskIndex={taskIndex} reviewTaskIndex={reviewTaskIndex} setReviewTaskIndex={setReviewTaskIndex} screen={screen} />
         <section className="task-card">
