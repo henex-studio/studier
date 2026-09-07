@@ -297,6 +297,25 @@ It is the same shape as A7. A governing document describes a capability that is 
 
 **Severity:** Minor while the project has one operator and no users. Grows the moment a second person works on the repository.
 
+
+---
+
+## Q-17. Anyone can list every published test without holding a link
+
+**Raised:** 7 September 2026, from a baseline check taken before migration 017.
+
+Reading the `studies` table as an anonymous visitor returns every published study, not only the one whose link the visitor has. Today that is three rows, with their titles, link codes and welcome text.
+
+Anonymous read access to `studies` is necessary. The participant page looks a study up by its link code, and that lookup runs before anyone has signed in. The question is whether it should return one row or all of them.
+
+The guide already tells operators that a test link is not secret. This is a different claim: that the existence, name and link of every published test is public. For an internal pilot that is probably acceptable. For a test whose subject matter is sensitive before publication, which is the whole point of Tone Test, it may not be.
+
+If it should be restricted, the fix is a policy that requires the query to name a slug rather than allowing an unfiltered read. That is a real change to how the participant page queries, so it needs deciding rather than assuming.
+
+**Blocks:** nothing today.
+
+**Severity:** Minor while the platform is an internal pilot with three published tests. Revisit before any test runs with external participants, alongside A7 and Q-16.
+
 ---
 
 # Part 3. Resolution order
@@ -313,4 +332,4 @@ Q-1 and Q-6 should be answered together. Q-6 changes what Q-1 means, because a c
 
 **Then, document repair.** D-1, D-2, D-3, D-6. Mechanical once the decisions above are settled. D-2 is the most urgent of these, because the stakeholder-facing proposal page currently shows superseded weights.
 
-**Remaining count:** 12 open questions, 5 open conflicts. Q-16 was added 7 September 2026 and sits outside the scoring work; it is documentation and environment repair, in the same family as A7.
+**Remaining count:** 13 open questions, 5 open conflicts. Q-16 and Q-17 were added 7 September 2026 and sit outside the scoring work. Q-16 is environment repair, in the same family as A7. Q-17 is a product judgement about how much of the platform an anonymous visitor should be able to enumerate.
