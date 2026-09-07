@@ -72,6 +72,13 @@ export default function ToneTestRunnerPage({ slug, studyId, preview = false }) {
   const [activeWordingIndex, setActiveWordingIndex] = useState(0);
   const [questionsError, setQuestionsError] = useState("");
 
+  // Set when a finished session is found and the link that was opened asked
+  // for a different role. Without it the page shows the ordinary thank you,
+  // which reads as "the test you were just sent is already done" to someone
+  // who has never opened it. Found by the operator on 7 September 2026,
+  // testing the three role links one after another in one window.
+  const [alreadyTakenPartAs, setAlreadyTakenPartAs] = useState(null);
+
   const participantId = study ? getParticipantId(study.id) : "";
 
   // A link generated for one role carries ?role=<key> so the person it was
@@ -211,6 +218,9 @@ export default function ToneTestRunnerPage({ slug, studyId, preview = false }) {
         // questions for a screen that will not show them.
         if (sessionData.completed_at) {
           setFinished(true);
+          if (roleFromLink && roleFromLink !== sessionData.selected_role) {
+            setAlreadyTakenPartAs(sessionData.selected_role);
+          }
         } else {
           await loadQuestionsForRole(studyData.id, sessionData.selected_role);
         }
@@ -578,8 +588,17 @@ export default function ToneTestRunnerPage({ slug, studyId, preview = false }) {
             </DoneCard>
           ) : (
             <DoneCard
-              heading="Thank you"
-              paragraphs={study.end_text?.length ? study.end_text : ["You have completed the test."]}
+              heading={alreadyTakenPartAs ? "You have already taken part" : "Thank you"}
+              paragraphs={
+                alreadyTakenPartAs
+                  ? [
+                      `You completed this test as ${ROLE_LABELS[alreadyTakenPartAs]}, so the link you have just opened cannot be answered.`,
+                      "Each person takes part once, from one point of view. If you were meant to review it as a different role, ask whoever sent the link to arrange that."
+                    ]
+                  : study.end_text?.length
+                    ? study.end_text
+                    : ["You have completed the test."]
+              }
             />
           )}
         </main>
