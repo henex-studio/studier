@@ -478,16 +478,24 @@ async function main() {
 
       await page.getByRole("button", { name: "Next", exact: true }).click();
 
-      // Answering the last task does not finish a tree test. next() always
-      // moves to the "Final questions" screen, which renders even when the
-      // test has no final questions, and the response is only written when
-      // Submit is clicked there. An earlier version of this step waited
-      // for the end card straight after Next and timed out. See
-      // TestRunnerPage.jsx, next() and submitFinal().
-      await page.getByRole("heading", { name: "Final questions" }).waitFor({ state: "visible", timeout: 20000 });
-      await page.getByRole("button", { name: "Submit", exact: true }).click();
-
+      // Answering the last task does not always finish a tree test. A
+      // test with final questions moves to that screen and submits from
+      // there. A test with none, which is what this script builds, now
+      // submits straight away and lands on the thank you page. Both are
+      // handled, so this step keeps working whichever kind of test it is
+      // pointed at.
+      const finalHeading = page.getByRole("heading", { name: "Final questions" });
       const done = page.locator(".done-card");
+
+      await Promise.race([
+        finalHeading.waitFor({ state: "visible", timeout: 20000 }),
+        done.waitFor({ state: "visible", timeout: 20000 })
+      ]).catch(() => {});
+
+      if (await finalHeading.isVisible().catch(() => false)) {
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
+      }
+
       const refused = page.locator(".error-box");
 
       await Promise.race([

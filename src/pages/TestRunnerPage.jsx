@@ -273,6 +273,17 @@ export default function TestRunnerPage({ slug }) {
       setTaskIndex(taskIndex + 1);
       setStartedAt(Date.now());
       showNextQuestionNotice();
+    } else if (finalQuestions.length === 0) {
+      // A test with no final questions has nothing to put on that screen,
+      // so a participant used to reach an empty page carrying only Back
+      // and Submit, which reads as something having gone wrong. Submit
+      // straight away instead and show the thank you page.
+      //
+      // submitFinal still runs, rather than jumping to the done screen,
+      // because it is what writes the response, and it carries any
+      // pre-task answers with it. This mirrors how startTest already
+      // skips the pre-question screen when there are no pre-questions.
+      await submitFinal();
     } else {
       setScreen("final");
       showNextQuestionNotice();
