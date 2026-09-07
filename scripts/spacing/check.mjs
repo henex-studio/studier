@@ -100,9 +100,26 @@ async function main() {
 
       for (const target of PAGES) {
         await page.goto(`${BASE_URL}${target.path}`, { waitUntil: "networkidle" });
-        // The tone pages start a session over the network before the
-        // questions exist to measure.
-        await page.waitForSelector(".question-card, .hero-card", { timeout: 20000 });
+
+        // The tone pages start a session over the network before there is
+        // anything to measure. If that never arrives, say which page it
+        // was and what was on it instead. The first version waited and
+        // then died with a bare selector timeout, naming neither the page
+        // nor what the page was actually showing, which is the same
+        // failure this repository has now hit three times in other
+        // scripts.
+        try {
+          await page.waitForSelector(".card", { timeout: 20000 });
+        } catch {
+          const text = (await page.evaluate(() => document.body.innerText)).trim().replace(/\s+/g, " ").slice(0, 200);
+          throw new Error(
+            `${viewport.name} ${target.name}: nothing rendered within 20s.\n` +
+            `          url:   ${page.url()}\n` +
+            `          title: ${await page.title()}\n` +
+            `          text:  ${text || "(the page is empty)"}`
+          );
+        }
+
         await page.waitForTimeout(1500);
 
         const found = await measure(page);

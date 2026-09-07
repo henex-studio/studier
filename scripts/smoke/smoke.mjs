@@ -189,11 +189,28 @@ async function answerQuestionCard(card) {
     await textareas.nth(i).fill("Automated answer from the smoke test.");
   }
 
-  const options = card.locator("button:not([disabled])");
-  const optionCount = await options.count();
-  if (optionCount > 0) {
-    await options.first().click();
+  // Every group in the card, not the first button in it.
+  //
+  // A question in compare-all mode is asked once per wording, so one card
+  // holds three separate groups and three separate answers. Clicking the
+  // first enabled button answered wording 1 and left 2 and 3 blank, and
+  // the app refused the submission listing exactly that. Corrected
+  // 7 September 2026 after reproducing it by hand as an anonymous
+  // participant; the run that found it reported a different error, which
+  // is dealt with at the submit step.
+  const groups = card.locator('[role="radiogroup"]');
+  const groupCount = await groups.count();
+
+  if (groupCount > 0) {
+    for (let i = 0; i < groupCount; i += 1) {
+      const option = groups.nth(i).locator('[role="radio"]:not([disabled])').first();
+      if (await option.count()) await option.click();
+    }
+    return;
   }
+
+  const options = card.locator("button:not([disabled])");
+  if (await options.count()) await options.first().click();
 }
 
 // Deletes every study whose title matches FIXTURE_TITLE exactly, through
@@ -479,22 +496,37 @@ async function main() {
         await answerQuestionCard(cards.nth(i));
       }
 
+      // What was already on screen before submitting. The page shows load
+      // failures in the same .error-box the submit failure uses, so
+      // treating any error box as a refusal blames the submission for
+      // something that happened much earlier. That is exactly what
+      // happened on 7 September: a network failure while loading was
+      // reported as "the app refused the submission: TypeError: Failed to
+      // fetch", and the real fault was somewhere else entirely.
+      const before = await page.locator(".error-box").allInnerTexts();
+
       await page.getByRole("button", { name: "Submit", exact: true }).click();
 
-      // A refused submit names the questions still unanswered, which is
-      // exactly what is needed if the generic answering above missed
-      // something. Waiting only for the end card would throw that away
-      // and report a timeout instead.
       const done = page.locator(".done-card");
-      const refused = page.locator(".error-box");
+      const errors = page.locator(".error-box");
 
       await Promise.race([
         done.waitFor({ state: "visible", timeout: 30000 }),
-        refused.first().waitFor({ state: "visible", timeout: 30000 })
+        page.waitForFunction(
+          (previous) => {
+            const now = [...document.querySelectorAll(".error-box")].map((el) => el.innerText.trim());
+            return now.some((text) => !previous.includes(text));
+          },
+          before.map((text) => text.trim()),
+          { timeout: 30000 }
+        )
       ]).catch(() => {});
 
-      if (await refused.first().isVisible().catch(() => false)) {
-        throw new Error(`The app refused the submission: ${(await refused.first().innerText()).trim()}`);
+      if (!(await done.isVisible().catch(() => false))) {
+        const after = (await errors.allInnerTexts()).map((text) => text.trim());
+        const fresh = after.filter((text) => !before.map((b) => b.trim()).includes(text));
+        if (fresh.length) throw new Error(`The app refused the submission: ${fresh.join(" | ")}`);
+        if (after.length) throw new Error(`Submit did nothing. An error was already on screen before it: ${after.join(" | ")}`);
       }
 
       await done.waitFor({ state: "visible", timeout: 30000 });
