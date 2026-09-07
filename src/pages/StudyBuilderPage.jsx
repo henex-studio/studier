@@ -340,13 +340,19 @@ export default function StudyBuilderPage({ profile, studyId }) {
 
     setStudy({ ...studyData, data_collection_settings: { ...defaultDataSettings(), ...(studyData.data_collection_settings || {}) } });
 
-    const { data: treeData } = await supabase.from("study_trees").select("*").eq("study_id", studyId).maybeSingle();
+    const { data: treeData, error: treeError } = await supabase.from("study_trees").select("*").eq("study_id", studyId).maybeSingle();
     setTreeRecord(treeData || { study_id: studyId, csv_text: "", tree_json: [] });
 
-    const { data: taskData } = await supabase.from("study_tasks").select("*").eq("study_id", studyId).order("task_order");
+    const { data: taskData, error: tasksError } = await supabase.from("study_tasks").select("*").eq("study_id", studyId).order("task_order");
     setTasks(taskData || []);
 
-    const { data: questionData } = await supabase.from("study_final_questions").select("*").eq("study_id", studyId).order("question_order");
+    const { data: questionData, error: questionsError } = await supabase.from("study_final_questions").select("*").eq("study_id", studyId).order("question_order");
+
+    // Without this, a failed read presents as an empty builder, and saving
+    // from an empty builder would overwrite the real content with nothing.
+    const readError = treeError || tasksError || questionsError;
+    if (readError) setMessage(readError.message);
+
     const questionRows = questionData || [];
     setPreQuestions(questionRows.filter((question) => question.question_position === "pre"));
     setFinalQuestions(questionRows.filter((question) => question.question_position !== "pre"));

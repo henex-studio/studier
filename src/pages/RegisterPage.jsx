@@ -85,9 +85,18 @@ export default function RegisterPage() {
     // Friendly pre-check only. The database trigger enforces this for
     // real; this call exists so an expired or already-used code fails
     // with a clear message here rather than a generic one from signUp.
-    const { data: inviteOk } = await supabase.rpc("validate_invite_code", {
+    const { data: inviteOk, error: inviteError } = await supabase.rpc("validate_invite_code", {
       p_code: cleanInviteCode
     });
+
+    // A failed call used to be indistinguishable from a rejected code, so
+    // someone holding a perfectly good invite would be told their invite
+    // was bad and would have no way to get past it.
+    if (inviteError) {
+      setLoading(false);
+      setMessage(`Could not check the invite code: ${inviteError.message}`);
+      return;
+    }
 
     if (inviteOk !== true) {
       setLoading(false);

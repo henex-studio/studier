@@ -172,25 +172,30 @@ export default function PreviewRunnerPage({ profile, studyId }) {
 
     setStudy(studyData);
 
-    const { data: treeRows } = await supabase
+    const { data: treeRows, error: treeError } = await supabase
       .from("study_trees")
       .select("tree_json")
       .eq("study_id", studyData.id)
       .maybeSingle();
     setTree(treeRows?.tree_json || []);
 
-    const { data: taskRows } = await supabase
+    const { data: taskRows, error: tasksError } = await supabase
       .from("study_tasks")
       .select("*")
       .eq("study_id", studyData.id)
       .order("task_order");
     setTasks(taskRows || []);
 
-    const { data: questionRows } = await supabase
+    const { data: questionRows, error: questionsError } = await supabase
       .from("study_final_questions")
       .select("*")
       .eq("study_id", studyData.id)
       .order("question_order");
+
+    // Kept in step with TestRunnerPage, deliberately.
+    const readError = treeError || tasksError || questionsError;
+    if (readError) setMessage(readError.message);
+
     const questions = questionRows || [];
     setPreQuestions(questions.filter((question) => question.question_position === "pre"));
     setFinalQuestions(questions.filter((question) => question.question_position !== "pre"));

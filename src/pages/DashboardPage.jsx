@@ -42,26 +42,32 @@ export default function DashboardPage({ profile, studyId }) {
     // against tables a Tone Test never writes to.
     if (studyData.study_type === "tone_test") return;
 
-    const { data: responseData } = await supabase
+    const { data: responseData, error: responsesError } = await supabase
       .from("task_responses")
       .select("*")
       .eq("study_id", studyId)
       .order("submitted_at", { ascending: false });
     setTaskRows(responseData || []);
 
-    const { data: questionData } = await supabase
+    const { data: questionData, error: questionsError } = await supabase
       .from("study_final_questions")
       .select("*")
       .eq("study_id", studyId)
       .order("question_order");
     setQuestions(sortQuestions(questionData || []));
 
-    const { data: finalData } = await supabase
+    const { data: finalData, error: finalError } = await supabase
       .from("final_responses")
       .select("*")
       .eq("study_id", studyId)
       .order("submitted_at", { ascending: false });
     setFinalRows(finalData || []);
+
+    // A dashboard is where someone decides whether a test worked. A read
+    // that fails silently here shows zero participants, which is a
+    // specific and wrong answer rather than an absent one.
+    const readError = responsesError || questionsError || finalError;
+    if (readError) setMessage(readError.message);
   }
 
   useEffect(() => {

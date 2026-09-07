@@ -8,7 +8,15 @@ import { supabase } from "../lib/supabase";
 // the caller's own studies, the same policy the dashboard relies on, so
 // this asks for nothing it could not already see.
 async function loadDeletionCounts(ownerId) {
-  const { data: myStudies } = await supabase.from("studies").select("id").eq("owner_id", ownerId);
+  const { data: myStudies, error: studiesError } = await supabase.from("studies").select("id").eq("owner_id", ownerId);
+
+  // These counts are shown to someone deciding whether to delete their
+  // account. A failed read used to report zero studies and zero
+  // participants, which is the most reassuring possible answer and would
+  // be given at exactly the wrong moment. Better to say the count is
+  // unknown than to say it is nothing.
+  if (studiesError) throw studiesError;
+
   const studyIds = (myStudies || []).map((study) => study.id);
 
   if (studyIds.length === 0) {
@@ -57,7 +65,12 @@ export default function AccountPage({ profile, onUpdated }) {
   useEffect(() => {
     let active = true;
     if (profile?.id) {
-      loadDeletionCounts(profile.id).then((result) => { if (active) setCounts(result); });
+      loadDeletionCounts(profile.id)
+        .then((result) => { if (active) setCounts(result); })
+        // Without this the throw added in loadDeletionCounts becomes an
+        // unhandled rejection, which is quieter than the silence it was
+        // meant to replace.
+        .catch((error) => { if (active) setDeleteError(`Could not count what deleting your account would remove: ${error.message}`); });
     }
     return () => { active = false; };
   }, [profile?.id]);

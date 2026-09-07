@@ -102,7 +102,7 @@ export default function ToneTestRunnerPage({ slug }) {
         return;
       }
 
-      const { data: settingsData } = await supabase
+      const { data: settingsData, error: settingsError } = await supabase
         .from("tone_test_settings")
         // Named columns, not *. A participant is anonymous, and anon is
         // granted select on this table one column at a time, deliberately
@@ -120,7 +120,7 @@ export default function ToneTestRunnerPage({ slug }) {
       if (!active) return;
       setSettings(settingsData);
 
-      const { data: variantRows } = await supabase
+      const { data: variantRows, error: variantsError } = await supabase
         .from("tone_variants")
         // Named columns for the same reason, and this one was the visible
         // failure. anon may read every column here except internal_note,
@@ -145,17 +145,33 @@ export default function ToneTestRunnerPage({ slug }) {
       if (!active) return;
       setVariants(variantRows || []);
 
+      // Say what actually went wrong. Both reads above previously took the
+      // data and dropped the error, so a refused request looked exactly
+      // like a test nobody had finished writing: "No wording is available
+      // for this test yet." That sentence was on screen for weeks while
+      // the real answer was "permission denied for table tone_variants".
+      // A participant cannot act on either message, but the operator can
+      // act on the second one and cannot act on the first.
+      if (settingsError || variantsError) {
+        setMessage((settingsError || variantsError).message);
+      }
+
       // Reopening the link on the same browser returns to whatever session
       // already exists, using the participant identifier the existing
       // browser-side code already generates and stores, rather than
       // starting a second one.
       const pid = getParticipantId(studyData.id);
-      const { data: sessionData } = await supabase.rpc("get_tone_session", {
+      const { data: sessionData, error: sessionError } = await supabase.rpc("get_tone_session", {
         p_study_id: studyData.id,
         p_participant_id: pid
       });
 
       if (!active) return;
+
+      // A failure here previously read as "you have not started yet", which
+      // is indistinguishable from a returning participant losing their
+      // answers.
+      if (sessionError) setMessage(sessionError.message);
 
       if (sessionData) {
         setSession(sessionData);
