@@ -125,8 +125,37 @@ async function step(name, body) {
   }
 }
 
+// Matches a card by its exact title. hasText would be a substring match,
+// and a case-insensitive one, which is what deleted a real study on the
+// first run. Nothing here matches loosely any more, even where the
+// consequence would only be picking the wrong card.
 function studyCard(page, title) {
-  return page.locator(".study-card", { hasText: title });
+  return page.locator(".study-card").filter({
+    has: page.locator(".study-card-body h2", { hasText: new RegExp(`^${title}$`) })
+  });
+}
+
+// Clicks Publish and reports what the app said if it refuses. Publishing
+// runs a readiness check, and a rejected publish leaves the card in draft
+// with a list of reasons on screen. Waiting for "Published" without
+// reading that list turns a clear, specific complaint into a bare timeout.
+async function publish(page, card) {
+  await card.getByRole("button", { name: "Publish", exact: true }).click();
+
+  const published = card.locator(".study-card-header", { hasText: "Published" });
+  const refused = card.locator(".publish-validation-box");
+
+  await Promise.race([
+    published.waitFor({ state: "visible", timeout: 20000 }),
+    refused.waitFor({ state: "visible", timeout: 20000 })
+  ]).catch(() => {});
+
+  if (await refused.isVisible().catch(() => false)) {
+    const reasons = (await refused.innerText()).trim().replace(/\n/g, "\n         ");
+    throw new Error(`The app refused to publish:\n         ${reasons}`);
+  }
+
+  await published.waitFor({ state: "visible", timeout: 20000 });
 }
 
 // Fills a label-wrapped field. The builders wrap the input inside a
@@ -135,6 +164,16 @@ function studyCard(page, title) {
 // therefore deliberate, not sloppy.
 function field(scope, labelText) {
   return scope.getByLabel(labelText, { exact: false }).first();
+}
+
+// Narrows to one <section class="card"> by its heading. Several class
+// names in the builders are reused across sections, so reaching for one
+// by index without saying which section it lives in picks whatever
+// happens to render first.
+function section(page, heading) {
+  return page.locator("section.card").filter({
+    has: page.getByRole("heading", { name: heading, exact: true })
+  });
 }
 
 // Answers whatever a question card is asking without knowing its type.
@@ -256,8 +295,12 @@ async function main() {
     });
 
     await step("Fill in the tree test and save it", async () => {
-      await field(page, "Welcome").fill("Thank you for helping with this check.");
-      await field(page, "Privacy").fill("This check does not collect personal details.");
+      // The two builders label these differently: "Welcome note" and
+      // "Privacy note" here, "Welcome message" and "Privacy message" in
+      // the tone builder. Spelling each out rather than matching on
+      // "Welcome" keeps the failure honest if one of them is renamed.
+      await field(page, "Welcome note").fill("Thank you for helping with this check.");
+      await field(page, "Privacy note").fill("This check does not collect personal details.");
       await page.fill(UI.csvInput, TREE_CSV);
 
       await page.getByRole("button", { name: "Add task" }).click();
@@ -274,19 +317,21 @@ async function main() {
       // internals. Scoped to the tree panel so it cannot accidentally
       // match the same words sitting in the CSV textarea above it. If
       // this step starts failing, check TreeView first.
-      await page.locator(".sticky-tree-panel").getByText("Renew a licence", { exact: true }).first().click();
+      const treeNode = page.locator(".sticky-tree-panel .tree-label", { hasText: /^Renew a licence$/ });
+      await treeNode.first().waitFor({ state: "visible", timeout: 15000 });
+      await treeNode.first().click();
       await page.getByRole("button", { name: "Add selected path as target" }).click();
 
-      await page.getByRole("button", { name: "Save", exact: true }).click();
-      await page.waitForSelector('text=Saved', { timeout: 20000 });
+      // "Save test" in the tree builder, "Save" in the tone builder.
+      await page.getByRole("button", { name: "Save test", exact: true }).click();
+      await page.waitForSelector("text=Saved.", { timeout: 20000 });
     });
 
     await step("Publish the tree test", async () => {
       await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
       const card = studyCard(page, TREE_TITLE);
       await card.waitFor({ state: "visible", timeout: 15000 });
-      await card.getByRole("button", { name: "Publish", exact: true }).click();
-      await card.locator("text=Published").waitFor({ state: "visible", timeout: 20000 });
+      await publish(page, card);
     });
 
     // ---------- Tone test, operator path ----------
@@ -302,13 +347,18 @@ async function main() {
     await step("Fill in the tone test and save it", async () => {
       await field(page, "Scenario").fill("A reminder that a driver licence is about to expire.");
       await field(page, "Content goal").fill("The reader renews on time without feeling accused.");
-      await field(page, "Welcome").fill("You will read two versions of the same message.");
-      await field(page, "Privacy").fill("This check does not collect personal details.");
+      await field(page, "Welcome message").fill("You will read two versions of the same message.");
+      await field(page, "Privacy message").fill("This check does not collect personal details.");
 
       // Publishing needs at least two variants. A new tone test starts
       // with the minimum already present but empty, so this fills them
       // rather than adding more.
-      const variantCards = page.locator(".question-card");
+      //
+      // Scoped to the Wording variants section. The class .question-card
+      // is used in four places in this builder, and the Questions section
+      // renders above this one, so an unscoped .nth(0) reaches a question
+      // rather than the first variant. Caught in review, not by a run.
+      const variantCards = section(page, "Wording variants").locator(".question-card");
       const wordings = [
         "Your driver licence expires next month. You can renew it online in about ten minutes.",
         "Your driver licence is due for renewal. Renewing online takes about ten minutes."
@@ -320,15 +370,14 @@ async function main() {
       }
 
       await page.getByRole("button", { name: "Save", exact: true }).click();
-      await page.waitForSelector('text=Saved', { timeout: 20000 });
+      await page.waitForSelector("text=Saved.", { timeout: 20000 });
     });
 
     await step("Publish the tone test", async () => {
       await page.goto(`${BASE_URL}/admin`, { waitUntil: "networkidle" });
       const card = studyCard(page, TONE_TITLE);
       await card.waitFor({ state: "visible", timeout: 15000 });
-      await card.getByRole("button", { name: "Publish", exact: true }).click();
-      await card.locator("text=Published").waitFor({ state: "visible", timeout: 20000 });
+      await publish(page, card);
     });
 
     // ---------- Participant path ----------
@@ -339,9 +388,29 @@ async function main() {
       const card = studyCard(page, TONE_TITLE);
       const openLink = card.getByRole("link", { name: "Open" });
       await openLink.waitFor({ state: "visible", timeout: 15000 });
-      const href = await openLink.getAttribute("href");
-      if (!href || !href.includes("role=")) {
-        throw new Error(`The Open link carries no role parameter. Got: ${href}`);
+
+      // The role in this link is chosen from the test's active roles,
+      // which ToneTestLinks loads from the database after the card first
+      // renders. Until that lands the link reads "?role=" with nothing
+      // after it, so the wait below is for a role actually being named,
+      // not merely for the parameter being present. Checking only for
+      // "role=" would let an empty one through and fail later, in the
+      // participant step, where the cause would be much harder to see.
+      let href = "";
+      await page.waitForFunction(
+        (title) => {
+          const cards = Array.from(document.querySelectorAll(".study-card"));
+          const match = cards.find((element) => element.querySelector(".study-card-body h2")?.textContent?.trim() === title);
+          const link = match && Array.from(match.querySelectorAll("a")).find((a) => a.textContent.trim() === "Open");
+          return Boolean(link && /[?&]role=[a-z_]+/.test(link.getAttribute("href") || ""));
+        },
+        TONE_TITLE,
+        { timeout: 15000 }
+      );
+
+      href = await openLink.getAttribute("href");
+      if (!href || !/[?&]role=[a-z_]+/.test(href)) {
+        throw new Error(`The Open link names no role. Got: ${href}`);
       }
       toneSlug = href;
     });
@@ -365,7 +434,24 @@ async function main() {
       }
 
       await page.getByRole("button", { name: "Submit", exact: true }).click();
-      await page.waitForSelector(".done-card", { state: "visible", timeout: 30000 });
+
+      // A refused submit names the questions still unanswered, which is
+      // exactly what is needed if the generic answering above missed
+      // something. Waiting only for the end card would throw that away
+      // and report a timeout instead.
+      const done = page.locator(".done-card");
+      const refused = page.locator(".error-box");
+
+      await Promise.race([
+        done.waitFor({ state: "visible", timeout: 30000 }),
+        refused.first().waitFor({ state: "visible", timeout: 30000 })
+      ]).catch(() => {});
+
+      if (await refused.first().isVisible().catch(() => false)) {
+        throw new Error(`The app refused the submission: ${(await refused.first().innerText()).trim()}`);
+      }
+
+      await done.waitFor({ state: "visible", timeout: 30000 });
     });
 
     await step("Run the tree test as a participant and submit", async () => {
@@ -376,11 +462,20 @@ async function main() {
       await page.goto(`${BASE_URL}${href}`, { waitUntil: "networkidle" });
       await page.getByRole("button", { name: "Start test" }).click();
 
-      await page.getByText("Licences", { exact: true }).first().click();
-      await page.getByText("Renew a licence", { exact: true }).first().click();
-      await page.getByRole("button", { name: "Next", exact: true }).click();
+      // The tree starts collapsed on a /test/ page and expanded in the
+      // builder, so unlike the builder step this one has to open the
+      // parent before the leaf exists to be clicked. See
+      // shouldCollapseByDefault in TreeView.jsx.
+      const parent = page.locator(".tree-label", { hasText: /^Licences$/ }).first();
+      await parent.waitFor({ state: "visible", timeout: 15000 });
+      await parent.click();
 
-      await page.waitForSelector(".done-card, text=Submit", { timeout: 20000 });
+      const leaf = page.locator(".tree-label", { hasText: /^Renew a licence$/ }).first();
+      await leaf.waitFor({ state: "visible", timeout: 15000 });
+      await leaf.click();
+
+      await page.getByRole("button", { name: "Next", exact: true }).click();
+      await page.locator(".done-card").waitFor({ state: "visible", timeout: 20000 });
     });
 
     // ---------- Reporting ----------
@@ -392,9 +487,17 @@ async function main() {
       await page.waitForSelector("h1", { state: "visible" });
       await page.getByRole("button", { name: "Refresh" }).click();
 
-      const body = await page.locator("main").innerText();
-      if (!/\b[1-9]\d*\b/.test(body)) {
-        throw new Error("The dashboard loaded but shows no participant count.");
+      // A tone test opens ToneDashboardPage, which counts sessions in
+      // summary cards. Reading that number is the point of the step: it
+      // is the only place in this script that proves the answers
+      // submitted a moment ago actually reached the database, rather
+      // than the participant page merely looking like it worked.
+      const completed = page.locator(".summary-card", { hasText: "Sessions completed" }).locator("strong");
+      await completed.waitFor({ state: "visible", timeout: 20000 });
+      const value = Number((await completed.innerText()).trim());
+
+      if (!Number.isFinite(value) || value < 1) {
+        throw new Error(`The dashboard shows ${value} completed sessions after one was just submitted.`);
       }
     });
 
