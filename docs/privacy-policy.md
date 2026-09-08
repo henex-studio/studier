@@ -109,11 +109,6 @@ readable by anyone who has its link, because that is how a participant
 takes part without an account. Until you publish, nobody but you can read
 them, including the person operating Studier.
 
-This changed on 8 September 2026. Before that date an administrator could
-read the contents of every test and every response. We are recording the
-change here rather than quietly improving, because anything you tested
-before that date was visible under the old arrangement.
-
 We do not sell your information, share it for advertising, or give it to
 anyone else except the service providers listed below, who process it on
 our behalf in order to run Studier.

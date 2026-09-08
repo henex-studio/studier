@@ -16,8 +16,12 @@ import React from "react";
 // read the contents of other accounts' tests or any response to them. The
 // old wording said the opposite, and said it deliberately and plainly, so
 // leaving it would have been a false statement rather than a stale one.
-// The new wording also records that the change has a date, because
-// anything tested before it was visible under the old arrangement.
+//
+// A paragraph dating the change and describing what was true before it was
+// written and then removed the same day, by the operator's decision. This
+// document states what is true now. What changed, when, and why belongs in
+// harness-docs/decision-log.md, S-9.8, which is where it now lives. The
+// version string above is what tells a reader the wording moved.
 //
 // Bumped 5 September 2026, PLAN-account-deletion.md Step 4: "How long it
 // is kept" previously said Studier could not delete an account itself,
@@ -145,12 +149,6 @@ export default function PrivacyPolicyContent() {
         publish a test, its questions and the wording being tested are readable by anyone who
         has its link, because that is how a participant takes part without an account. Until
         you publish, nobody but you can read them, including the person operating Studier.
-      </p>
-      <p>
-        This changed on 8 September 2026. Before that date an administrator could read the
-        contents of every test and every response. We are recording the change here rather
-        than quietly improving, because anything you tested before that date was visible
-        under the old arrangement.
       </p>
       <p>
         We do not sell your information, share it for advertising, or give it to anyone else
