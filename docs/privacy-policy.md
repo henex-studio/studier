@@ -1,6 +1,6 @@
 # Studier Privacy Policy
 
-**Version 2026-09-05**
+**Version 2026-09-08**
 
 This version string is recorded against your account when you agree to
 this policy at sign-up, so it stays possible to tell which wording each
@@ -96,11 +96,23 @@ holder who ran the test you answered. They are not visible to other
 participants, and not visible to anyone browsing the internet. Studier
 gives an unsigned-in visitor no access to any response at all.
 
-**The person operating Studier** can see all accounts and, unlike in some
-services, can see the contents of tests and their responses. This is an
-administrator capability that exists to support and repair the service. We
-are telling you this plainly because it is true; it would be easy to write
-a sentence implying otherwise.
+**The person operating Studier** can see that an account exists, who it
+belongs to, how many tests it has, what type each one is, whether it is a
+draft, published or closed, when it was created, and how many people took
+part. That is all. They cannot see the title of your test, its wording, its
+questions, or a single answer anyone gave you. This is enforced by the
+database, not by the interface, so it holds whatever the app does.
+
+One thing is worth saying plainly rather than leaving you to discover it.
+Once you publish a test, its questions and the wording being tested are
+readable by anyone who has its link, because that is how a participant
+takes part without an account. Until you publish, nobody but you can read
+them, including the person operating Studier.
+
+This changed on 8 September 2026. Before that date an administrator could
+read the contents of every test and every response. We are recording the
+change here rather than quietly improving, because anything you tested
+before that date was visible under the old arrangement.
 
 We do not sell your information, share it for advertising, or give it to
 anyone else except the service providers listed below, who process it on
@@ -178,9 +190,9 @@ your account, from the account page or by asking us to do it for you.
 
 Your connection to Studier is encrypted. Passwords are hashed and never
 stored in a readable form. Access to tests and responses is restricted at
-the database level to the account that owns them, and participants submit
-answers through a restricted entry point that gives them no ability to
-read or alter anything.
+the database level to the account that owns them, with no exception for
+administrators, and participants submit answers through a restricted entry
+point that gives them no ability to read or alter anything.
 
 No system is perfectly secure. Choose a password you do not use anywhere
 else, and do not share your account details.

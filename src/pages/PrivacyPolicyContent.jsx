@@ -12,12 +12,19 @@ import React from "react";
 // revised. RegisterPage passes it into the sign-up metadata, and the
 // handle_new_user database trigger writes it to profiles.privacy_version.
 //
+// Bumped 8 September 2026, migration 022: an administrator can no longer
+// read the contents of other accounts' tests or any response to them. The
+// old wording said the opposite, and said it deliberately and plainly, so
+// leaving it would have been a false statement rather than a stale one.
+// The new wording also records that the change has a date, because
+// anything tested before it was visible under the old arrangement.
+//
 // Bumped 5 September 2026, PLAN-account-deletion.md Step 4: "How long it
 // is kept" previously said Studier could not delete an account itself,
 // which stopped being true the moment the account page grew a delete
 // button. Existing accounts keep whichever version string they already
 // have; there is no re-consent flow, and none was asked for.
-export const PRIVACY_POLICY_VERSION = "2026-09-05";
+export const PRIVACY_POLICY_VERSION = "2026-09-08";
 
 export default function PrivacyPolicyContent() {
   return (
@@ -126,11 +133,24 @@ export default function PrivacyPolicyContent() {
         access to any response at all.
       </p>
       <p>
-        <strong>The person operating Studier</strong> can see all accounts and, unlike in
-        some services, can see the contents of tests and their responses. This is an
-        administrator capability that exists to support and repair the service. We are
-        telling you this plainly because it is true; it would be easy to write a sentence
-        implying otherwise.
+        <strong>The person operating Studier</strong> can see that an account exists, who it
+        belongs to, how many tests it has, what type each one is, whether it is a draft,
+        published or closed, when it was created, and how many people took part. That is all.
+        They cannot see the title of your test, its wording, its questions, or a single
+        answer anyone gave you. This is enforced by the database, not by the interface, so it
+        holds whatever the app does.
+      </p>
+      <p>
+        One thing is worth saying plainly rather than leaving you to discover it. Once you
+        publish a test, its questions and the wording being tested are readable by anyone who
+        has its link, because that is how a participant takes part without an account. Until
+        you publish, nobody but you can read them, including the person operating Studier.
+      </p>
+      <p>
+        This changed on 8 September 2026. Before that date an administrator could read the
+        contents of every test and every response. We are recording the change here rather
+        than quietly improving, because anything you tested before that date was visible
+        under the old arrangement.
       </p>
       <p>
         We do not sell your information, share it for advertising, or give it to anyone else
@@ -225,8 +245,9 @@ export default function PrivacyPolicyContent() {
       <p>
         Your connection to Studier is encrypted. Passwords are hashed and never stored in a
         readable form. Access to tests and responses is restricted at the database level to
-        the account that owns them, and participants submit answers through a restricted
-        entry point that gives them no ability to read or alter anything.
+        the account that owns them, with no exception for administrators, and participants
+        submit answers through a restricted entry point that gives them no ability to read or
+        alter anything.
       </p>
       <p>
         No system is perfectly secure. Choose a password you do not use anywhere else, and do

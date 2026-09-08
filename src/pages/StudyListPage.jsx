@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { getTonePublishIssues } from "../lib/tonetest/publishChecks";
 import ToneTestLinks from "../components/tonetest/ToneTestLinks";
 import ConfirmDialog from "../components/ConfirmDialog";
+import OtherAccountsTests from "../components/OtherAccountsTests";
 
 
 const NZ_TIME_ZONE = "Pacific/Auckland";
@@ -99,13 +100,6 @@ function statusClass(status) {
   return "status-badge status-draft";
 }
 
-function ownerClass(ownerId) {
-  const value = String(ownerId || "");
-  let total = 0;
-  for (let index = 0; index < value.length; index += 1) total += value.charCodeAt(index);
-  return `owner-chip owner-chip-${(total % 5) + 1}`;
-}
-
 function hasTextListValue(values) {
   return Array.isArray(values) && values.some((value) => String(value || "").trim());
 }
@@ -154,7 +148,6 @@ function PublishIssues({ issues }) {
 
 export default function StudyListPage({ profile }) {
   const [studies, setStudies] = useState([]);
-  const [profiles, setProfiles] = useState([]);
   const [title, setTitle] = useState("");
   const [studyType, setStudyType] = useState("tree_test");
   const [message, setMessage] = useState("");
@@ -167,6 +160,12 @@ export default function StudyListPage({ profile }) {
   const [typeFilter, setTypeFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState(null);
+
+  // Other accounts' studies, for an administrator only, and management data
+  // only. Since migration 022 the studies table returns nothing but the
+  // caller's own rows, so this comes from admin_study_overview() instead.
+  const [otherAccounts, setOtherAccounts] = useState(null);
+  const [otherAccountsError, setOtherAccountsError] = useState("");
 
   // Promise-based so clearResponseData and deleteStudy can still read the
   // answer with a plain await, the same shape window.prompt and
@@ -189,17 +188,6 @@ export default function StudyListPage({ profile }) {
     if (typeFilter === "all") return studies;
     return studies.filter((study) => study.study_type === typeFilter);
   }, [studies, typeFilter]);
-
-  const ownerById = useMemo(() => {
-    const map = new Map();
-    profiles.forEach((item) => {
-      map.set(item.id, {
-        label: item.display_name || item.email || "Unknown user",
-        title: item.email || item.display_name || "Unknown user"
-      });
-    });
-    return map;
-  }, [profiles]);
 
   async function loadStudies() {
     setLoading(true);
@@ -228,16 +216,18 @@ export default function StudyListPage({ profile }) {
 
     setStudies(studyRows);
 
-    const ownerIds = [...new Set(studyRows.map((study) => study.owner_id).filter(Boolean))];
-    if (ownerIds.length > 0) {
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("id,email,role,display_name")
-        .in("id", ownerIds);
-      if (profileError) setMessage(profileError.message);
-      else setProfiles(profileData || []);
-    } else {
-      setProfiles([]);
+    // The owner lookup that used to live here is gone with the owner
+    // column. An administrator now sees only their own studies, so every
+    // row named the same person, and other accounts' owners come from
+    // admin_study_overview() instead. See migration 022.
+
+    if (profile.role === "admin") {
+      const { data: overview, error: overviewError } = await supabase.rpc("admin_study_overview");
+      if (overviewError) setOtherAccountsError(overviewError.message);
+      else {
+        setOtherAccountsError("");
+        setOtherAccounts(overview || []);
+      }
     }
 
     setLoading(false);
@@ -647,8 +637,6 @@ export default function StudyListPage({ profile }) {
       {!loading && visibleStudies.length > 0 && viewMode === "cards" ? (
         <section className="study-grid">
           {visibleStudies.map((study) => {
-            const owner = ownerById.get(study.owner_id) || { label: "Unknown user", title: "Unknown user" };
-            const isAdminView = profile.role === "admin";
             const fullLink = `${window.location.origin}/test/${study.slug}`;
             const isCopied = copiedStudyId === study.id;
             const publishIssues = publishIssuesByStudyId[study.id] || [];
@@ -661,7 +649,6 @@ export default function StudyListPage({ profile }) {
                 </div>
 
                 <div className="study-card-body">
-                  {isAdminView ? <span className={ownerClass(study.owner_id)} title={owner.title}>{owner.label}</span> : null}
                   <h2>{study.title}</h2>
                   <p className="study-link-code" title={fullLink}>Test link code: <span>/{study.slug}</span></p>
                   <p className="study-expiry-text">{expiryLabel(study)}</p>
@@ -692,7 +679,6 @@ export default function StudyListPage({ profile }) {
                 <tr>
                   <th>Test</th>
                   <th>Status</th>
-                  {profile.role === "admin" ? <th>Owner</th> : null}
                   <th>Link code</th>
                   <th>Quick links</th>
                   <th>Actions</th>
@@ -700,7 +686,6 @@ export default function StudyListPage({ profile }) {
               </thead>
               <tbody>
                 {visibleStudies.map((study) => {
-                  const owner = ownerById.get(study.owner_id) || { label: "Unknown user", title: "Unknown user" };
                   const fullLink = `${window.location.origin}/test/${study.slug}`;
                   const isCopied = copiedStudyId === study.id;
                   const publishIssues = publishIssuesByStudyId[study.id] || [];
@@ -713,7 +698,6 @@ export default function StudyListPage({ profile }) {
                           <a className="test-title-link" href={builderPath(study)}>{study.title}</a>
                         </td>
                         <td><span className={statusClass(study.status)}>{statusLabel(study.status)}</span></td>
-                        {profile.role === "admin" ? <td><span className={ownerClass(study.owner_id)} title={owner.title}>{owner.label}</span></td> : null}
                         <td><span className="list-link-code" title={fullLink}>/{study.slug}</span></td>
                         <td>
                           <div className="list-link-row">
@@ -727,7 +711,7 @@ export default function StudyListPage({ profile }) {
 
                       {publishIssues.length || isCopied ? (
                         <tr className="list-feedback-row">
-                          <td colSpan={profile.role === "admin" ? 6 : 5}>
+                          <td colSpan={5}>
                             <PublishIssues issues={publishIssues} />
                             {isCopied ? <div className="copy-toast">{fallbackLink ? `Copy did not work. Link: ${fallbackLink}` : "Link copied"}</div> : null}
                           </td>
@@ -740,6 +724,10 @@ export default function StudyListPage({ profile }) {
             </table>
           </div>
         </section>
+      ) : null}
+
+      {!loading && profile.role === "admin" ? (
+        <OtherAccountsTests rows={otherAccounts} error={otherAccountsError} />
       ) : null}
 
       <ConfirmDialog

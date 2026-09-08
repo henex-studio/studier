@@ -168,7 +168,7 @@ export default function AccountPage({ profile, onUpdated }) {
 
         <label className="form-block">
           <span className="form-label">Display name</span>
-          <span className="muted-text">Shown in the top navigation and, for an admin, next to any test you own.</span>
+          <span className="muted-text">Shown in the top navigation, and to an administrator as the owner of the tests on your account.</span>
           <input
             className="text-input"
             value={displayName}

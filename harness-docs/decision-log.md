@@ -380,3 +380,21 @@ This file was on the absolute deny list. The intent was that the party being rec
 `agents/` and `briefs/` stay protected. They define how the work is done rather than record what was decided, and nothing in a conversation needs to change them.
 
 Recorded partly because this file was written to four times on 7 September while it was still on the deny list, before anyone noticed. Nothing enforces these lists in the current way of working; they hold only as far as they are honoured.
+
+### S-9.8 An administrator sees management data and nothing else
+**Status:** Active
+**Decided:** 8 September 2026, by Cafe.
+
+**Decision.** An administrator can no longer read another account's tests or the answers given to them. The test collection now has two regions: the tests the administrator owns, shown exactly as any owner sees their own, and every other account's tests as a read-only list of management data. Owner, type, status, a short reference, participant counts and dates. No title, no wording, no questions, no answers.
+
+**Why.** A tone test exists to check sensitive wording before it is published. The wording under test is the most confidential thing on the platform, and an administrator had no reason to see any of it. The old arrangement was not an oversight, it was stated openly in the privacy policy, but stating a bad default plainly does not make it a good one.
+
+**What was actually changed.** Migration 022 removes the `private.is_admin()` branch from 25 policies across 12 tables, five of which were `FOR ALL`. The two policies on `profiles` stay, because that table is how accounts are managed and how an owner's name is put on the list. The migration rewrites each policy by removing the administrator term rather than by writing a new expression, and aborts if `is_admin` survives anywhere in the result, so a policy of an unexpected shape stops the migration instead of being silently mangled.
+
+**Measured before and after, on production, by impersonating the administrator against another account's study.** Before: the study row, its tree, 10 tasks, 3 questions, 251 answers, 25 sessions. After: 0 study rows, 0 answers, 0 sessions. The owner still reads all of their own. A draft owned by another account returns nothing at all.
+
+**What replaces the access.** `admin_study_overview()`, a `security definer` function returning management data for studies the caller does not own, and only to an administrator. It deliberately returns neither the title nor the slug. The slug matters as much as the title: it is the public link, so an administrator holding it could read the whole test through the participant page, and the change would be theatre.
+
+**The one exposure this does not close, which is not an administrator privilege.** A published study's tree, tasks and questions are readable by anyone holding the study id, because that is the policy that lets a participant take part without an account. Proven by querying as `anon`. Drafts are invisible. This is the cost of anonymous participation and is now stated in the privacy policy rather than left to be discovered.
+
+**Privacy policy.** Both copies moved to version 2026-09-08. The administrator paragraph is rewritten, the Security section says the database restriction has no exception for administrators, and a paragraph records the date of the change and what was true before it, because anything tested before 8 September was visible under the old arrangement. Existing accounts keep the version string they agreed to; no re-consent flow exists and none was asked for.
