@@ -95,6 +95,21 @@ const STRUCTURE = ["table", "thead", "tbody", "tfoot", "tr", "td", "th", "svg", 
 // because the point of the scale is that there are two.
 const DENSE = ["tree-node", "tree-children", "tree-button", "tree-wrap"];
 
+// The participant screens, reachable with a link and nothing else. The
+// operator screens are discovered at run time, further down.
+const PAGES = [
+  { name: "Tone test, Audience", path: "/test/driver-licence-renewal-reminder-hsurx?role=audience" },
+  { name: "Tone test, Agency", path: "/test/driver-licence-renewal-reminder-hsurx?role=agency" },
+  { name: "Tree test", path: "/test/transport-services-navigation-test-j6foa" }
+];
+
+// Both are measured, because the mobile rules are a different layout and
+// a fault can exist in one and not the other.
+const VIEWPORTS = [
+  { name: "desktop", width: 1440, height: 900 },
+  { name: "mobile", width: 390, height: 844 }
+];
+
 async function measure(page, viewport) {
   return page.evaluate(({ CONTROL, LABEL, LABEL_PAIRS, PROSE, STRUCTURE, DENSE }) => {
     const first = (el) => String(el.className?.baseVal ?? el.className ?? "").split(" ")[0] || "";
