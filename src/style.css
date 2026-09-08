@@ -949,9 +949,31 @@ select:focus {
   margin-top: 0;
 }
 
+/* The card carries the table to its own edges, so it drops the 18px every
+   other card has. Anything that is not the table has to put that padding
+   back for itself, or it sits on the border and the rounded corner clips
+   it. That is what happened to the "Other accounts" heading on 8 September
+   2026: no padding, plus overflow hidden, and the top of the text was cut
+   off by the card edge. */
 .list-view-card {
   padding: 0;
   overflow: hidden;
+}
+
+.list-view-card-header {
+  padding: 18px 18px var(--control-gap);
+}
+
+.list-view-card-header h2 {
+  margin-top: 0;
+}
+
+.list-view-card-header p {
+  margin-bottom: 0;
+}
+
+.list-view-card-empty {
+  padding: 0 18px 18px;
 }
 
 .test-list-table-wrap,

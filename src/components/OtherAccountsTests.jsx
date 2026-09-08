@@ -57,18 +57,18 @@ export default function OtherAccountsTests({ rows, error }) {
 
   return (
     <section className="card list-view-card">
-      <div className="section-title-row">
-        <div>
-          <h2>Other accounts</h2>
-          <p className="muted-text">
-            Management data only. Titles, wording, questions and participant answers belong to the
-            account that created the test and are not visible here.
-          </p>
-        </div>
+      {/* The padding lives here rather than on the card, because the card
+          deliberately has none: the table runs to its edges. */}
+      <div className="list-view-card-header">
+        <h2>Other accounts</h2>
+        <p className="muted-text">
+          Management data only. Titles, wording, questions and participant answers belong to the
+          account that created the test and are not visible here.
+        </p>
       </div>
 
       {rows.length === 0 ? (
-        <p className="muted-text">No other account has created a test yet.</p>
+        <p className="muted-text list-view-card-empty">No other account has created a test yet.</p>
       ) : (
         <div className="desktop-table test-list-table-wrap">
           <table className="test-list-table">
