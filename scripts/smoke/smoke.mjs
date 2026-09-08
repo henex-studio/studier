@@ -1,4 +1,4 @@
-// Critical path smoke test. Drives the deployed dev preview with a real
+// Critical path smoke test. Drives the deployed site with a real
 // browser and walks the whole path an operator and a participant actually
 // take: create a test, fill it in, publish it, answer it, read the result,
 // export it, delete it.
@@ -43,7 +43,14 @@
 import { chromium } from "playwright";
 import readline from "node:readline";
 
-const BASE_URL = "https://studier-git-dev-cafes-projects-5a353a12.vercel.app";
+// Production. Work moved to main on 7 September 2026, so the dev preview
+// this used to point at is no longer where the code being checked lives.
+// Checking a branch nobody is committing to is worse than not checking.
+//
+// This does not change what the checks touch in the database. Both the
+// preview and production have always pointed at the same Supabase project,
+// because there is no separate development database (audit finding A7).
+const BASE_URL = "https://studier.henex.uk";
 const VIEWPORT = { width: 1440, height: 900 };
 
 // Everything this script creates is titled to match FIXTURE_TITLE exactly,

@@ -21,10 +21,8 @@
 // afterwards. A check whose coverage does not match where the faults are
 // is a check that reassures more than it verifies.
 //
-// One sign-in covers everything: Vercel's gate on preview deployments, if
-// the target is a preview, and Studier's own. It is the same manual pause
-// npm run smoke and npm run screenshots already use, and it never types a
-// password.
+// It signs in to Studier once, the same manual pause npm run smoke and
+// npm run screenshots already use, and it never types a password.
 //
 // A run creates a tone test session on the study it opens, because opening
 // a role link is what starts one. It deletes nothing, so clear those out
@@ -33,31 +31,27 @@
 import { chromium } from "playwright";
 import readline from "node:readline";
 
-// Where to measure. The dev preview by default, overridable so this can be
-// pointed at production after a merge without editing the file.
-const BASE_URL = process.env.SPACING_URL || "https://studier-git-dev-cafes-projects-5a353a12.vercel.app";
+// Production. Work moved to main on 7 September 2026, so the dev preview
+// this used to point at is no longer where the code being checked lives.
+// Checking a branch nobody is committing to is worse than not checking.
+//
+// This does not change what the checks touch in the database. Both the
+// preview and production have always pointed at the same Supabase project,
+// because there is no separate development database (audit finding A7).
+//
+// SPACING_URL still overrides it, for checking a preview before it lands.
+const BASE_URL = process.env.SPACING_URL || "https://studier.henex.uk";
 
-// Vercel protects preview deployments. A browser that has never signed in
-// to Vercel gets redirected to vercel.com/login, so the first version of
-// this script, which ran headless and unattended, measured nothing and
-// timed out waiting for a card that was never going to appear. It reported
-// only "waiting for locator to be visible", which named neither the page
-// nor the redirect; that is why it now prints the url and title on failure,
-// and that is how this was found in one run instead of several.
+// Vercel protects preview deployments and redirects a browser that has
+// never signed in to Vercel to its own login. Production is not protected,
+// so pointing at production removed that problem. It cost a run to find,
+// because the first version reported only "waiting for locator to be
+// visible" and named neither the page nor the redirect; printing the url
+// and title on failure is what found it, and that is kept.
 //
-// So it opens a visible window and waits, the same way npm run screenshots
-// and npm run smoke already do. Two ways to make it unattended again, both
-// requiring something this repository cannot hold:
-//
-//   Point it at production, which Vercel does not protect:
-//     SPACING_URL=https://<production-domain> npm run spacing
-//
-//   Or turn on Vercel's protection bypass for automation and put the secret
-//     in the environment, never in a file here.
-//
-// Neither removes the Studier sign-in, which the operator screens need. A
-// fully unattended version would have to hold an account's credentials,
-// which is not something this repository will do.
+// The Studier sign-in below remains, because the operator screens need a
+// session. A fully unattended version would have to hold an account's
+// credentials, which is not something this repository will do.
 function ask(question) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => rl.question(question, (answer) => { rl.close(); resolve(answer); }));

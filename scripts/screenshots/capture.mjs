@@ -25,8 +25,6 @@ import { fileURLToPath } from "node:url";
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const outputDir = path.join(dirname, "..", "..", "public", "guide");
 
-// The dev preview Vercel builds from this repository's dev branch.
-//
 // Correction, 6 September 2026. This comment used to say that the preview
 // and local development both point at a Supabase development branch, per
 // CLAUDE.md section 5, so neither could touch production data. There is no
@@ -37,7 +35,14 @@ const outputDir = path.join(dirname, "..", "..", "public", "guide");
 // So this script drives real production data with a real signed-in session.
 // It only reads and screenshots, and it never writes, but do not add a step
 // here that creates, edits or deletes anything until A7 is resolved.
-const BASE_URL = "https://studier-git-dev-cafes-projects-5a353a12.vercel.app";
+// Production. Work moved to main on 7 September 2026, so the dev preview
+// this used to point at is no longer where the code being checked lives.
+// Checking a branch nobody is committing to is worse than not checking.
+//
+// This does not change what the checks touch in the database. Both the
+// preview and production have always pointed at the same Supabase project,
+// because there is no separate development database (audit finding A7).
+const BASE_URL = "https://studier.henex.uk";
 
 // Ground truth for the two demo studies is their slug, visited directly
 // during Milestone 6 Step 6 and unlikely to change; titles are not used for
