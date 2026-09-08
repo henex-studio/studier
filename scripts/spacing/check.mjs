@@ -65,18 +65,19 @@ const CONTROL = 14;
 const CONTROL_MOBILE = 12;
 const LABEL = 8;
 
-// A label-to-control relationship, where the smaller value is the point.
-// The left side is a class name; the right may be a class or a tag.
-const LABEL_PAIRS = [
-  ["button-row", "rating-scale-labels"],
-  ["form-label", "textarea"],
-  ["form-label", "text-input"],
-  ["form-label", "div"],
-  ["muted-text", "textarea"],
-  ["muted-text", "text-input"],
-  ["muted-text", "input"],
-  ["owner-chip", "h2"]
-];
+// What counts as a label relationship, by meaning rather than by a list of
+// class names that has to be kept complete.
+//
+// Two rules do almost all of it. Anything carrying one of these classes is
+// a label, a caption or a help line, and whatever follows it is what it
+// describes. And two elements inside the same <label> element belong
+// together by definition, which is what a radio button and its own text
+// are; that pair was reported as a fault until this rule existed.
+//
+// The named pair that is left does not fit either: the rating scale's
+// caption sits after a button row rather than before its control.
+const LABEL_CLASSES = ["form-label", "muted-text", "owner-chip"];
+const LABEL_PAIRS = [["button-row", "rating-scale-labels"]];
 
 // Things this check has no business measuring. Added after its first real
 // run reported sixty-five problems of which most were its own.
@@ -111,11 +112,17 @@ const VIEWPORTS = [
 ];
 
 async function measure(page, viewport) {
-  return page.evaluate(({ CONTROL, LABEL, LABEL_PAIRS, PROSE, STRUCTURE, DENSE }) => {
+  return page.evaluate(({ CONTROL, LABEL, LABEL_CLASSES, LABEL_PAIRS, PROSE, STRUCTURE, DENSE }) => {
     const first = (el) => String(el.className?.baseVal ?? el.className ?? "").split(" ")[0] || "";
     const tag = (el) => el.tagName.toLowerCase();
+    const sameLabel = (a, b) => {
+      const owner = a.closest("label");
+      return Boolean(owner) && owner === b.closest("label");
+    };
     const isLabelPair = (a, b) =>
-      LABEL_PAIRS.some(([x, y]) => first(a) === x && (first(b) === y || tag(b) === y));
+      sameLabel(a, b) ||
+      LABEL_CLASSES.includes(first(a)) ||
+      LABEL_PAIRS.some(([x, y]) => first(a) === x && first(b) === y);
 
     const skip = (el) =>
       STRUCTURE.includes(tag(el)) ||
@@ -161,7 +168,7 @@ async function measure(page, viewport) {
     return found;
   }, {
     CONTROL: viewport.width < 640 ? CONTROL_MOBILE : CONTROL,
-    LABEL, LABEL_PAIRS, PROSE, STRUCTURE, DENSE
+    LABEL, LABEL_CLASSES, LABEL_PAIRS, PROSE, STRUCTURE, DENSE
   });
 }
 
