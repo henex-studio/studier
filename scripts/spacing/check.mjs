@@ -55,44 +55,58 @@ function ask(question) {
   return new Promise((resolve) => rl.question(question, (answer) => { rl.close(); resolve(answer); }));
 }
 
-// The scale, and the only two values that should appear.
+// The scale.
 //
-//   CONTROL: two separate things, side by side or stacked.
-//   LABEL:   a label or a caption and the control it describes. Closer on
-//            purpose, so the reader can see which one it belongs to.
+//   CONTROL: two separate things. 14, or 12 below 640px, where a
+//            deliberate mobile rule tightens every button row.
+//   LABEL:   a label, caption or help line and the control it describes.
+//            Closer on purpose, so a reader can see what belongs to what.
 const CONTROL = 14;
+const CONTROL_MOBILE = 12;
 const LABEL = 8;
 
-// Pairs where the smaller value is the point rather than a mistake. Written
-// as the two class names, in order. Anything not listed here is expected to
-// sit CONTROL apart.
+// A label-to-control relationship, where the smaller value is the point.
+// The left side is a class name; the right may be a class or a tag.
 const LABEL_PAIRS = [
   ["button-row", "rating-scale-labels"],
   ["form-label", "textarea"],
   ["form-label", "text-input"],
+  ["form-label", "div"],
+  ["muted-text", "textarea"],
+  ["muted-text", "text-input"],
+  ["muted-text", "input"],
   ["owner-chip", "h2"]
 ];
 
-// Prose, not controls. Line height does the spacing in a paragraph or a
-// bullet list and measuring it against a control scale is meaningless.
-const PROSE = new Set(["li", "p", "span", "strong", "em", "br"]);
+// Things this check has no business measuring. Added after its first real
+// run reported sixty-five problems of which most were its own.
+//
+//   PROSE      line height does the spacing, not a control scale.
+//   STRUCTURE  tables separate rows with borders; measuring the gap
+//              between two <tr> against a control scale is meaningless.
+//              SVG internals are drawing instructions, not layout.
+//   HIDDEN     a visually hidden label has no position to measure.
+const PROSE = ["li", "p", "span", "strong", "em", "br"];
+const STRUCTURE = ["table", "thead", "tbody", "tfoot", "tr", "td", "th", "svg", "path", "rect", "circle", "g", "line", "polyline"];
 
-const PAGES = [
-  { name: "Tone test, Audience", path: "/test/driver-licence-renewal-reminder-hsurx?role=audience" },
-  { name: "Tone test, Agency", path: "/test/driver-licence-renewal-reminder-hsurx?role=agency" },
-  { name: "Tree test", path: "/test/transport-services-navigation-test-j6foa" }
-];
+// A tree is a dense hierarchical list, and its nodes sit 6 apart on
+// purpose. Spacing them like separate controls would make a real site tree
+// several screens tall. Excluded rather than added as a third value,
+// because the point of the scale is that there are two.
+const DENSE = ["tree-node", "tree-children", "tree-button", "tree-wrap"];
 
-const VIEWPORTS = [
-  { name: "desktop", width: 1440, height: 900 },
-  { name: "mobile", width: 390, height: 844 }
-];
-
-async function measure(page) {
-  return page.evaluate(({ CONTROL, LABEL, LABEL_PAIRS, PROSE }) => {
-    const first = (el) => String(el.className || "").split(" ")[0] || "";
+async function measure(page, viewport) {
+  return page.evaluate(({ CONTROL, LABEL, LABEL_PAIRS, PROSE, STRUCTURE, DENSE }) => {
+    const first = (el) => String(el.className?.baseVal ?? el.className ?? "").split(" ")[0] || "";
+    const tag = (el) => el.tagName.toLowerCase();
     const isLabelPair = (a, b) =>
-      LABEL_PAIRS.some(([x, y]) => first(a) === x && (first(b) === y || b.tagName.toLowerCase() === y));
+      LABEL_PAIRS.some(([x, y]) => first(a) === x && (first(b) === y || tag(b) === y));
+
+    const skip = (el) =>
+      STRUCTURE.includes(tag(el)) ||
+      DENSE.includes(first(el)) ||
+      el.closest("svg") !== null ||
+      el.classList?.contains("sr-only");
 
     const found = [];
     document.querySelectorAll("main *").forEach((parent) => {
@@ -100,26 +114,40 @@ async function measure(page) {
       for (let i = 0; i < kids.length - 1; i += 1) {
         const a = kids[i];
         const b = kids[i + 1];
-        if (PROSE.includes(a.tagName.toLowerCase()) && PROSE.includes(b.tagName.toLowerCase())) continue;
+        if (skip(a) || skip(b)) continue;
+        if (PROSE.includes(tag(a)) && PROSE.includes(tag(b))) continue;
 
         const ra = a.getBoundingClientRect();
         const rb = b.getBoundingClientRect();
         if (rb.top < ra.bottom - 1) continue;               // side by side, not stacked
 
-        const gap = Math.round((rb.top - ra.bottom) * 10) / 10;
+        // What a reader actually sees between them, which includes the
+        // padding each one carries. A study card's actions block sits at a
+        // gap of 0 and looks correct, because its own top padding is the
+        // space. Measuring the gap alone called that a fault.
+        const sa = getComputedStyle(a);
+        const sb = getComputedStyle(b);
+        const visible =
+          (rb.top - ra.bottom) +
+          parseFloat(sa.paddingBottom || 0) +
+          parseFloat(sb.paddingTop || 0);
+
+        const gap = Math.round(visible * 10) / 10;
         const expected = isLabelPair(a, b) ? LABEL : CONTROL;
-        if (Math.abs(gap - expected) <= 0.5) continue;
-        if (gap > expected) continue;                        // roomier than the scale is not the fault being hunted
+        if (gap >= expected - 0.5) continue;                 // roomier is not the fault being hunted
 
         found.push({
           gap,
           expected,
-          pair: `${a.tagName.toLowerCase()}.${first(a)} -> ${b.tagName.toLowerCase()}.${first(b)}`
+          pair: `${tag(a)}.${first(a)} -> ${tag(b)}.${first(b)}`
         });
       }
     });
     return found;
-  }, { CONTROL, LABEL, LABEL_PAIRS, PROSE: [...PROSE] });
+  }, {
+    CONTROL: viewport.width < 640 ? CONTROL_MOBILE : CONTROL,
+    LABEL, LABEL_PAIRS, PROSE, STRUCTURE, DENSE
+  });
 }
 
 // The operator screens. Their ids are not known in advance, so they are
@@ -180,7 +208,7 @@ async function measurePage(page, viewport, target) {
 
   await page.waitForTimeout(1500);
 
-  const found = await measure(page);
+  const found = await measure(page, viewport);
   const tally = new Map();
   found.forEach((f) => {
     const key = `${f.gap}px where ${f.expected}px expected   ${f.pair}`;
