@@ -1,19 +1,21 @@
 # Studier Privacy Policy
 
+<!-- The version string is recorded against an account at sign-up, so it
+stays possible to tell which wording each person agreed to after the
+policy is revised. It matches PRIVACY_POLICY_VERSION, exported from
+src/pages/PrivacyPolicyContent.jsx and re-exported from
+src/pages/PrivacyPolicyPage.jsx. Change the wording in either place and
+change it in both, and move the version string in both.
+
+This document is the version of record. It says what is true now. What
+changed, when and why belongs in harness-docs/decision-log.md, not here. -->
+
 **Version 2026-09-08**
 
-This version string is recorded against your account when you agree to
-this policy at sign-up, so it stays possible to tell which wording each
-person actually agreed to after the policy is later revised. It matches
-`PRIVACY_POLICY_VERSION`, exported from `src/pages/PrivacyPolicyContent.jsx`
-and re-exported from `src/pages/PrivacyPolicyPage.jsx` for the pages that
-already imported it from there. If you change the wording below in any
-way that affects meaning, change both.
-
-This policy covers two different groups of people, and says so
-throughout, because what Studier holds about each is very different.
-**Account holders** create and run tests. **Participants** answer them,
-without an account and without being identified.
+This policy covers two groups. **Account holders** create and run tests.
+**Participants** answer them, without an account and without being
+identified. What Studier holds about each is different, and each section
+below says which group it applies to.
 
 ---
 
@@ -49,8 +51,8 @@ agreed to this policy and to the use conditions.
 wording you write, and the results of those tests.
 
 Our hosting and database providers keep standard server and
-authentication logs, which include IP addresses and sign-in times, as any
-web service does. These are not used to build any picture of you.
+authentication logs, which include IP addresses and sign-in times. These
+are used to run and secure the service and for nothing else.
 
 Studier stores your sign-in session in your browser. It is not sent
 anywhere else and is not used to identify you across other websites.
@@ -69,8 +71,8 @@ traced back to you.
 Attached to that identifier, Studier records **your answers**, when you
 started and finished, and, in a tree test, how you moved through the
 navigation: which items you clicked, in what order, how many clicks you
-made, how long you took, and whether you went back on yourself. The
-account holder running the test chooses which of these are recorded.
+made, how long you took, and whether you retraced your steps. The account
+holder running the test chooses which of these are recorded.
 
 In a tone test, what is recorded is the role you chose to answer as,
 which version of the wording you were shown, your ratings, any risk gate
@@ -78,36 +80,32 @@ judgements, and anything you typed in your own words. No navigation
 behaviour is recorded, because a tone test has none.
 
 **The questions are written by the account holder running the test, not
-by Studier.** They are asked not to request names, contact details, case
-details or anything else that could identify a person, and the use
-conditions they agree to say so. Studier does not check what they type,
-so please do not enter personal information about yourself or anyone else
-in a free text answer, even if a question seems to invite it.
+by Studier.** The use conditions require them not to ask for names,
+contact details, case details or anything else that could identify a
+person. Studier does not check what they write. Do not enter personal
+information about yourself or anyone else in a free text answer.
 
 ## Who can see your information
 
 **If you are an account holder:** you can see everything in your own
 tests, including every response to them. You cannot see anyone else's
-tests. This is enforced by the database itself, not only by the app, so it
-holds even if the app has a bug.
+tests. This is enforced by the database, not only by the app.
 
 **If you are a participant:** your answers are visible to the account
 holder who ran the test you answered. They are not visible to other
-participants, and not visible to anyone browsing the internet. Studier
-gives an unsigned-in visitor no access to any response at all.
+participants and not visible to anyone browsing the internet. A visitor
+who is not signed in has no access to any response.
 
 **The person operating Studier** can see that an account exists, who it
 belongs to, how many tests it has, what type each one is, whether it is a
 draft, published or closed, when it was created, and how many people took
-part. That is all. They cannot see the title of your test, its wording, its
-questions, or a single answer anyone gave you. This is enforced by the
-database, not by the interface, so it holds whatever the app does.
+part. They cannot see the title of your test, its wording, its questions,
+or any answer given to it. This is enforced by the database, not only by
+the app.
 
-One thing is worth saying plainly rather than leaving you to discover it.
-Once you publish a test, its questions and the wording being tested are
-readable by anyone who has its link, because that is how a participant
-takes part without an account. Until you publish, nobody but you can read
-them, including the person operating Studier.
+Once you publish a test, its questions and the wording being tested can be
+read by anyone who has its link. This is how a participant takes part
+without an account. Before you publish, only you can read them.
 
 We do not sell your information, share it for advertising, or give it to
 anyone else except the service providers listed below, who process it on
@@ -172,11 +170,10 @@ responses directly.
 For anything the app cannot do for you, such as correcting your account
 email, email privacy@henex.uk from the address on your account.
 
-Participants are not identified, so we generally cannot find or return
-"your" answers on request: we have no way to tell which anonymous
-responses are yours. If you gave an answer you regret and can tell us
-which test you answered and roughly when, contact the person who sent you
-the test link, since they are the one able to identify and remove it.
+Participants are not identified, so we cannot find or return your answers
+on request. We have no way to tell which anonymous responses are yours. To
+have an answer removed, contact the person who sent you the test link.
+They can identify and remove it.
 
 You can withdraw your agreement to this policy at any time by deleting
 your account, from the account page or by asking us to do it for you.
@@ -186,10 +183,10 @@ your account, from the account page or by asking us to do it for you.
 Your connection to Studier is encrypted. Passwords are hashed and never
 stored in a readable form. Access to tests and responses is restricted at
 the database level to the account that owns them, with no exception for
-administrators, and participants submit answers through a restricted entry
+administrators. Participants submit answers through a restricted entry
 point that gives them no ability to read or alter anything.
 
-No system is perfectly secure. Choose a password you do not use anywhere
+No system is completely secure. Choose a password you do not use anywhere
 else, and do not share your account details.
 
 ## If something goes wrong
@@ -205,12 +202,11 @@ www.privacy.org.nz.
 
 ## Information about participants
 
-If you are an account holder, the people who answer your tests are
-relying on you. You choose who receives the link, what the questions ask,
-and what is done with the results. Studier limits what it collects, but it
-cannot stop you writing a question that asks for something it should not.
-Please only send tests to people who expect them, and check exported
-results before sharing them.
+If you are an account holder, you choose who receives the link, what the
+questions ask, and what is done with the results. Studier limits what it
+collects, but it cannot prevent you writing a question that asks for
+something it should not. Send tests only to people who expect them, and
+check exported results before sharing them.
 
 ## Changes to this policy
 

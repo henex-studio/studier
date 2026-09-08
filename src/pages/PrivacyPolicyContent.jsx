@@ -37,10 +37,10 @@ export default function PrivacyPolicyContent() {
       <p className="muted-text">Version {PRIVACY_POLICY_VERSION}</p>
 
       <p>
-        This policy covers two different groups of people, and says so throughout, because
-        what Studier holds about each is very different. <strong>Account holders</strong>{" "}
-        create and run tests. <strong>Participants</strong> answer them, without an account
-        and without being identified.
+        This policy covers two groups. <strong>Account holders</strong> create and run
+        tests. <strong>Participants</strong> answer them, without an account and without
+        being identified. What Studier holds about each is different, and each section below
+        says which group it applies to.
       </p>
 
       <h2>Who runs Studier</h2>
@@ -81,8 +81,8 @@ export default function PrivacyPolicyContent() {
       </p>
       <p>
         Our hosting and database providers keep standard server and authentication logs,
-        which include IP addresses and sign-in times, as any web service does. These are not
-        used to build any picture of you.
+        which include IP addresses and sign-in times. These are used to run and secure the
+        service and for nothing else.
       </p>
       <p>
         Studier stores your sign-in session in your browser. It is not sent anywhere else and
@@ -104,7 +104,7 @@ export default function PrivacyPolicyContent() {
         Attached to that identifier, Studier records <strong>your answers</strong>, when you
         started and finished, and, in a tree test, how you moved through the navigation:
         which items you clicked, in what order, how many clicks you made, how long you took,
-        and whether you went back on yourself. The account holder running the test chooses
+        and whether you retraced your steps. The account holder running the test chooses
         which of these are recorded.
       </p>
       <p>
@@ -117,38 +117,35 @@ export default function PrivacyPolicyContent() {
         <strong>
           The questions are written by the account holder running the test, not by Studier.
         </strong>{" "}
-        They are asked not to request names, contact details, case details or anything else
-        that could identify a person, and the use conditions they agree to say so. Studier
-        does not check what they type, so please do not enter personal information about
-        yourself or anyone else in a free text answer, even if a question seems to invite it.
+        The use conditions require them not to ask for names, contact details, case details
+        or anything else that could identify a person. Studier does not check what they
+        write. Do not enter personal information about yourself or anyone else in a free text
+        answer.
       </p>
 
       <h2>Who can see your information</h2>
       <p>
         <strong>If you are an account holder:</strong> you can see everything in your own
         tests, including every response to them. You cannot see anyone else's tests. This is
-        enforced by the database itself, not only by the app, so it holds even if the app has
-        a bug.
+        enforced by the database, not only by the app.
       </p>
       <p>
         <strong>If you are a participant:</strong> your answers are visible to the account
-        holder who ran the test you answered. They are not visible to other participants, and
-        not visible to anyone browsing the internet. Studier gives an unsigned-in visitor no
-        access to any response at all.
+        holder who ran the test you answered. They are not visible to other participants and
+        not visible to anyone browsing the internet. A visitor who is not signed in has no
+        access to any response.
       </p>
       <p>
         <strong>The person operating Studier</strong> can see that an account exists, who it
         belongs to, how many tests it has, what type each one is, whether it is a draft,
-        published or closed, when it was created, and how many people took part. That is all.
-        They cannot see the title of your test, its wording, its questions, or a single
-        answer anyone gave you. This is enforced by the database, not by the interface, so it
-        holds whatever the app does.
+        published or closed, when it was created, and how many people took part. They cannot
+        see the title of your test, its wording, its questions, or any answer given to it.
+        This is enforced by the database, not only by the app.
       </p>
       <p>
-        One thing is worth saying plainly rather than leaving you to discover it. Once you
-        publish a test, its questions and the wording being tested are readable by anyone who
-        has its link, because that is how a participant takes part without an account. Until
-        you publish, nobody but you can read them, including the person operating Studier.
+        Once you publish a test, its questions and the wording being tested can be read by
+        anyone who has its link. This is how a participant takes part without an account.
+        Before you publish, only you can read them.
       </p>
       <p>
         We do not sell your information, share it for advertising, or give it to anyone else
@@ -228,11 +225,10 @@ export default function PrivacyPolicyContent() {
         account.
       </p>
       <p>
-        Participants are not identified, so we generally cannot find or return "your" answers
-        on request: we have no way to tell which anonymous responses are yours. If you gave
-        an answer you regret and can tell us which test you answered and roughly when,
-        contact the person who sent you the test link, since they are the one able to
-        identify and remove it.
+        Participants are not identified, so we cannot find or return your answers on request.
+        We have no way to tell which anonymous responses are yours. To have an answer
+        removed, contact the person who sent you the test link. They can identify and remove
+        it.
       </p>
       <p>
         You can withdraw your agreement to this policy at any time by deleting your account,
@@ -243,13 +239,13 @@ export default function PrivacyPolicyContent() {
       <p>
         Your connection to Studier is encrypted. Passwords are hashed and never stored in a
         readable form. Access to tests and responses is restricted at the database level to
-        the account that owns them, with no exception for administrators, and participants
-        submit answers through a restricted entry point that gives them no ability to read or
-        alter anything.
+        the account that owns them, with no exception for administrators. Participants submit
+        answers through a restricted entry point that gives them no ability to read or alter
+        anything.
       </p>
       <p>
-        No system is perfectly secure. Choose a password you do not use anywhere else, and do
-        not share your account details.
+        No system is completely secure. Choose a password you do not use anywhere else, and
+        do not share your account details.
       </p>
 
       <h2>If something goes wrong</h2>
@@ -269,11 +265,11 @@ export default function PrivacyPolicyContent() {
 
       <h2>Information about participants</h2>
       <p>
-        If you are an account holder, the people who answer your tests are relying on you.
-        You choose who receives the link, what the questions ask, and what is done with the
-        results. Studier limits what it collects, but it cannot stop you writing a question
-        that asks for something it should not. Please only send tests to people who expect
-        them, and check exported results before sharing them.
+        If you are an account holder, you choose who receives the link, what the questions
+        ask, and what is done with the results. Studier limits what it collects, but it
+        cannot prevent you writing a question that asks for something it should not. Send
+        tests only to people who expect them, and check exported results before sharing
+        them.
       </p>
 
       <h2>Changes to this policy</h2>
