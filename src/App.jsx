@@ -179,13 +179,6 @@ export default function App() {
 
   if (first === "test" && parts[1]) return <PublicTestRouter slug={parts[1]} />;
 
-  // The consent gate above already catches anyone who has not agreed, so
-  // reaching here means they have. Sending them to the consent screen
-  // again asked a question they had already answered, which is what the
-  // root path did until 8 September 2026. It matters now because the home
-  // screen icon starts here.
-  if (first === "") return <StudyListPage profile={profile} />;
-
   if (first === "consent") {
     return <ConsentPage profile={profile} onAccepted={setProfile} />;
   }
@@ -214,6 +207,18 @@ export default function App() {
 
   if (!session || !profile) return <LoginPage />;
   if (!hasProfileConsent(profile)) return <ConsentPage profile={profile} onAccepted={setProfile} />;
+
+  // The root, for someone signed in who has consented. It sits below the
+  // three gates above and not with the public routes, because everything
+  // it renders needs a profile: StudyListPage reads profile.role on its
+  // first line of work, so reaching it with null is a blank page, not a
+  // degraded one. That is exactly what happened on 8 September 2026 when
+  // this line was first added above the gates.
+  //
+  // Sending a signed-in visitor here to the consent screen, which is what
+  // the root did before that date, asked a question they had already
+  // answered. It matters now because the home screen icon starts here.
+  if (first === "") return <StudyListPage profile={profile} />;
 
   if (first === "guide") {
     if (parts[1] === "tone") return <ToneGuidePage profile={profile} />;
