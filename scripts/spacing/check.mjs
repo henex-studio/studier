@@ -42,16 +42,14 @@ import readline from "node:readline";
 // SPACING_URL still overrides it, for checking a preview before it lands.
 const BASE_URL = process.env.SPACING_URL || "https://studier.henex.uk";
 
-// Vercel protects preview deployments and redirects a browser that has
-// never signed in to Vercel to its own login. Production is not protected,
-// so pointing at production removed that problem. It cost a run to find,
-// because the first version reported only "waiting for locator to be
-// visible" and named neither the page nor the redirect; printing the url
-// and title on failure is what found it, and that is kept.
+// Kept because it cost three runs to learn. Aiming at a preview meant
+// Vercel's own login stood in front of the site, which the first version
+// reported only as "waiting for locator to be visible", naming neither the
+// page nor the redirect. Printing the url and the title on failure is what
+// found it, and is why every failure here still does that.
 //
-// The Studier sign-in below remains, because the operator screens need a
-// session. A fully unattended version would have to hold an account's
-// credentials, which is not something this repository will do.
+// A fully unattended version would have to hold an account's credentials,
+// which is not something this repository will do.
 function ask(question) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => rl.question(question, (answer) => { rl.close(); resolve(answer); }));
@@ -203,29 +201,43 @@ async function measurePage(page, viewport, target) {
 
 async function main() {
   const browser = await chromium.launch({ headless: false });
+
+  // One context, one page, for the whole run.
+  //
+  // browser.newPage() creates a fresh context every time, and a fresh
+  // context has no cookies. The first version signed in on one page and
+  // then opened new ones for each viewport, so every measurement ran
+  // signed out and the operator sat through the sign-in three times
+  // watching it fail. The viewport is changed on the single page instead.
+  const context = await browser.newContext({ viewport: VIEWPORTS[0] });
+  const page = await context.newPage();
+
   let total = 0;
 
   try {
-    const gate = await browser.newPage({ viewport: VIEWPORTS[0] });
-    await gate.goto(`${BASE_URL}/admin`, { waitUntil: "domcontentloaded" });
-    console.log("\nA browser window has opened.");
-    console.log("Sign in to Studier there. If the target is a preview deployment,");
-    console.log("Vercel may ask for its own login first; that one is not Studier's.");
+    await page.goto(`${BASE_URL}/admin`, { waitUntil: "domcontentloaded" });
+    console.log("\nA browser window has opened. Sign in to Studier there.");
     await ask("Once the test collection is on screen, press Enter here... ");
-    await gate.close();
 
-    // Read the operator pages once, in one context, then measure everything
-    // at both widths.
-    const scout = await browser.newPage({ viewport: VIEWPORTS[0] });
-    const operator = await operatorPages(scout);
-    await scout.close();
+    // Confirm the sign-in took, rather than discovering it four pages later
+    // as a selector timeout.
+    try {
+      await page.waitForSelector('h1:has-text("Test collection")', { timeout: 15000 });
+    } catch {
+      throw new Error(
+        `Still not signed in.\n` +
+        `          url:   ${page.url()}\n` +
+        `          title: ${await page.title()}`
+      );
+    }
+
+    const operator = await operatorPages(page);
 
     for (const viewport of VIEWPORTS) {
-      const page = await browser.newPage({ viewport });
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
       for (const target of [...PAGES, ...operator]) {
         total += await measurePage(page, viewport, target);
       }
-      await page.close();
     }
   } finally {
     await browser.close();
