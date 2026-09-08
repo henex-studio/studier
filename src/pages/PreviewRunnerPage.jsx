@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import TreeView from "../components/TreeView";
 import PreviewBanner from "../components/PreviewBanner";
 import DoneCard from "../components/DoneCard";
+import NothingToPreview from "../components/NothingToPreview";
 import ToneTestRunnerPage from "./tonetest/ToneTestRunnerPage";
 import { supabase } from "../lib/supabase";
 import { getMatchResult } from "../lib/matching";
@@ -309,6 +310,26 @@ export default function PreviewRunnerPage({ profile, studyId }) {
 
   if (!study) {
     return <div className="page-shell"><main className="container narrow"><section className="card"><h1>Preview unavailable</h1><p>{message}</p><a className="primary-button" href="/admin">Back to test collection</a></section></main></div>;
+  }
+
+  // Before the welcome screen, because the welcome screen has a Start
+  // button and starting is what broke: with no tasks, the task screen
+  // reads displayedTask.task_text on a value that is not there, throws,
+  // and React unmounts the tree. A blank page, and no way back.
+  //
+  // An empty menu is caught here too. It does not throw, but every task
+  // would ask the participant to choose a place from a menu with nothing
+  // in it, which is not a preview of anything.
+  if (!tasks.length || !tree.length) {
+    return (
+      <NothingToPreview
+        builderPath={`/builder/${study.id}`}
+        missing={[
+          tree.length ? null : "A menu. The preview needs the navigation a participant chooses from.",
+          tasks.length ? null : "At least one task. Each task asks a participant to find one thing in the menu."
+        ]}
+      />
+    );
   }
 
   if (screen === "welcome") {

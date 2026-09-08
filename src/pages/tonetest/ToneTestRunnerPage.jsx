@@ -4,6 +4,7 @@ import { getParticipantId } from "../../lib/participantId";
 import { ROLE_KEYS, ROLE_LABELS, ROLE_DESCRIPTIONS } from "../../lib/tonetest/defaultQuestions";
 import PreviewBanner from "../../components/PreviewBanner";
 import DoneCard from "../../components/DoneCard";
+import NothingToPreview from "../../components/NothingToPreview";
 
 function isPastExpiry(value) {
   if (!value) return false;
@@ -543,7 +544,19 @@ export default function ToneTestRunnerPage({ slug, studyId, preview = false }) {
     );
   }
 
-  if (study.status === "closed" || (study.status === "published" && isPastExpiry(study.expires_at))) {
+  // The three status screens below are what a participant sees, so a
+  // preview skips all of them. Loading already refuses a preview to
+  // anyone who is not the owner or an administrator, and it never touches
+  // tone_sessions, so there is nothing here for a status to protect.
+  //
+  // Without this, previewing a draft tone test showed "Test unavailable",
+  // which is the opposite of the reason the preview was built: to check a
+  // test before it goes out. Load has said so since 7 September, in a
+  // comment, while these three guards below quietly said otherwise.
+  // Nothing caught it because the tone tests previewed so far had already
+  // been published. The tree preview has never checked status at all, so
+  // the two preview paths also disagreed. Found 9 September 2026.
+  if (!preview && (study.status === "closed" || (study.status === "published" && isPastExpiry(study.expires_at)))) {
     return (
       <div className="page-shell">
         <main className="container narrow">
@@ -556,7 +569,7 @@ export default function ToneTestRunnerPage({ slug, studyId, preview = false }) {
     );
   }
 
-  if (study.status !== "published") {
+  if (!preview && study.status !== "published") {
     return (
       <div className="page-shell">
         <main className="container narrow">
@@ -566,6 +579,24 @@ export default function ToneTestRunnerPage({ slug, studyId, preview = false }) {
           </section>
         </main>
       </div>
+    );
+  }
+
+  // A preview of a tone test with no wording in it. The runner does not
+  // throw here the way the tree preview did, but it shows a role picker
+  // followed by an error box where the wording should be, which reads as a
+  // fault rather than as an unfinished test. Same page as the tree
+  // preview, so "there is nothing here yet" says one thing on both.
+  //
+  // Only in preview. A published test with no wording is a different
+  // problem, and a participant who has been sent a link should not be told
+  // what the operator forgot to add.
+  if (preview && !variants.length) {
+    return (
+      <NothingToPreview
+        builderPath={`/tone-builder/${study.id}`}
+        missing={["At least one version of the wording. This is the text reviewers read and rate."]}
+      />
     );
   }
 
