@@ -179,7 +179,14 @@ export default function App() {
 
   if (first === "test" && parts[1]) return <PublicTestRouter slug={parts[1]} />;
 
-  if (first === "" || first === "consent") {
+  // The consent gate above already catches anyone who has not agreed, so
+  // reaching here means they have. Sending them to the consent screen
+  // again asked a question they had already answered, which is what the
+  // root path did until 8 September 2026. It matters now because the home
+  // screen icon starts here.
+  if (first === "") return <StudyListPage profile={profile} />;
+
+  if (first === "consent") {
     return <ConsentPage profile={profile} onAccepted={setProfile} />;
   }
 
