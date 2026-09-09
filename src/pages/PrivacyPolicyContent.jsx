@@ -12,6 +12,12 @@ import React from "react";
 // revised. RegisterPage passes it into the sign-up metadata, and the
 // handle_new_user database trigger writes it to profiles.privacy_version.
 //
+// Bumped 9 September 2026: Microsoft Clarity was added to every page, so
+// there is a fifth service provider, it holds data in the United States,
+// and both account holders and participants have to be told that their
+// interactions are recorded. Adding a recorder without saying so is the
+// kind of change this version string exists to make visible. S-9.9.
+//
 // Bumped 8 September 2026, migration 022: an administrator can no longer
 // read the contents of other accounts' tests or any response to them. The
 // old wording said the opposite, and said it deliberately and plainly, so
@@ -28,7 +34,7 @@ import React from "react";
 // which stopped being true the moment the account page grew a delete
 // button. Existing accounts keep whichever version string they already
 // have; there is no re-consent flow, and none was asked for.
-export const PRIVACY_POLICY_VERSION = "2026-09-08";
+export const PRIVACY_POLICY_VERSION = "2026-09-09";
 
 export default function PrivacyPolicyContent() {
   return (
@@ -88,6 +94,13 @@ export default function PrivacyPolicyContent() {
         Studier stores your sign-in session in your browser. It is not sent anywhere else and
         is not used to identify you across other websites.
       </p>
+      <p>
+        Studier uses Microsoft Clarity to see how the app is used. It records which parts of a
+        page you click, how far you scroll, how long a screen takes, and where people give up.
+        It stores its own identifier in your browser for this. All text on the page is masked
+        before anything is sent, so Clarity holds a record of where you clicked and not of
+        what you read or wrote.
+      </p>
 
       <h2>What Studier collects from participants</h2>
       <p>
@@ -106,6 +119,14 @@ export default function PrivacyPolicyContent() {
         which items you clicked, in what order, how many clicks you made, how long you took,
         and whether you retraced your steps. The account holder running the test chooses
         which of these are recorded.
+      </p>
+      <p>
+        Studier uses Microsoft Clarity on the test pages as well. It records which parts of
+        the page you click, how far you scroll, and where people give up, so that confusing
+        screens can be found and fixed. All text is masked before anything is sent, and what
+        you type into a box is never sent at all, so it holds where you clicked and not what
+        you wrote. It does not receive the identifier described above and cannot connect what
+        it sees to any account.
       </p>
       <p>
         In a tone test, what is recorded is the role you chose to answer as, which version
@@ -154,7 +175,7 @@ export default function PrivacyPolicyContent() {
       </p>
 
       <h2>Where your information is stored</h2>
-      <p>Studier uses four service providers.</p>
+      <p>Studier uses five service providers.</p>
       <ol>
         <li>
           <strong>Supabase</strong> stores the database and handles sign-in. Your information
@@ -173,6 +194,13 @@ export default function PrivacyPolicyContent() {
         <li>
           <strong>Cloudflare</strong> forwards email sent to privacy@henex.uk before it
           reaches us.
+        </li>
+        <li>
+          <strong>Microsoft</strong> provides Clarity, the usage analytics described above. It
+          receives interaction data, an identifier it sets in your browser, and the technical
+          details any web request carries, such as your IP address, browser and approximate
+          location. Microsoft stores this in the United States. Text on the page is masked
+          before it is sent, so the contents of tests and responses do not reach it.
         </li>
       </ol>
       <p>
@@ -241,7 +269,8 @@ export default function PrivacyPolicyContent() {
         readable form. Access to tests and responses is restricted at the database level to
         the account that owns them, with no exception for administrators. Participants submit
         answers through a restricted entry point that gives them no ability to read or alter
-        anything.
+        anything. The usage analytics described above run with all text masked, so no test
+        content passes to them.
       </p>
       <p>
         No system is completely secure. Choose a password you do not use anywhere else, and

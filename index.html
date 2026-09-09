@@ -34,9 +34,39 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Studier, internal testing tool." />
     <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Microsoft Clarity. Behavioural analytics: clicks, scroll depth,
+         rage and dead clicks, drop-off, heatmaps, session replay.
+         Operator's decision, 9 September 2026. Recorded as S-9.9.
+
+         The project is set to Strict masking, which masks all text. The
+         mask attribute on #root below does the same thing from the code,
+         so it does not depend on a dashboard setting that anyone with
+         access can change, and so it cannot be forgotten when a new page
+         is added. Both are deliberate; neither is redundant.
+
+         Why it matters more here than on an ordinary site: the page text
+         on Studier is the product. A tone test exists to check sensitive
+         wording before it is published, and Clarity's default Balanced
+         mode masks only numbers and email addresses, so the wording, the
+         questions, the task text and the study titles would all upload to
+         Microsoft and be readable in replays. That is the same content
+         migration 022 removed from the administrator's reach, and the
+         privacy policy states it is readable by nobody but its owner.
+
+         Content typed into inputs and dropdowns is masked by Clarity in
+         every mode and cannot be unmasked, so participants' free text
+         answers never leave the browser regardless of any of the above. -->
+    <script type="text/javascript">
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "yfii73t1ru");
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" data-clarity-mask="True"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

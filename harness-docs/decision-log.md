@@ -400,3 +400,21 @@ Recorded partly because this file was written to four times on 7 September while
 **Privacy policy.** Both copies moved to version 2026-09-08. The administrator paragraph is rewritten, the Security section says the database restriction has no exception for administrators, and a paragraph records the date of the change and what was true before it, because anything tested before 8 September was visible under the old arrangement. Existing accounts keep the version string they agreed to; no re-consent flow exists and none was asked for.
 
 **A paragraph dating the change was written into the policy and then removed, the same day, by Cafe.** It said that before 8 September an administrator could read every test and every response, and that anything tested before that date was visible under the old arrangement. The operator's position is that a privacy policy states what is true now, and that a running account of how the software was built does not belong in a document written for the people using it. The record of what changed, when and why is this entry. The version string on the policy is what tells a reader the wording moved, and the Changes section already says a material change brings a fresh request to agree.
+
+### S-9.9 Microsoft Clarity, with all text masked
+**Status:** Active
+**Decided:** 9 September 2026, by Cafe, after being shown what the default would have sent.
+
+**Decision.** Clarity runs on every page, operator and participant alike, in Strict masking mode, with `data-clarity-mask="True"` written onto the application root in `index.html` as well.
+
+**Why both.** Strict is a setting in Microsoft's dashboard. Anyone with access to that dashboard can change it in one click, the change is silent, and nothing in this repository would record that it mattered. The attribute in the code cannot be changed from the dashboard, cannot be forgotten when a new page is added, and carries the reasoning next to it. Neither is redundant.
+
+**What was nearly shipped.** The snippet as supplied uses Clarity's default Balanced mode, which masks only numbers and email addresses. Everything else on the page uploads to Microsoft and is readable in session replay. On most sites that is unremarkable. Here the page text is the product: the wording a tone test exists to check before publication, the task text, the navigation tree, the study titles, and on the administrator's own list the names and email addresses of other account holders. That is the same content removed from the administrator's reach the previous day in migration 022, and the privacy policy states it is readable by nobody but its owner. Balanced mode would have made both statements false, through a third party, with no database policy in the way.
+
+**What is not at risk either way.** Clarity masks the contents of input boxes and drop-downs in every mode and does not allow that to be unmasked, so a participant's free text answers never leave the browser.
+
+**What is given up.** Session replays show layout and behaviour, not words, which makes them harder to follow. Everything Clarity is actually installed for survives: clicks, scroll depth, rage clicks, dead clicks, drop-off and heatmaps. If the operator later wants navigation and button labels legible in replay, those specific elements can be unmasked without touching any test content. Offered, not done.
+
+**Privacy policy.** Version 2026-09-09. A fifth service provider, holding data in the United States. Account holders and participants are each told, in their own section, what is recorded and that all text is masked before it is sent. Clarity does not receive the participant identifier and cannot connect what it sees to any account.
+
+**Outstanding, for the operator.** The policy's own Changes section says a change affecting what is done with your information brings a fresh request to agree. Adding a third party recorder is that kind of change. There is no re-consent flow, and the accounts affected can be counted on one hand, so this is a decision to make rather than a mechanism to build. Recorded here so it is not lost.

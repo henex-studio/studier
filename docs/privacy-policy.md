@@ -10,7 +10,7 @@ change it in both, and move the version string in both.
 This document is the version of record. It says what is true now. What
 changed, when and why belongs in harness-docs/decision-log.md, not here. -->
 
-**Version 2026-09-08**
+**Version 2026-09-09**
 
 This policy covers two groups. **Account holders** create and run tests.
 **Participants** answer them, without an account and without being
@@ -57,6 +57,13 @@ are used to run and secure the service and for nothing else.
 Studier stores your sign-in session in your browser. It is not sent
 anywhere else and is not used to identify you across other websites.
 
+Studier uses Microsoft Clarity to see how the app is used. It records
+which parts of a page you click, how far you scroll, how long a screen
+takes, and where people give up. It stores its own identifier in your
+browser for this. All text on the page is masked before anything is sent,
+so Clarity holds a record of where you clicked and not of what you read
+or wrote.
+
 ## What Studier collects from participants
 
 If you are answering a test, you do not have an account, you are not
@@ -73,6 +80,14 @@ started and finished, and, in a tree test, how you moved through the
 navigation: which items you clicked, in what order, how many clicks you
 made, how long you took, and whether you retraced your steps. The account
 holder running the test chooses which of these are recorded.
+
+Studier uses Microsoft Clarity on the test pages as well. It records
+which parts of the page you click, how far you scroll, and where people
+give up, so that confusing screens can be found and fixed. All text is
+masked before anything is sent, and what you type into a box is never
+sent at all, so it holds where you clicked and not what you wrote. It
+does not receive the identifier described above and cannot connect what
+it sees to any account.
 
 In a tone test, what is recorded is the role you chose to answer as,
 which version of the wording you were shown, your ratings, any risk gate
@@ -113,7 +128,7 @@ our behalf in order to run Studier.
 
 ## Where your information is stored
 
-Studier uses four service providers.
+Studier uses five service providers.
 
 1. **Supabase** stores the database and handles sign-in. Your information
    is held on servers in Sydney, Australia.
@@ -125,6 +140,12 @@ Studier uses four service providers.
    your tests and responses never pass through it.
 4. **Cloudflare** forwards email sent to privacy@henex.uk before it
    reaches us.
+5. **Microsoft** provides Clarity, the usage analytics described above.
+   It receives interaction data, an identifier it sets in your browser,
+   and the technical details any web request carries, such as your IP
+   address, browser and approximate location. Microsoft stores this in
+   the United States. Text on the page is masked before it is sent, so
+   the contents of tests and responses do not reach it.
 
 Participants are never sent email, because Studier does not have their
 address.
@@ -184,7 +205,9 @@ Your connection to Studier is encrypted. Passwords are hashed and never
 stored in a readable form. Access to tests and responses is restricted at
 the database level to the account that owns them, with no exception for
 administrators. Participants submit answers through a restricted entry
-point that gives them no ability to read or alter anything.
+point that gives them no ability to read or alter anything. The usage
+analytics described above run with all text masked, so no test content
+passes to them.
 
 No system is completely secure. Choose a password you do not use anywhere
 else, and do not share your account details.
